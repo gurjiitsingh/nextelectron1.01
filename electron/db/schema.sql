@@ -267,3 +267,294 @@ ON pos_kot_items(syncedToCloud);
 
 CREATE INDEX IF NOT EXISTS idx_kot_source
 ON pos_kot_items(source);
+
+
+
+-- =====================================================
+-- POS ORDER MASTER
+-- Matches Android PosOrderMasterEntity
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS pos_order_master (
+
+  -- =====================================================
+  -- CORE IDENTIFIERS
+  -- =====================================================
+
+  id TEXT PRIMARY KEY,
+
+  srno TEXT NOT NULL,
+
+  orderType TEXT NOT NULL,
+
+  tableNo TEXT,
+
+  saleType TEXT DEFAULT '',
+
+  reason TEXT DEFAULT '',
+
+
+  -- =====================================================
+  -- CUSTOMER SNAPSHOT
+  -- =====================================================
+
+  customerName TEXT,
+
+  customerPhone TEXT,
+
+  customerId TEXT,
+
+
+  -- =====================================================
+  -- USER SNAPSHOT
+  -- =====================================================
+
+  createdById TEXT DEFAULT '',
+
+  createdByName TEXT DEFAULT '',
+
+  finalizedById TEXT DEFAULT '',
+
+  finalizedByName TEXT DEFAULT '',
+
+
+  -- =====================================================
+  -- DELIVERY ADDRESS SNAPSHOT
+  -- =====================================================
+
+  dAddressLine1 TEXT,
+
+  dAddressLine2 TEXT,
+
+  dCity TEXT,
+
+  dState TEXT,
+
+  dZipcode TEXT,
+
+  dLandmark TEXT,
+
+
+  -- =====================================================
+  -- AMOUNTS
+  -- =====================================================
+
+  deliveryFee REAL NOT NULL DEFAULT 0,
+
+  deliveryTax REAL NOT NULL DEFAULT 0,
+
+  itemTotal REAL NOT NULL DEFAULT 0,
+
+  itemTax REAL NOT NULL DEFAULT 0,
+
+  taxTotal REAL NOT NULL DEFAULT 0,
+
+  discountTotal REAL NOT NULL DEFAULT 0,
+
+  grandTotal REAL NOT NULL DEFAULT 0,
+
+
+  -- =====================================================
+  -- PAYMENT
+  -- =====================================================
+
+  paymentMode TEXT NOT NULL,
+
+  paymentStatus TEXT NOT NULL,
+
+  paidAmount REAL NOT NULL DEFAULT 0,
+
+  dueAmount REAL NOT NULL DEFAULT 0,
+
+
+  -- =====================================================
+  -- ORDER STATE
+  -- =====================================================
+
+  orderStatus TEXT NOT NULL,
+
+
+  -- =====================================================
+  -- SOURCE & DEVICE META
+  -- =====================================================
+
+  source TEXT NOT NULL DEFAULT 'POS',
+
+  deviceId TEXT NOT NULL,
+
+  deviceName TEXT,
+
+  appVersion TEXT,
+
+
+  -- =====================================================
+  -- TIMING
+  -- =====================================================
+
+  businessDate TEXT NOT NULL,
+
+  createdAt INTEGER NOT NULL,
+
+  updatedAt INTEGER,
+
+
+  -- =====================================================
+  -- SYNC CONTROL
+  -- =====================================================
+
+  syncStatus TEXT NOT NULL,
+
+  lastSyncedAt INTEGER,
+
+
+  -- =====================================================
+  -- EXTRA
+  -- =====================================================
+
+  notes TEXT
+);
+
+
+-- =====================================================
+-- INDEXES
+-- Matches Android Room indexes
+-- =====================================================
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_master_syncStatus
+ON pos_order_master(syncStatus);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_master_createdAt
+ON pos_order_master(createdAt);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_master_orderType
+ON pos_order_master(orderType);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_master_businessDate
+ON pos_order_master(businessDate);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_master_tableNo
+ON pos_order_master(tableNo);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_master_srno
+ON pos_order_master(srno);
+
+
+
+
+
+ 
+-- =====================================================
+-- POS ORDER ITEMS
+-- Matches Android PosOrderItemEntity
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS pos_order_items (
+
+  id TEXT PRIMARY KEY,
+
+  categoryName TEXT NOT NULL,
+  productMode TEXT NOT NULL,
+  currentStock REAL NOT NULL DEFAULT 0,
+
+  orderMasterId TEXT NOT NULL,
+  productId TEXT NOT NULL,
+
+  createdById TEXT NOT NULL DEFAULT '',
+  createdByName TEXT NOT NULL DEFAULT '',
+
+  name TEXT NOT NULL,
+  categoryId TEXT NOT NULL,
+
+  parentId TEXT,
+  isVariant INTEGER NOT NULL DEFAULT 0,
+
+  basePrice REAL NOT NULL,
+  quantity INTEGER NOT NULL,
+  itemSubtotal REAL NOT NULL DEFAULT 0,
+
+  currency TEXT,
+  paymentStatus TEXT,
+
+  taxRate REAL NOT NULL DEFAULT 0,
+  taxType TEXT NOT NULL DEFAULT 'exclusive',
+
+  taxAmountPerItem REAL NOT NULL DEFAULT 0,
+  taxTotal REAL NOT NULL DEFAULT 0,
+
+  note TEXT NOT NULL DEFAULT '',
+  modifiersJson TEXT NOT NULL DEFAULT '',
+  modifierPrice REAL NOT NULL DEFAULT 0,
+  modifierSummary TEXT NOT NULL DEFAULT '',
+
+  finalPricePerItem REAL NOT NULL DEFAULT 0,
+  finalTotal REAL NOT NULL DEFAULT 0,
+
+  source TEXT NOT NULL DEFAULT 'POS',
+
+  createdAt INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_orderMasterId
+ON pos_order_items(orderMasterId);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_productId
+ON pos_order_items(productId);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_parentId
+ON pos_order_items(parentId);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_createdAt
+ON pos_order_items(createdAt);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_categoryName
+ON pos_order_items(categoryName);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_paymentStatus
+ON pos_order_items(paymentStatus);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_paymentStatus_createdAt
+ON pos_order_items(paymentStatus, createdAt);
+
+
+-- =====================================================
+-- POS ORDER PAYMENTS
+-- Matches Android PosOrderPaymentEntity
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS pos_order_payments (
+
+  id TEXT PRIMARY KEY,
+
+  orderId TEXT NOT NULL,
+
+  ownerId TEXT NOT NULL,
+  outletId TEXT NOT NULL,
+
+  amount REAL NOT NULL,
+
+  mode TEXT NOT NULL,
+
+  provider TEXT,
+  method TEXT,
+
+  status TEXT NOT NULL,
+
+  deviceId TEXT NOT NULL,
+
+  createdAt INTEGER NOT NULL,
+
+  businessDate TEXT NOT NULL,
+
+  syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+
+  lastSyncedAt INTEGER,
+
+  isVoided INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_payments_orderId
+ON pos_order_payments(orderId);
+
+CREATE INDEX IF NOT EXISTS idx_pos_order_payments_syncStatus
+ON pos_order_payments(syncStatus);
+ 

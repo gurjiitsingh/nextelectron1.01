@@ -97,7 +97,25 @@ export default function PosTopBar() {
         >
           KOT
         </Link>
-
+        
+     <Link
+          href="/bill"
+          className={`
+            px-4
+            py-1.5
+            rounded-md
+            text-xs
+            font-semibold
+            transition
+            ${
+              isKOT
+                ? "bg-white text-slate-800 shadow-sm"
+                : "text-slate-500 hover:text-slate-800"
+            }
+          `}
+        >
+          BILL
+        </Link>
       </div>
     </header>
   );

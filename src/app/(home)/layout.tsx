@@ -1,7 +1,7 @@
 import "@/app/globals.css";
 import { Toaster } from "react-hot-toast";
 import type { Metadata } from "next";
- 
+
 import "@/css/style.css";
 import UTMInitializer from "../UTMInitializer";
 import { Providers } from "../Providers";
@@ -16,6 +16,7 @@ import { SEO } from "@/config/languages";
 import { getDynamicSEO } from "@/lib/seo/getSeo";
 import SyncButton from "./SyncButton";
 import PosTopBar from "@/components/pos/home/PosTopBar";
+import { PosUiProvider } from "@/PosUiStore/PosUiContext";
 
 
 
@@ -68,49 +69,49 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
- 
-        <div className="text-[#2B2E4A] overflow-hidden">
-          <div translate="no">
-            <UTMInitializer />
 
-            <Providers>
-              <BargerMenu />
-              <Modal />
+    <div className="text-[#2B2E4A]  ">
+      <div translate="no">
+        <UTMInitializer />
+        <PosUiProvider>
+          <Providers>
+            <BargerMenu />
+            <Modal />
 
-              <div className="flex flex-col gap-0 my-0">
-                <div className="z-50">
-                  <SafeSideCart />
-                </div>
+            <div className="flex flex-col gap-0 my-0">
+              <div className="z-50">
+                <SafeSideCart />
+              </div>
 
               {/* NEW TOP BAR */}
-      <PosTopBar />
+              <PosTopBar />
 
-                {children}
+              {children}
 
-              
 
-             
-              </div>
-            
-            </Providers>
 
-            <Toaster
-              position="top-center"
-              containerStyle={{ top: "30%" }}
-              toastOptions={{
-                style: {
-                  borderRadius: "10px",
-                  padding: "12px 16px",
-                },
-                className: "toast-default",
-                success: { className: "toast-success" },
-                error: { className: "toast-error" },
-                loading: { className: "toast-loading" },
-              }}
-              reverseOrder={false}
-            />
-          </div>
-        </div>
-   
+
+            </div>
+
+          </Providers>
+        </PosUiProvider>
+        <Toaster
+          position="top-center"
+          containerStyle={{ top: "30%" }}
+          toastOptions={{
+            style: {
+              borderRadius: "10px",
+              padding: "12px 16px",
+            },
+            className: "toast-default",
+            success: { className: "toast-success" },
+            error: { className: "toast-error" },
+            loading: { className: "toast-loading" },
+          }}
+          reverseOrder={false}
+        />
+      </div>
+    </div>
+
   );
 }

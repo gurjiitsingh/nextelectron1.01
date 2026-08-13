@@ -17,7 +17,7 @@ export default function RootLayout({
 
  
   return (
-      <html lang="en" translate="no" className="overflow-hidden">
+      <html lang="en" translate="no" className="overflow-hidden ">
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Days+One&family=Dosis&family=Quicksand&display=swap"

@@ -71,6 +71,68 @@ updateKotStatus: (
   status: string
 ) => Promise<any>;
 
+ 
+createBill: (input: {
+  tableNo: string;
+  orderType?: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
+
+  customerName?: string;
+  customerPhone?: string;
+  customerId?: string | null;
+
+  discountTotal?: number;
+  deliveryFee?: number;
+  deliveryTax?: number;
+
+  paymentMode?: string;
+  paymentStatus?: string;
+
+  paidAmount?: number;
+
+  payments?: Array<{
+    mode: string;
+    amount: number;
+    provider?: string | null;
+    method?: string | null;
+  }>;
+
+  ownerId?: string;
+  outletId?: string;
+
+  deviceId?: string;
+  deviceName?: string;
+  appVersion?: string;
+
+  businessDate?: string;
+
+  currency?: string;
+}) => Promise<{
+  success: boolean;
+  error?: string;
+
+  orderId?: string;
+  srno?: string;
+
+  tableNo?: string;
+  itemCount?: number;
+
+  itemTotal?: number;
+  itemTax?: number;
+  taxTotal?: number;
+  discountTotal?: number;
+  deliveryFee?: number;
+
+  grandTotal?: number;
+  paidAmount?: number;
+  dueAmount?: number;
+
+  paymentStatus?: string;
+}>,
+
+getBillableKotItems: (
+  tableNo: string
+) => Promise<any[]>,
+
 
 
       // Modifiers

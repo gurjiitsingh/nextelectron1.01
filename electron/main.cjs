@@ -31,6 +31,11 @@ const {
 
 const kotRepo = require('./db/kotRepo.cjs');
 
+const {
+  createBillFromKitchen,
+  getBillableKotItems,
+} = require('./db/billingRepo.cjs');
+
 
 ipcMain.handle(
   'kot:insert',
@@ -67,6 +72,72 @@ ipcMain.handle(
     return kotRepo.updateKotStatus(id, status);
   }
 );
+
+
+
+ 
+// =====================================================
+// BILLING
+// =====================================================
+
+ipcMain.handle(
+  'bill:create',
+  async (_event, input) => {
+
+    try {
+
+      const result =
+        await createBillFromKitchen(
+          input
+        );
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        'BILL CREATE FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to create bill',
+      };
+    }
+  }
+);
+
+
+// =====================================================
+// GET BILLABLE KOT ITEMS
+// =====================================================
+
+ipcMain.handle(
+  'bill:get-kot-items',
+  async (_event, tableNo) => {
+
+    try {
+
+      return getBillableKotItems(
+        tableNo
+      );
+
+    } catch (error) {
+
+      console.error(
+        'GET BILL ITEMS FAILED:',
+        error
+      );
+
+      throw error;
+    }
+  }
+);
+
+
 
 function createWindow() {
   const preloadPath = path.resolve(

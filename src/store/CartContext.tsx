@@ -20,6 +20,11 @@ interface CartContextType {
   decCartProduct: (c: cartProductType) => void;
   decCartProductAll: (c: cartProductType) => void;
   removeCartProduct: (c: cartProductType | undefined) => void;
+  // =====================================================
+// RELOAD CART FROM SQLITE
+// =====================================================
+setCartData: React.Dispatch<React.SetStateAction<cartProductType[]>>;
+reloadCart: () => Promise<void>;
   emptyCart: () => void;
   endTotalG: number;
   setEndTotalG: (c: number) => void;
@@ -39,6 +44,8 @@ const CartContext = createContext<CartContextType>({
   counter: 0,
   productTotalCost: 0,
   cartData: [],
+  
+    setCartData: () => {},
 
   address: {
     name: "",
@@ -57,6 +64,8 @@ const CartContext = createContext<CartContextType>({
   decCartProduct: () => {},
   decCartProductAll: () => {},
   removeCartProduct: () => {},
+  // reload helper
+reloadCart: async () => {}, 
   emptyCart: () => {},
 
   endTotalG: 0,

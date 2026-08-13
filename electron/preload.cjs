@@ -121,4 +121,24 @@ updateKotStatus: (id, status) =>
   ),
 
 
+
+// =====================================================
+// BILLING
+// =====================================================
+
+getBillableKotItems: (tableNo) =>
+  ipcRenderer.invoke(
+    'bill:get-kot-items',
+    tableNo
+  ),
+
+createBill: (input) =>
+  ipcRenderer.invoke(
+    'bill:create',
+    input
+  ),
+
+
+
+
 });

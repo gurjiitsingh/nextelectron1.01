@@ -1,0 +1,922 @@
+ 
+const crypto = require('crypto');
+const { db } = require('./sqlite.cjs');
+
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+function uuid() {
+  return crypto.randomUUID();
+}
+
+
+// =====================================================
+// GET BILLABLE KOT ITEMS
+// =====================================================
+//
+// We consider both PENDING and DONE as billable because
+// the KOT has already been sent to the kitchen.
+//
+// Later, if your kitchen flow requires only DONE items,
+// change this to:
+//
+// WHERE tableNo = ? AND status = 'DONE'
+//
+// =====================================================
+
+function getBillableKotItems(tableNo) {
+  return db
+    .prepare(`
+      SELECT *
+      FROM pos_kot_items
+      WHERE tableNo = ?
+        AND status IN ('PENDING', 'DONE')
+      ORDER BY createdAt ASC
+    `)
+    .all(tableNo);
+}
+
+
+// =====================================================
+// CREATE BILL
+// =====================================================
+
+async function createBillFromKitchen(input) {
+
+  const {
+    tableNo,
+    orderType = 'DINE_IN',
+
+    customerName = 'Customer',
+    customerPhone = '',
+    customerId = null,
+
+    discountTotal = 0,
+    deliveryFee = 0,
+    deliveryTax = 0,
+
+    paymentMode = 'CASH',
+    paymentStatus = 'PAID',
+
+    paidAmount = 0,
+
+    payments = [],
+
+    ownerId = '',
+    outletId = '',
+
+    deviceId = 'POS',
+    deviceName = 'Electron POS',
+    appVersion = '1.0',
+
+    businessDate,
+
+    currency = '₹',
+  } = input;
+
+
+  // ===================================================
+  // BASIC VALIDATION
+  // ===================================================
+
+  if (!tableNo) {
+    throw new Error('tableNo is required');
+  }
+
+
+  // ===================================================
+  // READ KOT
+  // ===================================================
+
+  const kotItems =
+    getBillableKotItems(tableNo);
+
+
+  if (!kotItems.length) {
+    throw new Error(
+      `No billable kitchen items found for table ${tableNo}`
+    );
+  }
+
+
+  const now = Date.now();
+
+  const orderId = uuid();
+
+
+  // ===================================================
+  // BUSINESS DATE
+  // ===================================================
+  //
+  // For now caller can provide businessDate.
+  //
+  // Later we will connect this to your Electron
+  // business-day repository.
+  // ===================================================
+
+  const finalBusinessDate =
+    businessDate ||
+    new Date().toISOString().slice(0, 10);
+
+
+  // ===================================================
+  // ORDER NUMBER
+  // ===================================================
+  //
+  // Temporary safe number.
+  //
+  // Later we should replace this with your daily
+  // POS sequence repository, equivalent to:
+  //
+  // orderSequenceRepository.getOrCreateOrderNo()
+  //
+  // ===================================================
+
+  const srno =
+    `POS-${Date.now()}`;
+
+
+  // ===================================================
+  // CALCULATE ITEMS
+  // ===================================================
+
+  let itemTotal = 0;
+  let itemTax = 0;
+
+
+  const orderItems = kotItems.map((kot) => {
+
+    const quantity =
+      Number(kot.quantity || 0);
+
+    const basePrice =
+      Number(kot.basePrice || 0);
+
+    const modifierPrice =
+      Number(kot.modifierTotal || 0);
+
+    const priceBeforeTax =
+      basePrice + modifierPrice;
+
+
+    const itemSubtotal =
+      priceBeforeTax * quantity;
+
+
+    const taxRate =
+      Number(kot.taxRate || 0);
+
+    const taxType =
+      kot.taxType || 'exclusive';
+
+
+    let taxAmountPerItem = 0;
+
+
+    if (taxType === 'exclusive') {
+      taxAmountPerItem =
+        priceBeforeTax *
+        (taxRate / 100);
+    }
+
+
+    const taxTotal =
+      taxAmountPerItem * quantity;
+
+
+    const finalPricePerItem =
+      priceBeforeTax +
+      taxAmountPerItem;
+
+
+    const finalTotal =
+      finalPricePerItem *
+      quantity;
+
+
+    itemTotal += itemSubtotal;
+    itemTax += taxTotal;
+
+
+    return {
+
+      id: uuid(),
+
+      categoryName:
+        kot.categoryName || '',
+
+      productMode:
+        kot.productMode || 'raw_stock',
+
+      currentStock:
+        Number(kot.currentStock || 0),
+
+      orderMasterId:
+        orderId,
+
+      productId:
+        kot.productId,
+
+      createdById:
+        kot.createdById || '',
+
+      createdByName:
+        kot.createdByName || '',
+
+      name:
+        kot.name || '',
+
+      categoryId:
+        kot.categoryId || '',
+
+      parentId:
+        kot.parentId || null,
+
+      isVariant:
+        kot.isVariant ? 1 : 0,
+
+      basePrice,
+
+      quantity,
+
+      itemSubtotal,
+
+      currency,
+
+      paymentStatus,
+
+      taxRate,
+
+      taxType,
+
+      taxAmountPerItem,
+
+      taxTotal,
+
+      note:
+        kot.note || '',
+
+      modifiersJson:
+        kot.modifiersJson || '',
+
+      modifierPrice,
+
+      modifierSummary:
+        '',
+
+      finalPricePerItem,
+
+      finalTotal,
+
+      source:
+        kot.source || 'POS',
+
+      createdAt:
+        now,
+    };
+  });
+
+
+  // ===================================================
+  // FINAL TOTALS
+  // ===================================================
+
+  const safeDiscount =
+    Math.max(
+      0,
+      Number(discountTotal || 0)
+    );
+
+
+  const safeDeliveryFee =
+    Math.max(
+      0,
+      Number(deliveryFee || 0)
+    );
+
+
+  const safeDeliveryTax =
+    Math.max(
+      0,
+      Number(deliveryTax || 0)
+    );
+
+
+  const taxTotal =
+    itemTax + safeDeliveryTax;
+
+
+  const grandTotal =
+    Math.max(
+      0,
+      itemTotal +
+      taxTotal +
+      safeDeliveryFee -
+      safeDiscount
+    );
+
+
+  const safePaidAmount =
+    Math.max(
+      0,
+      Number(paidAmount || 0)
+    );
+
+
+  const dueAmount =
+    Math.max(
+      0,
+      grandTotal -
+      safePaidAmount
+    );
+
+
+  // ===================================================
+  // PAYMENT ARRAY
+  // ===================================================
+
+  let finalPayments = payments;
+
+
+  // If caller didn't provide payment array,
+  // create one from paymentMode + paidAmount.
+
+  if (
+    !Array.isArray(finalPayments) ||
+    finalPayments.length === 0
+  ) {
+
+    if (safePaidAmount > 0) {
+
+      finalPayments = [
+        {
+          mode: paymentMode,
+          amount: safePaidAmount,
+        },
+      ];
+
+    } else {
+
+      finalPayments = [];
+    }
+  }
+
+
+  // ===================================================
+  // TRANSACTION
+  // ===================================================
+
+  const transaction =
+    db.transaction(() => {
+
+      // ================================================
+      // 1. CREATE ORDER MASTER
+      // ================================================
+
+      db.prepare(`
+        INSERT INTO pos_order_master (
+
+          id,
+          srno,
+          orderType,
+          tableNo,
+
+          saleType,
+          reason,
+
+          customerName,
+          customerPhone,
+          customerId,
+
+          createdById,
+          createdByName,
+
+          finalizedById,
+          finalizedByName,
+
+          dAddressLine1,
+          dAddressLine2,
+          dCity,
+          dState,
+          dZipcode,
+          dLandmark,
+
+          deliveryFee,
+          deliveryTax,
+
+          itemTotal,
+          itemTax,
+          taxTotal,
+          discountTotal,
+          grandTotal,
+
+          paymentMode,
+          paymentStatus,
+
+          paidAmount,
+          dueAmount,
+
+          orderStatus,
+
+          source,
+
+          deviceId,
+          deviceName,
+          appVersion,
+
+          businessDate,
+
+          createdAt,
+          updatedAt,
+
+          syncStatus,
+          lastSyncedAt,
+
+          notes
+
+        ) VALUES (
+
+          @id,
+          @srno,
+          @orderType,
+          @tableNo,
+
+          @saleType,
+          @reason,
+
+          @customerName,
+          @customerPhone,
+          @customerId,
+
+          @createdById,
+          @createdByName,
+
+          @finalizedById,
+          @finalizedByName,
+
+          @dAddressLine1,
+          @dAddressLine2,
+          @dCity,
+          @dState,
+          @dZipcode,
+          @dLandmark,
+
+          @deliveryFee,
+          @deliveryTax,
+
+          @itemTotal,
+          @itemTax,
+          @taxTotal,
+          @discountTotal,
+          @grandTotal,
+
+          @paymentMode,
+          @paymentStatus,
+
+          @paidAmount,
+          @dueAmount,
+
+          @orderStatus,
+
+          @source,
+
+          @deviceId,
+          @deviceName,
+          @appVersion,
+
+          @businessDate,
+
+          @createdAt,
+          @updatedAt,
+
+          @syncStatus,
+          @lastSyncedAt,
+
+          @notes
+        )
+      `).run({
+
+        id: orderId,
+
+        srno,
+
+        orderType,
+
+        tableNo,
+
+        saleType: '',
+
+        reason: '',
+
+        customerName:
+          customerName || 'Customer',
+
+        customerPhone:
+          customerPhone || '',
+
+        customerId:
+          customerId || null,
+
+        createdById:
+          '',
+
+        createdByName:
+          '',
+
+        finalizedById:
+          '',
+
+        finalizedByName:
+          '',
+
+        dAddressLine1:
+          null,
+
+        dAddressLine2:
+          null,
+
+        dCity:
+          null,
+
+        dState:
+          null,
+
+        dZipcode:
+          null,
+
+        dLandmark:
+          null,
+
+        deliveryFee:
+          safeDeliveryFee,
+
+        deliveryTax:
+          safeDeliveryTax,
+
+        itemTotal,
+
+        itemTax,
+
+        taxTotal,
+
+        discountTotal:
+          safeDiscount,
+
+        grandTotal,
+
+        paymentMode,
+
+        paymentStatus,
+
+        paidAmount:
+          safePaidAmount,
+
+        dueAmount,
+
+        orderStatus:
+          'COMPLETED',
+
+        source:
+          'POS',
+
+        deviceId,
+
+        deviceName,
+
+        appVersion,
+
+        businessDate:
+          finalBusinessDate,
+
+        createdAt:
+          now,
+
+        updatedAt:
+          now,
+
+        syncStatus:
+          'PENDING',
+
+        lastSyncedAt:
+          null,
+
+        notes:
+          null,
+      });
+
+
+      // ================================================
+      // 2. CREATE ORDER ITEMS
+      // ================================================
+
+      const insertItem =
+        db.prepare(`
+          INSERT INTO pos_order_items (
+
+            id,
+
+            categoryName,
+            productMode,
+            currentStock,
+
+            orderMasterId,
+            productId,
+
+            createdById,
+            createdByName,
+
+            name,
+            categoryId,
+
+            parentId,
+            isVariant,
+
+            basePrice,
+            quantity,
+            itemSubtotal,
+
+            currency,
+            paymentStatus,
+
+            taxRate,
+            taxType,
+
+            taxAmountPerItem,
+            taxTotal,
+
+            note,
+            modifiersJson,
+            modifierPrice,
+            modifierSummary,
+
+            finalPricePerItem,
+            finalTotal,
+
+            source,
+
+            createdAt
+
+          ) VALUES (
+
+            @id,
+
+            @categoryName,
+            @productMode,
+            @currentStock,
+
+            @orderMasterId,
+            @productId,
+
+            @createdById,
+            @createdByName,
+
+            @name,
+            @categoryId,
+
+            @parentId,
+            @isVariant,
+
+            @basePrice,
+            @quantity,
+            @itemSubtotal,
+
+            @currency,
+            @paymentStatus,
+
+            @taxRate,
+            @taxType,
+
+            @taxAmountPerItem,
+            @taxTotal,
+
+            @note,
+            @modifiersJson,
+            @modifierPrice,
+            @modifierSummary,
+
+            @finalPricePerItem,
+            @finalTotal,
+
+            @source,
+
+            @createdAt
+          )
+        `);
+
+
+      for (const item of orderItems) {
+        insertItem.run(item);
+      }
+
+
+      // ================================================
+      // 3. CREATE PAYMENTS
+      // ================================================
+
+      const insertPayment =
+        db.prepare(`
+          INSERT INTO pos_order_payments (
+
+            id,
+            orderId,
+
+            ownerId,
+            outletId,
+
+            amount,
+
+            mode,
+
+            provider,
+            method,
+
+            status,
+
+            deviceId,
+
+            createdAt,
+            businessDate,
+
+            syncStatus,
+            lastSyncedAt,
+
+            isVoided
+
+          ) VALUES (
+
+            @id,
+            @orderId,
+
+            @ownerId,
+            @outletId,
+
+            @amount,
+
+            @mode,
+
+            @provider,
+            @method,
+
+            @status,
+
+            @deviceId,
+
+            @createdAt,
+            @businessDate,
+
+            @syncStatus,
+            @lastSyncedAt,
+
+            @isVoided
+
+          )
+        `);
+
+
+      for (const payment of finalPayments) {
+
+        const amount =
+          Number(payment.amount || 0);
+
+        if (amount <= 0) {
+          continue;
+        }
+
+
+        insertPayment.run({
+
+          id:
+            uuid(),
+
+          orderId,
+
+          ownerId,
+
+          outletId,
+
+          amount,
+
+          mode:
+            payment.mode || paymentMode,
+
+          provider:
+            payment.provider || null,
+
+          method:
+            payment.method || null,
+
+          status:
+            'SUCCESS',
+
+          deviceId,
+
+          createdAt:
+            now,
+
+          businessDate:
+            finalBusinessDate,
+
+          syncStatus:
+            'PENDING',
+
+          lastSyncedAt:
+            null,
+
+          isVoided:
+            0,
+        });
+      }
+
+
+      // ================================================
+      // 4. COMPLETE KOT
+      // ================================================
+      //
+      // First mark them PAID.
+      //
+      // This makes the transition explicit.
+      // ================================================
+
+      db.prepare(`
+        UPDATE pos_kot_items
+        SET status = 'PAID'
+        WHERE tableNo = ?
+          AND status IN ('PENDING', 'DONE')
+      `).run(tableNo);
+
+
+      // ================================================
+      // 5. CLEAR KOT
+      // ================================================
+      //
+      // The order_items table now contains the permanent
+      // snapshot, so local KOT rows can be removed.
+      // ================================================
+
+      db.prepare(`
+        DELETE FROM pos_kot_items
+        WHERE tableNo = ?
+          AND status = 'PAID'
+      `).run(tableNo);
+    });
+
+
+  // ===================================================
+  // EXECUTE TRANSACTION
+  // ===================================================
+
+  transaction();
+
+
+  // ===================================================
+  // RETURN RESULT TO REACT
+  // ===================================================
+
+  return {
+
+    success: true,
+
+    orderId,
+
+    srno,
+
+    tableNo,
+
+    itemCount:
+      orderItems.length,
+
+    itemTotal,
+
+    itemTax,
+
+    taxTotal,
+
+    discountTotal:
+      safeDiscount,
+
+    deliveryFee:
+      safeDeliveryFee,
+
+    grandTotal,
+
+    paidAmount:
+      safePaidAmount,
+
+    dueAmount,
+
+    paymentStatus,
+  };
+}
+
+
+// =====================================================
+// EXPORT
+// =====================================================
+
+module.exports = {
+  createBillFromKitchen,
+  getBillableKotItems,
+};
+

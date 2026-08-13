@@ -1,6 +1,18 @@
 const { initDb } = require('./initDb.cjs');
 const { db } = require('./sqlite.cjs');
 
+// =====================================================
+// DEBUG: SHOW ALL SQLITE TABLES
+// Location: electron/db/cartRepo.cjs
+// Run once when Electron starts
+// =====================================================
+console.log(
+  'SQLITE TABLES =>',
+  db.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table'"
+  ).all()
+);
+
 initDb();
 
 async function addCartItem(item, tableNo) {
@@ -145,9 +157,16 @@ async function removeCartItem(
 }
 
 async function clearCart(tableNo) {
-  db.prepare(
+  const result = db.prepare(
     'DELETE FROM pos_cart_item WHERE tableId = ?'
   ).run(tableNo);
+
+  console.log(
+    'CLEAR CART => table:',
+    tableNo,
+    'deleted rows:',
+    result.changes
+  );
 
   return [];
 }

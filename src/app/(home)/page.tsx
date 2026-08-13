@@ -1,9 +1,10 @@
 
 import PosSidebarCategories from "@/components/pos/PosSidebarCategories";
-import CartPanel from "@/components/pos/CartPanel";
+import CartPanel from "@/components/pos/cart/CartPanel";
 
 import Products from "@/components/level-1/Products";
 import PosTopBar from "@/components/pos/home/PosTopBar";
+import RightSideBar from "@/components/pos/rightSideBar/RightSidebar";
 
 export default async function Page() {
   return (
@@ -23,7 +24,7 @@ export default async function Page() {
         </section>
 
         <aside className="hidden xl:flex w-[440px] bg-white border-l border-slate-200">
-          <CartPanel />
+          <RightSideBar  />
         </aside>
 
       </main>

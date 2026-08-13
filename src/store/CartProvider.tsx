@@ -53,15 +53,21 @@ export const CartProvider: React.FC<Props> = ({ children }) => {
   // LOAD CART FROM SQLITE
   // =====================================================
 
-  useEffect(() => {
-    async function loadCart() {
-      const rows = await posApi.getCartItems(tableNo || 'T1');
+useEffect(() => {
+  reloadCart();
+}, [tableNo]);
+
+      // =====================================================
+    // RELOAD CART FROM SQLITE
+    // Location: src/store/CartProvider.tsx
+    // =====================================================
+    async function reloadCart() {
+      const rows = await posApi.getCartItems(
+        tableNo || 'T1'
+      );
 
       setCartData(rows as cartProductType[]);
     }
-
-    loadCart();
-  }, [tableNo]);
 
   // =====================================================
   // CALCULATE TOTALS
@@ -114,95 +120,90 @@ export const CartProvider: React.FC<Props> = ({ children }) => {
       return;
     }
 
-await posApi.addCartItem(
-  {
-    id: newProduct.id ?? 0,
+    await posApi.addCartItem(
+      {
+        id: newProduct.id ?? 0,
 
-    productId: newProduct.productId,
-    productMode: newProduct.productMode,
+        productId: newProduct.productId,
+        productMode: newProduct.productMode,
 
-    currentStock: newProduct.currentStock ?? 0,
+        currentStock: newProduct.currentStock ?? 0,
 
-    name: newProduct.name,
+        name: newProduct.name,
 
-    categoryId: newProduct.categoryId,
-    categoryName: newProduct.categoryName,
+        categoryId: newProduct.categoryId,
+        categoryName: newProduct.categoryName,
 
-    parentId: newProduct.parentId ?? null,
+        parentId: newProduct.parentId ?? null,
 
-    isVariant: newProduct.isVariant ?? false,
+        isVariant: newProduct.isVariant ?? false,
 
-    basePrice: Number(newProduct.basePrice),
-    finalPrice: Number(newProduct.finalPrice),
-    modifierTotal: Number(newProduct.modifierTotal ?? 0),
+        basePrice: Number(newProduct.basePrice),
+        finalPrice: Number(newProduct.finalPrice),
+        modifierTotal: Number(newProduct.modifierTotal ?? 0),
 
-    quantity: 1, // always increase by 1
+        quantity: 1, // always increase by 1
 
-    taxRate: Number(newProduct.taxRate ?? 0),
-    taxType: newProduct.taxType ?? 'exclusive',
+        taxRate: Number(newProduct.taxRate ?? 0),
+        taxType: newProduct.taxType ?? 'exclusive',
 
-    sessionId: newProduct.sessionId ?? 'DEFAULT',
+        sessionId: newProduct.sessionId ?? 'DEFAULT',
 
-    tableId: newProduct.tableId ?? tableNo ?? 'T1',
-    tableName:
-      newProduct.tableName ??
-      tableNo ??
-      'T1',
+        tableId: newProduct.tableId ?? tableNo ?? 'T1',
+        tableName:
+          newProduct.tableName ??
+          tableNo ??
+          'T1',
 
-    createdById:
-      newProduct.createdById ?? '',
-    createdByName:
-      newProduct.createdByName ?? '',
+        createdById:
+          newProduct.createdById ?? '',
+        createdByName:
+          newProduct.createdByName ?? '',
 
-    note: newProduct.note ?? '',
+        note: newProduct.note ?? '',
 
-    modifiersJson:
-      newProduct.modifiersJson ??
-      JSON.stringify(
-        newProduct.modifiers ?? []
-      ),
+        modifiersJson:
+          newProduct.modifiersJson ??
+          JSON.stringify(
+            newProduct.modifiers ?? []
+          ),
 
-    sentToKitchen:
-      newProduct.sentToKitchen ?? false,
+        sentToKitchen:
+          newProduct.sentToKitchen ?? false,
 
-    kitchenPrintReq:
-      newProduct.kitchenPrintReq ?? false,
+        kitchenPrintReq:
+          newProduct.kitchenPrintReq ?? false,
 
-    printStatus:
-      newProduct.printStatus ?? 'PENDING',
+        printStatus:
+          newProduct.printStatus ?? 'PENDING',
 
-    createdAt:
-      newProduct.createdAt ?? Date.now(),
-  },
-  newProduct.tableId ?? tableNo ?? 'T1'
-);
-
-    const rows = await posApi.getCartItems(
-      tableNo || 'T1'
+        createdAt:
+          newProduct.createdAt ?? Date.now(),
+      },
+      newProduct.tableId ?? tableNo ?? 'T1'
     );
 
-    setCartData(rows as cartProductType[]);
+   await reloadCart();
+
   }
 
   // =====================================================
   // DECREASE QUANTITY BY 1
   // =====================================================
 
- async function decCartProduct(
-  item: cartProductType
-) {
-  await posApi.removeCartItem(
-    String(item.id), // SQLite row id
-    tableNo || 'T1',
-    false // decrease by 1
-  );
+  async function decCartProduct(
+    item: cartProductType
+  ) {
+    await posApi.removeCartItem(
+      String(item.id), // SQLite row id
+      tableNo || 'T1',
+      false // decrease by 1
+    );
 
-  const rows = await posApi.getCartItems(
-    tableNo || 'T1'
-  );
+   await reloadCart();
 
-  setCartData(rows as cartProductType[]);
-}
+    
+  }
 
   // =====================================================
   // REMOVE ALL OF A PRODUCT LINE
@@ -219,11 +220,7 @@ await posApi.addCartItem(
       true
     );
 
-    const rows = await posApi.getCartItems(
-      tableNo || 'T1'
-    );
-
-    setCartData(rows as cartProductType[]);
+await reloadCart();
   }
 
   // =====================================================
@@ -240,11 +237,7 @@ await posApi.addCartItem(
       tableNo || 'T1'
     );
 
-    const rows = await posApi.getCartItems(
-      tableNo || 'T1'
-    );
-
-    setCartData(rows as cartProductType[]);
+   await reloadCart();
   }
 
   // =====================================================
@@ -254,7 +247,7 @@ await posApi.addCartItem(
   async function emptyCart() {
     await posApi.clearCart(tableNo || 'T1');
 
-    setCartData([]);
+     await reloadCart();
   }
 
   // =====================================================
@@ -291,31 +284,33 @@ await posApi.addCartItem(
   }
 
   return (
-    <CartContext.Provider
-      value={{
-        cartData,
-        address,
-        addProduct,
-        addAddress,
-        endTotalG,
-        setEndTotalG,
-        counter,
-        productTotalCost,
-        addProductToCart,
-        decCartProduct,
-        decCartProductAll,
-        removeCartProduct,
-        emptyCart,
-        totalDiscountG,
-        setTotalDiscountG,
-        orderType,
-        setOrderType,
-        tableNo,
-        setTableNo,
-        scheduledAt,
-        setScheduledAt,
-      }}
-    >
+<CartContext.Provider
+  value={{
+    cartData,
+    setCartData, // 👈 ADD THIS LINE
+    address,
+    addProduct,
+    addAddress,
+    endTotalG,
+    setEndTotalG,
+    counter,
+    productTotalCost,
+    reloadCart,
+    addProductToCart,
+    decCartProduct,
+    decCartProductAll,
+    removeCartProduct,
+    emptyCart,
+    totalDiscountG,
+    setTotalDiscountG,
+    orderType,
+    setOrderType,
+    tableNo,
+    setTableNo,
+    scheduledAt,
+    setScheduledAt,
+  }}
+>
       {children}
     </CartContext.Provider>
   );
