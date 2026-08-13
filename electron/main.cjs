@@ -14,10 +14,17 @@ const { db, getDebugCounts } = require('./db/sqlite.cjs');
 const tableRepo = require('./db/tableRepo.cjs');
 console.log('MAIN STARTED');
  
+const {
+  getModifierGroups,
+} = require('./db/modifierGroupRepo.cjs');
 
 const cartRepo = require('./db/cartRepo.cjs');
  const orderRepo = require('./db/orderRepo.cjs');
+const {
+  getProductModifiers,
+} = require('./db/productModifierRepo.cjs');
 
+const billItemRepo = require('./db/billItemRepo.cjs');
 
 const { getAllUsers } = require('./db/userRepo.cjs');
 const { getOutlet } = require('./db/outletRepo.cjs');
@@ -66,15 +73,9 @@ const {
 } = require('./db/billingRepo.cjs');
 
 // OPTIONAL: only if these repos exist
-const {
-  getModifierGroups,
-} = require('./db/modifierGroupRepo.cjs');
 
-const {
-  getProductModifiers,
-} = require('./db/productModifierRepo.cjs');
 
-const billItemRepo = require('./db/billItemRepo.cjs');
+
 
 // =====================================================
 // KOT IPC
@@ -426,10 +427,11 @@ app.whenReady().then(() => {
   // MODIFIERS
   // -------------------------------
 
-  ipcMain.handle(
-    'modifier-groups:list',
-    async () => getModifierGroups()
-  );
+ipcMain.handle(
+  'modifier-groups:list',
+  async () => getModifierGroups()
+);
+  
 
   ipcMain.handle(
     'product-modifiers:list',

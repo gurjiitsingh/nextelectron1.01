@@ -71,11 +71,11 @@ export default function ProductCardHorizontical({
       .map((pm) => pm.groupId);
   }, [product.id, productModifiers]);
 
-  const productModifierGroups = useMemo(() => {
-    return modifierGroups.filter((g) =>
-      productGroupIds.includes(g.group.id)
-    );
-  }, [modifierGroups, productGroupIds]);
+const productModifierGroups = useMemo(() => {
+  return modifierGroups.filter((g) =>
+    productGroupIds.includes(g.id)
+  );
+}, [modifierGroups, productGroupIds]);
 
   useEffect(() => {
     if (!productModifierGroups.length) return;
@@ -118,7 +118,7 @@ export default function ProductCardHorizontical({
       )
       : null;
 
-const cartProduct = {
+const cartProduct: cartProductType = {
   // Android PosCartEntity fields
   id: 0,
 
@@ -128,7 +128,9 @@ const cartProduct = {
 
   name: product.name,
   categoryId: product.categoryId,
-  categoryName: product.productCat,
+
+  // FIX: always provide a string
+  categoryName: product.productCat ?? '',
 
   parentId: product.parentId ?? null,
   isVariant: product.type === 'variant',
@@ -172,9 +174,11 @@ const cartProduct = {
     '_' +
     (quickNote?.trim() || ''),
 
-  price: priceTarget,
+   
   image: product.image,
-  productCat: product.productCat,
+
+  // FIX: if productCat in cartProductType is required, keep it a string too
+  productCat: product.productCat ?? '',
 };
 
   const modifiersFlat = Object.values(selectedModifiers).flat();

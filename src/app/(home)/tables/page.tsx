@@ -16,7 +16,7 @@ setLoading(true);
 
  
   // Optional: sync before loading
-
+  //await window.posApi.syncAll();
 
   const rows = await window.posApi.getTables();
 
@@ -32,7 +32,6 @@ setLoading(true);
 
 return ( <div className="p-4"> <div className="mb-4 flex items-center justify-between"> <h1 className="text-xl font-semibold">Tables</h1>
 
-```
     <button
       onClick={loadTables}
       className="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200"

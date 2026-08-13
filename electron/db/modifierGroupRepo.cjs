@@ -38,7 +38,7 @@ async function insertModifierGroups(list) {
   insertMany(list);
 }
 
-async function getAllModifierGroups() {
+async function getModifierGroups() {
   return db
     .prepare(
       'SELECT * FROM modifier_groups ORDER BY sortOrder ASC, name ASC'
@@ -49,5 +49,5 @@ async function getAllModifierGroups() {
 module.exports = {
   clearModifierGroups,
   insertModifierGroups,
-  getAllModifierGroups,
+  getModifierGroups,
 };

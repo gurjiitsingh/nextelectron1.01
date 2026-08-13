@@ -7,14 +7,14 @@ export default function TestPage() {
   const [outlet, setOutlet] = useState<any>(null);
 
   useEffect(() => {
-    window.posApi.getAllUsers().then(setUsers);
-    window.posApi.getOutlet().then(setOutlet);
+    // window.posApi.getAllUsers().then(setUsers);
+    // window.posApi.getOutlet().then(setOutlet);
   }, []);
 
   return (
     <div className='p-4 min-w-[300px] flex space-y-4 overflow-y-auto'>
-       <pre>{JSON.stringify(users, null, 2)}</pre>
-      <pre>{JSON.stringify(outlet, null, 2)}</pre>
+       {/* <pre>{JSON.stringify(users, null, 2)}</pre>
+      <pre>{JSON.stringify(outlet, null, 2)}</pre> */}
 
      
     </div>

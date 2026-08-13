@@ -10,41 +10,63 @@ const {
   syncProductModifiers,
 } = require('./modifierSync.cjs');
 
-async function syncAll() {
+async function runStep(name, fn) {
+  console.log(`\n========== ${name} START ==========`);
+
+  const start = Date.now();
+
   try {
-    console.log('Syncing categories...');
-    await syncCategories();
+    const result = await fn();
 
-    console.log('Syncing products...');
-    await syncProducts();
+    console.log(`✅ ${name} SUCCESS in ${Date.now() - start}ms`);
 
-    console.log('Syncing modifier groups...');
-    await syncModifierGroups();
+    if (result !== undefined) {
+      console.log(`${name} RESULT:`, result);
+    }
 
-    console.log('Syncing modifier items...');
-    await syncModifierItems();
+    console.log(`========== ${name} END ==========\n`);
 
-    console.log('Syncing product modifiers...');
-    await syncProductModifiers();
+    return result;
+  } catch (err) {
+    console.error(`❌ ${name} FAILED`);
+    console.error(err);
+    throw err;
+  }
+}
 
-    console.log('Syncing tables...');
-    await syncTables();
+async function syncAll() {
+  console.log('\n==============================');
+  console.log('🚀 FULL SYNC STARTED');
+  console.log('==============================\n');
 
-    console.log('Syncing users...');
-    await syncUsers();
+  const startedAt = Date.now();
 
-    console.log('Syncing outlet...');
-    await syncOutlet();
+  try {
+    await runStep('CATEGORIES', syncCategories);
+    await runStep('PRODUCTS', syncProducts);
+    await runStep('MODIFIER GROUPS', syncModifierGroups);
+    await runStep('MODIFIER ITEMS', syncModifierItems);
+    await runStep('PRODUCT MODIFIERS', syncProductModifiers);
+    await runStep('TABLES', syncTables);
+    await runStep('USERS', syncUsers);
+    await runStep('OUTLET', syncOutlet);
 
-    console.log('Sync complete');
+    console.log('\n==============================');
+    console.log(
+      `🎉 FULL SYNC COMPLETED in ${Date.now() - startedAt}ms`
+    );
+    console.log('==============================\n');
 
     return { success: true };
   } catch (e) {
-    console.error('Sync failed', e);
+    console.error('\n==============================');
+    console.error('💥 FULL SYNC FAILED');
+    console.error('==============================');
+    console.error(e);
 
     return {
       success: false,
-      error: e.message,
+      error: e?.message || String(e),
     };
   }
 }

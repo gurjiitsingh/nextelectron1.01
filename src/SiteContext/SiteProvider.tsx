@@ -4,7 +4,7 @@ import SiteContext from "./SiteContext";
 import { useEffect, useState } from "react";
 import { deliveryType } from "@/lib/types/deliveryType";
 import { couponType } from "@/lib/types/couponType";
-import { getAllSettings } from "@/app/(universal)/action/setting/dbOperations";
+ 
 import { SettingsDataType } from "@/lib/types/settings";
 import { ProductType } from "@/lib/types/productType";
 
@@ -58,28 +58,7 @@ export const SiteProvider: React.FC<Props> = ({
   // useEffect(() => {
   //   getAllSettings().then(setSettings).catch(console.error);
   // }, []);
-  useEffect(() => {
-    getAllSettings()
-      .then((fetched) => {
-        setSettings({
-          // Default values from .env
-          currency: process.env.NEXT_PUBLIC_DEFAULT_CURRENCY as string,
-          locale: process.env.NEXT_PUBLIC_DEFAULT_LOCALE as string,
-
-          // Now include everything from Firestore
-          ...fetched,  // this overwrites defaults if Firestore has values
-        });
-      })
-      .catch((err) => {
-        console.error("Error fetching settings:", err);
-
-        // Fallback to .env if Firestore fails
-        setSettings({
-          currency: process.env.NEXT_PUBLIC_DEFAULT_CURRENCY as string,
-          locale: process.env.NEXT_PUBLIC_DEFAULT_LOCALE as string,
-        });
-      });
-  }, []);
+ 
 
 
 
