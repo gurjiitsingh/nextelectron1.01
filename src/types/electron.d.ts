@@ -19,12 +19,17 @@ declare global {
         removeAll?: boolean
       ) => Promise<any>;
 
+      getAllUsers: () => Promise<any[]>;
+      getOutlet: () => Promise<any | null>;
       clearCart: (
         tableNo: string
       ) => Promise<any>;
 
-      // Sync
+      //SYNC DATA
       syncAll: () => Promise<any>;
+      getTables: () => Promise<any[]>;
+
+
 
       // Categories
       getAllCategories: () => Promise<any[]>;
@@ -146,6 +151,22 @@ declare global {
       getBillableKotItems: (
         tableNo: string
       ) => Promise<any[]>,
+
+
+
+      // Orders
+      getOrders: () => Promise<any[]>;
+
+      getOrderById: (
+        orderId: string
+      ) => Promise<any>;
+
+      getOrderItems: (
+        orderId: string
+      ) => Promise<any[]>;
+
+
+
 
 
 

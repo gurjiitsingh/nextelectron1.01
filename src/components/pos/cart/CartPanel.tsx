@@ -113,7 +113,7 @@ export default function CartPanel() {
     await reloadCart();
 
     // Switch to kitchen view
-    setRightSidebarView('kitchen');
+    setRightSidebarView('bill');
 
   } catch (e: any) {
     console.error('KOT/BILL SAVE FAILED', e);

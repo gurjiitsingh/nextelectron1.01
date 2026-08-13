@@ -176,7 +176,7 @@ export default function Bill({
       await loadBillItems();
 
       // go back to cart
-      setRightSidebarView('cart');
+     // setRightSidebarView('cart');
 
       onSuccess?.();
     } catch (e: any) {

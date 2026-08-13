@@ -3,6 +3,19 @@ const { contextBridge, ipcRenderer } = require('electron');
 console.log('PRELOAD EXECUTED');
 
 contextBridge.exposeInMainWorld('posApi', {
+
+// =====================================================
+// SYCN DATA
+// =====================================================
+getAllUsers: () =>
+  ipcRenderer.invoke('users:list'),
+
+getOutlet: () =>
+  ipcRenderer.invoke('outlet:get'),
+  // TABLES
+getTables: () =>
+  ipcRenderer.invoke('tables:list'),
+
 // =====================================================
 // CART
 // =====================================================
@@ -166,6 +179,25 @@ clearKotByTable: (tableNo) =>
     'clear-kot-by-table',
     tableNo
   ),
+
+
+
+// =====================================================
+// ORDERS
+// =====================================================
+
+getOrders: () =>
+  ipcRenderer.invoke('orders:list'),
+
+getOrderById: (orderId) =>
+  ipcRenderer.invoke('orders:get', orderId),
+
+getOrderItems: (orderId) =>
+  ipcRenderer.invoke('orders:items', orderId),
+
+
+
+
 
 
 });

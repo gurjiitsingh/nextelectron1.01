@@ -85,7 +85,7 @@ ON products(foodType);
 
 
 
-DROP TABLE IF EXISTS pos_cart_item;
+ 
 
 CREATE TABLE IF NOT EXISTS pos_cart_item (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -622,169 +622,154 @@ ON pos_order_payments(syncStatus);
 
 
 
-CREATE TABLE IF NOT EXISTS order_master (
+
+    
+
+-- =====================================================
+-- TABLES
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS tables (
   id TEXT PRIMARY KEY,
-  srno TEXT NOT NULL,
-  orderType TEXT NOT NULL,
-  tableNo TEXT,
 
-  saleType TEXT DEFAULT '',
-  reason TEXT DEFAULT '',
+  tableName TEXT NOT NULL,
 
-  customerName TEXT,
-  customerPhone TEXT,
-  customerId TEXT,
+  status TEXT NOT NULL DEFAULT 'AVAILABLE',
 
-  createdById TEXT DEFAULT '',
-  createdByName TEXT DEFAULT '',
-  finalizedById TEXT DEFAULT '',
-  finalizedByName TEXT DEFAULT '',
+  waiterName TEXT,
+  waiterId TEXT,
 
-  dAddressLine1 TEXT,
-  dAddressLine2 TEXT,
-  dCity TEXT,
-  dState TEXT,
-  dZipcode TEXT,
-  dLandmark TEXT,
+  activeOrderId TEXT,
 
-  deliveryFee REAL DEFAULT 0,
-  deliveryTax REAL DEFAULT 0,
+  guestsCount INTEGER,
 
-  itemTotal REAL NOT NULL,
-  itemTax REAL DEFAULT 0,
-  taxTotal REAL NOT NULL,
-  discountTotal REAL NOT NULL,
-  grandTotal REAL NOT NULL,
+  area TEXT DEFAULT 'General',
 
-  paymentMode TEXT NOT NULL,
-  paymentStatus TEXT NOT NULL,
-  paidAmount REAL DEFAULT 0,
-  dueAmount REAL DEFAULT 0,
+  sortOrder INTEGER DEFAULT 0,
 
-  orderStatus TEXT NOT NULL,
+  cartCount INTEGER DEFAULT 0,
+  kitchenCount INTEGER DEFAULT 0,
+  billCount INTEGER DEFAULT 0,
+  billAmount REAL DEFAULT 0,
 
-  source TEXT DEFAULT 'POS',
-  deviceId TEXT NOT NULL,
-  deviceName TEXT,
-  appVersion TEXT,
-
-  businessDate TEXT NOT NULL,
-  createdAt INTEGER NOT NULL,
   updatedAt INTEGER,
+  createdAt INTEGER,
 
-  syncStatus TEXT NOT NULL,
-  lastSyncedAt INTEGER,
+  notes TEXT,
 
-  notes TEXT
+  synced INTEGER DEFAULT 1
 );
 
-CREATE INDEX IF NOT EXISTS idx_order_master_sync
-  ON order_master(syncStatus);
+CREATE INDEX IF NOT EXISTS idx_tables_area
+ON tables(area);
 
-CREATE INDEX IF NOT EXISTS idx_order_master_created
-  ON order_master(createdAt);
+CREATE INDEX IF NOT EXISTS idx_tables_sort
+ON tables(sortOrder);
 
-CREATE INDEX IF NOT EXISTS idx_order_master_type
-  ON order_master(orderType);
+CREATE INDEX IF NOT EXISTS idx_tables_status
+ON tables(status);
+ 
+ -- =====================================================
+-- POS USERS
+-- =====================================================
 
+CREATE TABLE IF NOT EXISTS pos_users (
+  userId TEXT PRIMARY KEY,
 
+  outletId TEXT DEFAULT '',
 
-       CREATE TABLE IF NOT EXISTS order_items (
-      id TEXT PRIMARY KEY,
-      categoryName TEXT NOT NULL,
-      productMode TEXT NOT NULL,
-      currentStock REAL DEFAULT 0,
+  fullName TEXT NOT NULL,
 
-      orderMasterId TEXT NOT NULL,
-      productId TEXT NOT NULL,
+  username TEXT DEFAULT '',
 
-      createdById TEXT DEFAULT '',
-      createdByName TEXT DEFAULT '',
+  mobile TEXT DEFAULT '',
 
-      name TEXT NOT NULL,
-      categoryId TEXT NOT NULL,
+  employeeId TEXT DEFAULT '',
 
-      parentId TEXT,
-      isVariant INTEGER NOT NULL DEFAULT 0,
+  role TEXT NOT NULL,
 
-      basePrice REAL NOT NULL,
-      quantity INTEGER NOT NULL,
-      itemSubtotal REAL NOT NULL,
+  loginPin TEXT NOT NULL,
 
-      currency TEXT,
-      paymentStatus TEXT,
+  allowPosLogin INTEGER NOT NULL DEFAULT 1,
 
-      taxRate REAL NOT NULL DEFAULT 0,
-      taxType TEXT NOT NULL DEFAULT 'exclusive',
+  isActive INTEGER NOT NULL DEFAULT 1,
 
-      taxAmountPerItem REAL NOT NULL DEFAULT 0,
-      taxTotal REAL NOT NULL DEFAULT 0,
+  createdAt INTEGER NOT NULL,
 
-      note TEXT DEFAULT '',
-      modifiersJson TEXT DEFAULT '',
-      modifierPrice REAL DEFAULT 0,
-      modifierSummary TEXT DEFAULT '',
+  updatedAt INTEGER NOT NULL,
 
-      finalPricePerItem REAL NOT NULL,
-      finalTotal REAL NOT NULL,
+  syncStatus TEXT NOT NULL DEFAULT 'PENDING',
 
-      source TEXT DEFAULT 'POS',
-      createdAt INTEGER NOT NULL
-    );
+  lastSyncedAt INTEGER
+);
 
-    CREATE INDEX IF NOT EXISTS idx_order_items_order
-      ON order_items(orderMasterId);
+CREATE INDEX IF NOT EXISTS idx_pos_users_active
+  ON pos_users(isActive);
 
-    CREATE INDEX IF NOT EXISTS idx_order_items_product
-      ON order_items(productId);
-
-    CREATE INDEX IF NOT EXISTS idx_order_items_created
-      ON order_items(createdAt);
-  
+CREATE INDEX IF NOT EXISTS idx_pos_users_role
+  ON pos_users(role);
 
 
 
+-- =====================================================
+-- OUTLET (SINGLE ROW)
+-- =====================================================
 
-   CREATE TABLE IF NOT EXISTS bill_items (
-      id TEXT PRIMARY KEY,
-      billItemGroupKey TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS outlet (
+  outletId TEXT PRIMARY KEY,
 
-      sessionId TEXT,
-      tableNo TEXT,
-      tableName TEXT,
+  outletName TEXT DEFAULT '',
+  ownerId TEXT DEFAULT '',
 
-      productId TEXT NOT NULL,
-      name TEXT NOT NULL,
-      categoryId TEXT NOT NULL,
-      categoryName TEXT NOT NULL,
+  addressLine1 TEXT DEFAULT '',
+  addressLine2 TEXT,
+  addressLine3 TEXT,
 
-      parentId TEXT,
-      isVariant INTEGER NOT NULL DEFAULT 0,
+  city TEXT DEFAULT '',
+  state TEXT,
+  zipcode TEXT,
+  countryName TEXT,
 
-      basePrice REAL NOT NULL,
-      finalPrice REAL NOT NULL,
-      modifierTotal REAL NOT NULL DEFAULT 0,
-      quantity INTEGER NOT NULL,
+  taxType TEXT,
+  taxMode TEXT DEFAULT 'PER_ITEM',
 
-      taxRate REAL NOT NULL DEFAULT 0,
-      taxType TEXT NOT NULL DEFAULT 'exclusive',
+  gstVatNumber TEXT,
+  fssaiNumber TEXT DEFAULT '',
 
-      note TEXT DEFAULT '',
-      modifiersJson TEXT DEFAULT '',
+  phone TEXT DEFAULT '',
+  phone2 TEXT,
 
-      status TEXT NOT NULL DEFAULT 'OPEN',
-      billed INTEGER NOT NULL DEFAULT 0,
+  email TEXT,
+  web TEXT,
 
-      billId TEXT,
-      billNo TEXT,
+  logoUrl TEXT,
 
-      createdAt INTEGER NOT NULL
-    );
+  printerWidth INTEGER DEFAULT 80,
+  printerIPBill TEXT DEFAULT '',
+  printerIPKitchen TEXT DEFAULT '',
+  printerName TEXT,
 
-    CREATE INDEX IF NOT EXISTS idx_bill_items_table
-      ON bill_items(tableNo);
+  footerNote TEXT,
 
-    CREATE INDEX IF NOT EXISTS idx_bill_items_status
-      ON bill_items(status, billed);
-  
-};
+  qrEnabled INTEGER DEFAULT 0,
+  qrText TEXT,
+  qrTitle TEXT,
+
+  upiId TEXT,
+  upiName TEXT,
+  upiTitle TEXT,
+
+  countryCode TEXT DEFAULT 'IN',
+
+  currencyCode TEXT DEFAULT 'INR',
+
+  localeTag TEXT DEFAULT 'en-IN',
+
+  isActive INTEGER DEFAULT 1,
+
+  posType TEXT DEFAULT 'RESTAU',
+
+  showCategorySidebar INTEGER DEFAULT 1,
+
+  startupScreen TEXT DEFAULT 'tables'
+);

@@ -6,27 +6,46 @@ const {
 } = require('electron');
 
 const path = require('path');
-const { db } = require('./sqlite.cjs');
-const db = require('./db/init.cjs');
+
 const { syncAll } = require('./sync/syncAll.cjs');
-const { getDebugCounts } = require('./db/debugRepo.cjs');
 
-
+// Import BOTH db and getDebugCounts from the same file
+const { db, getDebugCounts } = require('./db/sqlite.cjs');
+const tableRepo = require('./db/tableRepo.cjs');
 console.log('MAIN STARTED');
+ 
 
-// =====================================================
-// DEBUG
+const cartRepo = require('./db/cartRepo.cjs');
+ const orderRepo = require('./db/orderRepo.cjs');
+
+
+const { getAllUsers } = require('./db/userRepo.cjs');
+const { getOutlet } = require('./db/outletRepo.cjs');
+
+
+ // =====================================================
+// SYNC DATA
 // =====================================================
 
-const {
-  getDebugCounts,
-} = require('./db/sqlite.cjs');
+ipcMain.handle('users:list', async () => {
+  return getAllUsers();
+});
+
+ipcMain.handle('outlet:get', async () => {
+  return getOutlet();
+});
+
+ ipcMain.handle(
+  'tables:list',
+  async () => {
+    return tableRepo.getAllTables();
+  }
+);
 
 // =====================================================
 // REPOSITORIES
 // =====================================================
 
-const cartRepo = require('./db/cartRepo.cjs');
 
 const {
   getAllCategories,
@@ -199,6 +218,31 @@ ipcMain.handle(
   }
 );
 
+
+// =====================================================
+// ORDERS
+// =====================================================
+
+ipcMain.handle(
+  'orders:list',
+  async () => {
+    return orderRepo.getOrders();
+  }
+);
+
+ipcMain.handle(
+  'orders:get',
+  async (_e, orderId) => {
+    return orderRepo.getOrderById(orderId);
+  }
+);
+
+ipcMain.handle(
+  'orders:items',
+  async (_e, orderId) => {
+    return orderRepo.getOrderItems(orderId);
+  }
+);
 // =====================================================
 // WINDOW
 // =====================================================

@@ -10,7 +10,7 @@ export default function SyncButton() {
       setLoading(true);
 
       const res = await window.posApi.syncAll();
-
+  
       console.log('SYNC RESULT', res);
 
       alert('Data synced successfully');

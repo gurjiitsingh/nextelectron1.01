@@ -1,7 +1,7 @@
  
 const crypto = require('crypto');
 const { db } = require('./sqlite.cjs');
-
+const { insertOrder } = require('./orderRepo.cjs');
 
 // =====================================================
 // HELPERS
@@ -861,6 +861,33 @@ async function createBillFromKitchen(input) {
           AND status = 'PAID'
       `).run(tableNo);
     });
+
+
+    // ================================================
+// 6. MARK BILL ITEMS AS BILLED
+// ================================================
+
+db.prepare(`
+  UPDATE pos_bill_items
+  SET billed = 1,
+      status = 'BILLED',
+      billId = ?,
+      billNo = ?
+  WHERE tableNo = ?
+    AND billed = 0
+`).run(orderId, srno, tableNo);
+
+
+// ================================================
+// 7. CLEAR BILLED BILL ITEMS
+// ================================================
+// Remove temporary bill rows after successful billing.
+
+db.prepare(`
+  DELETE FROM pos_bill_items
+  WHERE tableNo = ?
+    AND billed = 1
+`).run(tableNo);
 
 
   // ===================================================

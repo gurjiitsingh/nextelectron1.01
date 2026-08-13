@@ -116,6 +116,61 @@ export default function PosTopBar() {
         >
           BILL
         </Link>
+
+         <Link
+          href="/orders"
+          className={`
+            px-4
+            py-1.5
+            rounded-md
+            text-xs
+            font-semibold
+            transition
+            ${
+              isKOT
+                ? "bg-white text-slate-800 shadow-sm"
+                : "text-slate-500 hover:text-slate-800"
+            }
+          `}
+        >
+          ORDERS
+        </Link>
+         <Link
+          href="/tables"
+          className={`
+            px-4
+            py-1.5
+            rounded-md
+            text-xs
+            font-semibold
+            transition
+            ${
+              isKOT
+                ? "bg-white text-slate-800 shadow-sm"
+                : "text-slate-500 hover:text-slate-800"
+            }
+          `}
+        >
+          TABLES
+        </Link>
+          <Link
+          href="/settings"
+          className={`
+            px-4
+            py-1.5
+            rounded-md
+            text-xs
+            font-semibold
+            transition
+            ${
+              isKOT
+                ? "bg-white text-slate-800 shadow-sm"
+                : "text-slate-500 hover:text-slate-800"
+            }
+          `}
+        >
+          Settings
+        </Link>
       </div>
     </header>
   );
