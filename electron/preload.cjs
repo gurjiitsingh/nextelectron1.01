@@ -92,6 +92,9 @@ getProductModifiers: () =>
   // =====================================================
 // KOT
 // =====================================================
+
+
+
 insertKotItems: (items) =>
   ipcRenderer.invoke('kot:insert', items),
 
@@ -120,11 +123,31 @@ updateKotStatus: (id, status) =>
     status
   ),
 
+ 
+
 
 
 // =====================================================
 // BILLING
 // =====================================================
+
+insertBillItems: (items) =>
+  ipcRenderer.invoke('bill-items:insert', items),
+
+getBillItems: (tableNo) =>
+  ipcRenderer.invoke('bill-items:list', tableNo),
+
+markBillItemsBilled: (
+  tableNo,
+  billId,
+  billNo
+) =>
+  ipcRenderer.invoke(
+    'bill-items:mark-billed',
+    tableNo,
+    billId,
+    billNo
+  ),
 
 getBillableKotItems: (tableNo) =>
   ipcRenderer.invoke(
@@ -138,7 +161,11 @@ createBill: (input) =>
     input
   ),
 
-
+clearKotByTable: (tableNo) =>
+  ipcRenderer.invoke(
+    'clear-kot-by-table',
+    tableNo
+  ),
 
 
 });

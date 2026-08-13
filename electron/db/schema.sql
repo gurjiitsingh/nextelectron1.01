@@ -268,8 +268,67 @@ ON pos_kot_items(syncedToCloud);
 CREATE INDEX IF NOT EXISTS idx_kot_source
 ON pos_kot_items(source);
 
+-- =====================================================
+-- POS BILL
+--  
+-- =====================================================
 
+CREATE TABLE IF NOT EXISTS pos_bill_items (
+  id TEXT PRIMARY KEY,
 
+  -- Linking
+  billItemGroupKey TEXT,
+  sessionId TEXT,
+  tableNo TEXT,
+  tableName TEXT,
+
+  -- Product
+  productId TEXT NOT NULL,
+  name TEXT NOT NULL,
+  categoryId TEXT NOT NULL,
+  categoryName TEXT NOT NULL,
+
+  -- Variant
+  parentId TEXT,
+  isVariant INTEGER NOT NULL DEFAULT 0,
+
+  -- Pricing
+  basePrice REAL NOT NULL,
+  finalPrice REAL NOT NULL DEFAULT 0,
+  modifierTotal REAL NOT NULL DEFAULT 0,
+  quantity INTEGER NOT NULL,
+
+  -- Tax
+  taxRate REAL NOT NULL DEFAULT 0,
+  taxType TEXT NOT NULL DEFAULT 'exclusive',
+
+  -- Notes / modifiers
+  note TEXT DEFAULT '',
+  modifiersJson TEXT DEFAULT '',
+
+  -- Billing status
+  status TEXT NOT NULL DEFAULT 'OPEN',
+  billed INTEGER NOT NULL DEFAULT 0,
+  billNo TEXT DEFAULT '',
+  billId TEXT DEFAULT '',
+
+  createdAt INTEGER NOT NULL,
+
+  -- Source
+  source TEXT NOT NULL DEFAULT 'POS',
+
+  syncedToCloud INTEGER NOT NULL DEFAULT 0,
+  syncedFromCloud INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_bill_items_table
+ON pos_bill_items(tableNo);
+
+CREATE INDEX IF NOT EXISTS idx_bill_items_status
+ON pos_bill_items(status);
+
+CREATE INDEX IF NOT EXISTS idx_bill_items_billed
+ON pos_bill_items(billed);
 -- =====================================================
 -- POS ORDER MASTER
 -- Matches Android PosOrderMasterEntity
@@ -558,3 +617,174 @@ ON pos_order_payments(orderId);
 CREATE INDEX IF NOT EXISTS idx_pos_order_payments_syncStatus
 ON pos_order_payments(syncStatus);
  
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS order_master (
+  id TEXT PRIMARY KEY,
+  srno TEXT NOT NULL,
+  orderType TEXT NOT NULL,
+  tableNo TEXT,
+
+  saleType TEXT DEFAULT '',
+  reason TEXT DEFAULT '',
+
+  customerName TEXT,
+  customerPhone TEXT,
+  customerId TEXT,
+
+  createdById TEXT DEFAULT '',
+  createdByName TEXT DEFAULT '',
+  finalizedById TEXT DEFAULT '',
+  finalizedByName TEXT DEFAULT '',
+
+  dAddressLine1 TEXT,
+  dAddressLine2 TEXT,
+  dCity TEXT,
+  dState TEXT,
+  dZipcode TEXT,
+  dLandmark TEXT,
+
+  deliveryFee REAL DEFAULT 0,
+  deliveryTax REAL DEFAULT 0,
+
+  itemTotal REAL NOT NULL,
+  itemTax REAL DEFAULT 0,
+  taxTotal REAL NOT NULL,
+  discountTotal REAL NOT NULL,
+  grandTotal REAL NOT NULL,
+
+  paymentMode TEXT NOT NULL,
+  paymentStatus TEXT NOT NULL,
+  paidAmount REAL DEFAULT 0,
+  dueAmount REAL DEFAULT 0,
+
+  orderStatus TEXT NOT NULL,
+
+  source TEXT DEFAULT 'POS',
+  deviceId TEXT NOT NULL,
+  deviceName TEXT,
+  appVersion TEXT,
+
+  businessDate TEXT NOT NULL,
+  createdAt INTEGER NOT NULL,
+  updatedAt INTEGER,
+
+  syncStatus TEXT NOT NULL,
+  lastSyncedAt INTEGER,
+
+  notes TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_master_sync
+  ON order_master(syncStatus);
+
+CREATE INDEX IF NOT EXISTS idx_order_master_created
+  ON order_master(createdAt);
+
+CREATE INDEX IF NOT EXISTS idx_order_master_type
+  ON order_master(orderType);
+
+
+
+       CREATE TABLE IF NOT EXISTS order_items (
+      id TEXT PRIMARY KEY,
+      categoryName TEXT NOT NULL,
+      productMode TEXT NOT NULL,
+      currentStock REAL DEFAULT 0,
+
+      orderMasterId TEXT NOT NULL,
+      productId TEXT NOT NULL,
+
+      createdById TEXT DEFAULT '',
+      createdByName TEXT DEFAULT '',
+
+      name TEXT NOT NULL,
+      categoryId TEXT NOT NULL,
+
+      parentId TEXT,
+      isVariant INTEGER NOT NULL DEFAULT 0,
+
+      basePrice REAL NOT NULL,
+      quantity INTEGER NOT NULL,
+      itemSubtotal REAL NOT NULL,
+
+      currency TEXT,
+      paymentStatus TEXT,
+
+      taxRate REAL NOT NULL DEFAULT 0,
+      taxType TEXT NOT NULL DEFAULT 'exclusive',
+
+      taxAmountPerItem REAL NOT NULL DEFAULT 0,
+      taxTotal REAL NOT NULL DEFAULT 0,
+
+      note TEXT DEFAULT '',
+      modifiersJson TEXT DEFAULT '',
+      modifierPrice REAL DEFAULT 0,
+      modifierSummary TEXT DEFAULT '',
+
+      finalPricePerItem REAL NOT NULL,
+      finalTotal REAL NOT NULL,
+
+      source TEXT DEFAULT 'POS',
+      createdAt INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_order_items_order
+      ON order_items(orderMasterId);
+
+    CREATE INDEX IF NOT EXISTS idx_order_items_product
+      ON order_items(productId);
+
+    CREATE INDEX IF NOT EXISTS idx_order_items_created
+      ON order_items(createdAt);
+  
+
+
+
+
+   CREATE TABLE IF NOT EXISTS bill_items (
+      id TEXT PRIMARY KEY,
+      billItemGroupKey TEXT NOT NULL,
+
+      sessionId TEXT,
+      tableNo TEXT,
+      tableName TEXT,
+
+      productId TEXT NOT NULL,
+      name TEXT NOT NULL,
+      categoryId TEXT NOT NULL,
+      categoryName TEXT NOT NULL,
+
+      parentId TEXT,
+      isVariant INTEGER NOT NULL DEFAULT 0,
+
+      basePrice REAL NOT NULL,
+      finalPrice REAL NOT NULL,
+      modifierTotal REAL NOT NULL DEFAULT 0,
+      quantity INTEGER NOT NULL,
+
+      taxRate REAL NOT NULL DEFAULT 0,
+      taxType TEXT NOT NULL DEFAULT 'exclusive',
+
+      note TEXT DEFAULT '',
+      modifiersJson TEXT DEFAULT '',
+
+      status TEXT NOT NULL DEFAULT 'OPEN',
+      billed INTEGER NOT NULL DEFAULT 0,
+
+      billId TEXT,
+      billNo TEXT,
+
+      createdAt INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_bill_items_table
+      ON bill_items(tableNo);
+
+    CREATE INDEX IF NOT EXISTS idx_bill_items_status
+      ON bill_items(status, billed);
+  
+};

@@ -4,6 +4,7 @@ import { usePosUi } from '@/PosUiStore/PosUiContext';
 
 import CartPanel from '../cart/CartPanel';
 import KitchenView from '../kitchen/KitchenView';
+import Bill from '../bill/Bill';
 // import BillView from '../bill/BillView';
 
 export default function RightSideBar() {
@@ -24,42 +25,39 @@ export default function RightSideBar() {
             onClick={() =>
               setRightSidebarView('cart')
             }
-            className={`rounded-lg py-2 text-sm font-medium transition-colors ${
-              rightSidebarView === 'cart'
+            className={`rounded-lg py-2 text-sm font-medium transition-colors ${rightSidebarView === 'cart'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'bg-blue-50 text-slate-700 hover:bg-blue-100'
-            }`}
+              }`}
           >
             🛒 Cart
           </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setRightSidebarView('kitchen')
-            }
-            className={`rounded-lg py-2 text-sm font-medium transition-colors ${
-              rightSidebarView === 'kitchen'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-blue-50 text-slate-700 hover:bg-blue-100'
-            }`}
-          >
-            🍳 Kitchen
-          </button>
-
           <button
             type="button"
             onClick={() =>
               setRightSidebarView('bill')
             }
-            className={`rounded-lg py-2 text-sm font-medium transition-colors ${
-              rightSidebarView === 'bill'
+            className={`rounded-lg py-2 text-sm font-medium transition-colors ${rightSidebarView === 'bill'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'bg-blue-50 text-slate-700 hover:bg-blue-100'
-            }`}
+              }`}
           >
             🧾 Bill
           </button>
+          <button
+            type="button"
+            onClick={() =>
+              setRightSidebarView('kitchen')
+            }
+            className={`rounded-lg py-2 text-sm font-medium transition-colors ${rightSidebarView === 'kitchen'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-blue-50 text-slate-700 hover:bg-blue-100'
+              }`}
+          >
+            🍳 Kitchen
+          </button>
+
+
 
         </div>
       </div>
@@ -71,13 +69,15 @@ export default function RightSideBar() {
           <CartPanel />
         )}
 
+           {rightSidebarView === 'bill' && (
+          <Bill />
+        )}
+
         {rightSidebarView === 'kitchen' && (
           <KitchenView />
         )}
 
-        {/* {rightSidebarView === 'bill' && (
-          <BillView />
-        )} */}
+     
 
       </div>
 

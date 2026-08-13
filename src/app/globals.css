@@ -441,3 +441,36 @@ button:disabled {
 .label-light {
   @apply text-xs text-gray-600 font-medium ;
 }
+
+
+
+
+/* Desktop-like scrollbar */
+.app-scrollbar {
+  scrollbar-width: thin;                 /* Firefox */
+  scrollbar-color: #c1c7d0 transparent; /* thumb track */
+}
+
+/* Chrome / Edge / Electron */
+.app-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.app-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #c1c7d0;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.app-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #9aa4b2;
+}
+
+.app-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}

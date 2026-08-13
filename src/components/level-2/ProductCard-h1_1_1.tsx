@@ -12,6 +12,7 @@ import { useState } from "react";
 import type { TnewModifierItemSchema } from "@/lib/types/modifierItemType";
 import { IoClose } from "react-icons/io5";
 import { useCartContext } from "@/store/CartContext";
+import { usePosUi } from "@/PosUiStore/PosUiContext";
 export default function ProductCardHorizontical({
   product,
   variants,
@@ -43,7 +44,10 @@ export default function ProductCardHorizontical({
   const shouldOpenPopup =
     product.hasVariants || product.hasModifier;
 
-   
+     const {
+       rightSidebarView,
+       setRightSidebarView,
+     } = usePosUi();
 
 
   const [simpleNoteOpen, setSimpleNoteOpen] = useState(false);
@@ -216,6 +220,7 @@ const cartProduct = {
    // if (lockRef.current) return;
 
   //  lockRef.current = true;
+  setRightSidebarView('cart')
     addProductToCart(cartProduct);
 
     // setTimeout(() => {

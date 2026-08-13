@@ -19,7 +19,7 @@ export default async function Page() {
           <PosSidebarCategories />
         </aside>
 
-        <section className="flex-1 overflow-y-auto mx-0 px-0 ">
+        <section className="flex-1 overflow-y-auto mx-0 px-0 app-scrollbar">
           <Products />
         </section>
 

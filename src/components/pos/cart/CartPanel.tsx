@@ -1,5 +1,6 @@
 'use client';
 
+import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { useCartContext } from '@/store/CartContext';
 import { useRouter } from 'next/navigation';
 
@@ -16,72 +17,113 @@ export default function CartPanel() {
   } = useCartContext();
 
   const router = useRouter();
+     const {
+        
+         setRightSidebarView,
+       } = usePosUi();
 
   // =====================================================
   // SEND TO KITCHEN (KOT)
   // =====================================================
-  async function sendToKitchenHandle() {
-    if (cartData.length === 0) return;
+ async function sendToKitchenHandle() {
+  if (cartData.length === 0) return;
 
-    try {
-      const kotBatchId = crypto.randomUUID();
-      const kotNumber = `KOT-${Date.now()}`;
+  try {
+    const kotBatchId = crypto.randomUUID();
+    const kotNumber = `KOT-${Date.now()}`;
 
-      const kotItems = cartData.map((item) => ({
-        id: crypto.randomUUID(),
-        kotNumber,
-        categoryName: item.categoryName,
-        productMode: item.productMode,
-        currentStock: item.currentStock ?? 0,
-        sessionId: item.sessionId,
-        kotBatchId,
-        tableNo: item.tableId,
-        tableName: item.tableName,
-        productId: item.productId,
-        name: item.name,
-        categoryId: item.categoryId,
-        createdById: item.createdById ?? '',
-        createdByName: item.createdByName ?? '',
-        parentId: item.parentId ?? null,
-        isVariant: item.isVariant ?? false,
-        basePrice: item.basePrice,
-        finalPrice: item.finalPrice,
-        modifierTotal: item.modifierTotal ?? 0,
-        quantity: item.quantity,
-        taxRate: item.taxRate ?? 0,
-        taxType: item.taxType ?? 'exclusive',
-        status: 'PENDING',
-        note: item.note ?? '',
-        modifiersJson:
-          item.modifiersJson ??
-          JSON.stringify(item.modifiers ?? []),
-        kitchenPrintReq: item.kitchenPrintReq ?? true,
-        kitchenPrinted: false,
-        createdAt: Date.now(),
-        source: 'POS',
-        syncedToCloud: false,
-        syncedFromCloud: false,
-      }));
+    // =====================================================
+    // COMMON ITEM DATA
+    // =====================================================
+    const commonItems = cartData.map((item) => ({
+      categoryName: item.categoryName,
+      productMode: item.productMode,
+      currentStock: item.currentStock ?? 0,
+      sessionId: item.sessionId,
+      tableNo: item.tableId,
+      tableName: item.tableName,
+      productId: item.productId,
+      name: item.name,
+      categoryId: item.categoryId,
+      createdById: item.createdById ?? '',
+      createdByName: item.createdByName ?? '',
+      parentId: item.parentId ?? null,
+      isVariant: item.isVariant ?? false,
+      basePrice: item.basePrice,
+      finalPrice: item.finalPrice,
+      modifierTotal: item.modifierTotal ?? 0,
+      quantity: item.quantity,
+      taxRate: item.taxRate ?? 0,
+      taxType: item.taxType ?? 'exclusive',
+      note: item.note ?? '',
+      modifiersJson:
+        item.modifiersJson ??
+        JSON.stringify(item.modifiers ?? []),
+      createdAt: Date.now(),
+      source: 'POS',
+      syncedToCloud: false,
+      syncedFromCloud: false,
+    }));
 
-      await window.posApi.insertKotItems(kotItems);
+    // =====================================================
+    // KOT ITEMS (KITCHEN)
+    // =====================================================
+    const kotItems = commonItems.map((item) => ({
+      id: crypto.randomUUID(),
+      kotNumber,
+      kotBatchId,
+      status: 'PENDING',
+      kitchenPrintReq: true,
+      kitchenPrinted: false,
+      ...item,
+    }));
 
-      console.log('KOT SAVED', kotBatchId);
+    // =====================================================
+    // BILL ITEMS (BILLING)
+    // =====================================================
+    const billItems = commonItems.map((item) => ({
+      id: crypto.randomUUID(),
+      billItemGroupKey: [
+        item.productId,
+        item.basePrice,
+        item.taxRate,
+        item.taxType,
+        item.note,
+        item.modifiersJson,
+      ].join('|'),
+      status: 'OPEN',
+      billed: false,
+      billNo: '',
+      billId: '',
+      ...item,
+    }));
 
-      // Clear cart
-      await window.posApi.clearCart(tableNo ?? 'T1');
-      setCartData([]);
-      await reloadCart();
+    // Save kitchen items
+    await window.posApi.insertKotItems(kotItems);
 
-      console.log('KOT SAVED', kotBatchId);
-    } catch (e: any) {
-      console.error('KOT SAVE FAILED', e);
+    // Save bill items
+    await window.posApi.insertBillItems(billItems);
 
-      alert(
-        'Failed to send items to kitchen: ' +
-          (e?.message ?? JSON.stringify(e))
-      );
-    }
+    console.log('KOT SAVED', kotBatchId);
+    console.log('BILL ITEMS SAVED', billItems.length);
+
+    // Clear cart
+    await window.posApi.clearCart(tableNo ?? 'T1');
+    setCartData([]);
+    await reloadCart();
+
+    // Switch to kitchen view
+    setRightSidebarView('kitchen');
+
+  } catch (e: any) {
+    console.error('KOT/BILL SAVE FAILED', e);
+
+    alert(
+      'Failed to send items to kitchen: ' +
+      (e?.message ?? JSON.stringify(e))
+    );
   }
+}
 
   return (
     <aside className="relative flex h-[93%] w-full flex-col overflow-hidden">
@@ -105,7 +147,7 @@ export default function CartPanel() {
       </div>
 
       {/* Content */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto app-scrollbar">
 
         {cartData.length === 0 ? (
           <div className="flex h-full items-center justify-center">
@@ -115,7 +157,7 @@ export default function CartPanel() {
           </div>
         ) : (
           <div>
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto app-scrollbar">
               <div className="divide-y divide-gray-200">
                 {cartData.map((item) => (
                   <div

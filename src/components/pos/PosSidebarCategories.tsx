@@ -81,14 +81,14 @@ export default function PosSidebarCategories() {
 
   return (
     <aside className="h-full w-full bg-white flex flex-col">
-      <div className="h-12 shrink-0 flex items-center px-4 border-b border-slate-200">
+      {/* <div className="h-12 shrink-0 flex items-center px-4 border-b border-slate-200">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
           Categories
         </span>
-      </div>
+      </div> */}
 
-      <div className="pos-sidebar-scroll flex-1 overflow-y-auto px-2 py-2 space-y-1">
-        <button
+      <div className="pos-sidebar-scroll flex-1 overflow-y-auto app-scrollbar px-2 py-2 space-y-1">
+        {/* <button
           type="button"
           onClick={() => setProductCategoryIdG("")}
           className={`
@@ -110,7 +110,7 @@ export default function PosSidebarCategories() {
           <span className="text-sm font-medium">
             All Items
           </span>
-        </button>
+        </button> */}
 
         {categoryData.map((cat) => {
           const active = displayCategory === cat.id;

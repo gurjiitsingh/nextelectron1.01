@@ -1,4 +1,4 @@
-export {};
+export { };
 
 declare global {
   interface Window {
@@ -48,90 +48,104 @@ declare global {
 
 
 
-//KOT
+      //KOT
 
-insertKotItems: (
-  items: any[]
-) => Promise<{ success: boolean }>;
+      insertKotItems: (
+        items: any[]
+      ) => Promise<{ success: boolean }>;
 
-getPendingKotByTable: (
-  tableNo: string
-) => Promise<any[]>;
+      getPendingKotByTable: (
+        tableNo: string
+      ) => Promise<any[]>;
 
-getKotByBatch: (
-  kotBatchId: string
-) => Promise<any[]>;
+      getKotByBatch: (
+        kotBatchId: string
+      ) => Promise<any[]>;
 
-markKotPrinted: (
-  kotBatchId: string
-) => Promise<any>;
+      markKotPrinted: (
+        kotBatchId: string
+      ) => Promise<any>;
 
-updateKotStatus: (
-  id: string,
-  status: string
-) => Promise<any>;
+      updateKotStatus: (
+        id: string,
+        status: string
+      ) => Promise<any>;
 
- 
-createBill: (input: {
-  tableNo: string;
-  orderType?: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
 
-  customerName?: string;
-  customerPhone?: string;
-  customerId?: string | null;
+      //================== BILL =======================
+      insertBillItems: (items: any[]) => Promise<any>;
 
-  discountTotal?: number;
-  deliveryFee?: number;
-  deliveryTax?: number;
+      getBillItems: (
+        tableNo: string
+      ) => Promise<any[]>;
 
-  paymentMode?: string;
-  paymentStatus?: string;
+      markBillItemsBilled: (
+        tableNo: string,
+        billId: string,
+        billNo: string
+      ) => Promise<any>;
 
-  paidAmount?: number;
 
-  payments?: Array<{
-    mode: string;
-    amount: number;
-    provider?: string | null;
-    method?: string | null;
-  }>;
+      createBill: (input: {
+        tableNo: string;
+        orderType?: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
 
-  ownerId?: string;
-  outletId?: string;
+        customerName?: string;
+        customerPhone?: string;
+        customerId?: string | null;
 
-  deviceId?: string;
-  deviceName?: string;
-  appVersion?: string;
+        discountTotal?: number;
+        deliveryFee?: number;
+        deliveryTax?: number;
 
-  businessDate?: string;
+        paymentMode?: string;
+        paymentStatus?: string;
 
-  currency?: string;
-}) => Promise<{
-  success: boolean;
-  error?: string;
+        paidAmount?: number;
 
-  orderId?: string;
-  srno?: string;
+        payments?: Array<{
+          mode: string;
+          amount: number;
+          provider?: string | null;
+          method?: string | null;
+        }>;
 
-  tableNo?: string;
-  itemCount?: number;
+        ownerId?: string;
+        outletId?: string;
 
-  itemTotal?: number;
-  itemTax?: number;
-  taxTotal?: number;
-  discountTotal?: number;
-  deliveryFee?: number;
+        deviceId?: string;
+        deviceName?: string;
+        appVersion?: string;
 
-  grandTotal?: number;
-  paidAmount?: number;
-  dueAmount?: number;
+        businessDate?: string;
 
-  paymentStatus?: string;
-}>,
+        currency?: string;
+      }) => Promise<{
+        success: boolean;
+        error?: string;
 
-getBillableKotItems: (
-  tableNo: string
-) => Promise<any[]>,
+        orderId?: string;
+        srno?: string;
+
+        tableNo?: string;
+        itemCount?: number;
+
+        itemTotal?: number;
+        itemTax?: number;
+        taxTotal?: number;
+        discountTotal?: number;
+        deliveryFee?: number;
+
+        grandTotal?: number;
+        paidAmount?: number;
+        dueAmount?: number;
+
+        paymentStatus?: string;
+      }>,
+
+      getBillableKotItems: (
+        tableNo: string
+      ) => Promise<any[]>,
 
 
 

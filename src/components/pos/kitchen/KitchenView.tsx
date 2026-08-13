@@ -4,14 +4,27 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartContext } from '@/store/CartContext';
 import { calculateBill, groupBillItems } from '@/lib/billing/calculateBill';
+import { usePosUi } from '@/PosUiStore/PosUiContext';
 
-export default function KitchenView() {
+
+
+type KitchenViewProps = {
+  onSuccess?: () => void;
+};
+
+export default function KitchenView({
+  onSuccess,
+}: KitchenViewProps) {
   const { tableNo } = useCartContext();
 
   const router = useRouter();
 
   const [kitchenItems, setKitchenItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const {
+    setRightSidebarView,
+  } = usePosUi();
 
   // =====================================================
   // LOAD KITCHEN ITEMS FOR CURRENT TABLE
@@ -61,6 +74,8 @@ export default function KitchenView() {
   const [paidAmount, setPaidAmount] =
     useState(0);
 
+  const [processing, setProcessing] = useState(false);
+
   const [error, setError] =
     useState<string | null>(null);
 
@@ -94,48 +109,63 @@ export default function KitchenView() {
         : 'PAID';
 
 
-  async function handleBill() {
-    if (!tableNo) return;
 
-    if (billItems.length === 0) {
-      setError(
-        'No kitchen items available for billing.'
-      );
-      return;
-    }
 
-    if (
-      (paymentStatus === 'CREDIT' ||
-        paymentStatus === 'PARTIAL') &&
-      !customerPhone.trim()
-    ) {
-      setError(
-        'Phone number is required for credit sale.'
-      );
-      return;
-    }
 
-    if (
-      Number(paidAmount) >
-      calculation.grandTotal
-    ) {
-      setError(
-        'Paid amount cannot be greater than total.'
-      );
-      return;
-    }
+  // =====================================================
+  // FINALIZE BILL
+  // =====================================================
+
+  async function handleCheckout() {
+    if (processing) return;
+
+    // if (billItems.length === 0) {
+    //     setError(
+    //         'No kitchen items available for billing.'
+    //     );
+    //     return;
+    // }
+
+    // if (
+    //     (paymentStatus === 'CREDIT' ||
+    //         paymentStatus === 'PARTIAL') &&
+    //     !customerPhone.trim()
+    // ) {
+    //     setError(
+    //         'Phone number is required for credit sale.'
+    //     );
+    //     return;
+    // }
+
+    // if (
+    //     Number(paidAmount) >
+    //     calculation.grandTotal
+    // ) {
+    //     setError(
+    //         'Paid amount cannot be greater than total.'
+    //     );
+    //     return;
+    // }
 
     try {
-      setLoading(true);
+      setProcessing(true);
       setError(null);
+
+      /*
+       * FINAL BILL IPC WILL BE CONNECTED HERE.
+       * We will implement this after creating
+       * the Electron billing repository/IPC.
+       */
 
       const result =
         await window.posApi.createBill({
-          tableNo,
-          orderType: 'DINE_IN',
+          tableNo: "T1",
+
+          orderType: "DINE_IN",
 
           customerName:
-            customerName.trim() || 'Customer',
+            customerName.trim() ||
+            'Customer',
 
           customerPhone:
             customerPhone.trim(),
@@ -149,6 +179,7 @@ export default function KitchenView() {
           deliveryTax: 0,
 
           paymentMode,
+
           paymentStatus,
 
           paidAmount:
@@ -177,39 +208,46 @@ export default function KitchenView() {
           currency: '₹',
         });
 
-   if (!result.success) {
-  throw new Error(
-    result.error ||
-    'Failed to create bill'
-  );
-}
 
-// =====================================================
-// CLEAR KITCHEN ITEMS AFTER SUCCESSFUL BILL
-// =====================================================
+      if (!result.success) {
+        throw new Error(
+          result.error ||
+          'Failed to create bill'
+        );
+      }
 
-// Delete all KOT items for this table
-await window.posApi.clearKotByTable(tableNo);
 
-// Reload kitchen list so UI becomes empty
-await loadKitchen();
+      console.log(
+        'BILL CREATED',
+        result
+      );
 
-console.log(
-  'KITCHEN CLEARED FOR TABLE',
-  tableNo
-);
+      // clear UI immediately
+      setKitchenItems([]);
 
-alert(
-  `Bill ${result.srno} created successfully`
-);
+      // reload from database so state stays correct
+      await loadKitchen();
+
+
+      setRightSidebarView('cart')
+      // alert(
+      //     `Bill ${result.srno} created successfully`
+      // );
+
+      // optional parent refresh
+      onSuccess?.();
     } catch (e: any) {
-      console.error('BILL FAILED', e);
+      console.error(
+        'BILL FAILED',
+        e
+      );
 
       setError(
-        e?.message || 'Payment failed'
+        e?.message ||
+        'Payment failed'
       );
     } finally {
-      setLoading(false);
+      setProcessing(false);
     }
   }
 
@@ -236,7 +274,7 @@ alert(
       </div>
 
       {/* Item List */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto app-scrollbar">
 
         {loading ? (
           <div className="flex h-full items-center justify-center">
@@ -294,7 +332,7 @@ alert(
 
         <button
           type="button"
-          onClick={handleBill}
+          onClick={handleCheckout}
           disabled={
             loading ||
             kitchenItems.length === 0
@@ -361,3 +399,105 @@ alert(
     </div>
   );
 }
+
+
+
+
+
+
+
+//   async function handleBill() {
+//     if (!tableNo) return;
+
+//     if (billItems.length === 0) {
+//       setError(
+//         'No kitchen items available for billing.'
+//       );
+//       return;
+//     }
+
+//     if (
+//       (paymentStatus === 'CREDIT' ||
+//         paymentStatus === 'PARTIAL') &&
+//       !customerPhone.trim()
+//     ) {
+//       setError(
+//         'Phone number is required for credit sale.'
+//       );
+//       return;
+//     }
+
+//     if (
+//       Number(paidAmount) >
+//       calculation.grandTotal
+//     ) {
+//       setError(
+//         'Paid amount cannot be greater than total.'
+//       );
+//       return;
+//     }
+
+//     try {
+//       setLoading(true);
+//       setError(null);
+
+// console.log('START BILL', tableNo);
+
+// const result = await window.posApi.createBill({
+//   tableNo,
+//   orderType: 'DINE_IN',
+//   customerName: customerName.trim() || 'Customer',
+//   customerPhone: customerPhone.trim(),
+//   discountTotal: calculation.discount,
+//   deliveryFee: calculation.deliveryFee,
+//   deliveryTax: 0,
+//   paymentMode,
+//   paymentStatus,
+//   paidAmount: Number(paidAmount) || 0,
+//   payments:
+//     paidAmount > 0
+//       ? [
+//           {
+//             mode: paymentMode,
+//             amount: Number(paidAmount),
+//           },
+//         ]
+//       : [],
+//   deviceId: 'POS',
+//   deviceName: 'Electron POS',
+//   appVersion: '1.0',
+//   businessDate: new Date().toISOString().slice(0, 10),
+//   currency: '₹',
+// });
+
+// console.log('CREATE BILL RESULT', result);
+
+// if (!result || result.success !== true) {
+//   console.error('CREATE BILL FAILED', result);
+//   throw new Error(result?.error || 'Failed to create bill');
+// }
+
+// console.log('BILL SAVED, NOW CLEARING KOT');
+
+// const clearResult = await window.posApi.clearKotByTable(tableNo);
+
+// console.log('CLEAR RESULT', clearResult);
+
+// // Force UI empty immediately
+// setKitchenItems([]);
+
+// alert(`Bill ${result.srno} created successfully`);
+
+// await loadKitchen();
+
+// console.log('DONE');
+//     } catch (e: any) {
+//       console.error('BILL FAILED', e);
+
+//       setError(
+//         e?.message || 'Payment failed'
+//       );
+//     } finally {
+//       setLoading(false);
+//     }
+//   }
