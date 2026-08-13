@@ -3,20 +3,21 @@ import { Toaster } from "react-hot-toast";
 import type { Metadata } from "next";
 
 import "@/css/style.css";
-import UTMInitializer from "../UTMInitializer";
+ 
 import { Providers } from "../Providers";
 import SafeSideCart from "./SafeSideCart";
 
 import { BargerMenu } from "@/components/Bargermenu/Menu";
 import Modal from "@/components/level-1/Modal";
-import Header from "@/custom/cus-components/Header";
+
 
 
 import { SEO } from "@/config/languages";
- 
+
 import SyncButton from "./SyncButton";
 import PosTopBar from "@/components/pos/home/PosTopBar";
 import { PosUiProvider } from "@/PosUiStore/PosUiContext";
+import { PosSessionProvider } from "@/PosSessionStore/PosSessionContext";
 
 
 
@@ -24,7 +25,7 @@ import { PosUiProvider } from "@/PosUiStore/PosUiContext";
 // import FooterWrapper from "@/components/FooterWrapper";
 
 
- 
+
 
 // ✅ ADD THIS LINE (VERY IMPORTANT)
 export const revalidate = 3600; // 1 hour cache
@@ -38,28 +39,31 @@ export default function RootLayout({
 
     <div className="text-[#2B2E4A]  ">
       <div translate="no">
-        <UTMInitializer />
+     
         <PosUiProvider>
-          <Providers>
-            <BargerMenu />
-            <Modal />
+          <PosSessionProvider>
 
-            <div className="flex flex-col gap-0 my-0">
-              <div className="z-50">
-                <SafeSideCart />
+            <Providers>
+              <BargerMenu />
+              <Modal />
+
+              <div className="flex flex-col gap-0 my-0">
+                <div className="z-50">
+                  <SafeSideCart />
+                </div>
+
+                {/* NEW TOP BAR */}
+                <PosTopBar />
+
+                {children}
+
+
+
+
               </div>
 
-              {/* NEW TOP BAR */}
-              <PosTopBar />
-
-              {children}
-
-
-
-
-            </div>
-
-          </Providers>
+            </Providers>
+          </PosSessionProvider>
         </PosUiProvider>
         <Toaster
           position="top-center"
