@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useCartContext } from '@/store/CartContext';
-import { calculateBill, groupBillItems } from '@/lib/billing/calculateBill';
+ 
+import {  groupBillItems } from '@/lib/billing/calculateBill';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
+import { fromPaise } from '@/lib/pos/billing/money';
+import { calculateBillAndroid } from '@/lib/pos/billing/calculator';
 type BillProps = {
   onSuccess?: () => void;
 };
@@ -15,13 +17,13 @@ export default function Bill({
 
   const { activeTable } = usePosSession();
 
-const currentTableId =
-  activeTable?.tableId ||
-  activeTable?.tableName ||
-  'T1';
+  const currentTableId =
+    activeTable?.tableId ||
+    activeTable?.tableName ||
+    'T1';
 
-const currentTableName =
-  activeTable?.tableName || 'N/A';
+  const currentTableName =
+    activeTable?.tableName || 'N/A';
 
   const [billRows, setBillRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,54 +37,59 @@ const currentTableName =
   // =====================================================
   // LOAD BILL ITEMS FOR CURRENT TABLE
   // =====================================================
-useEffect(() => {
-  loadBillItems();
-}, [currentTableId]);
+  useEffect(() => {
+    loadBillItems();
+  }, [currentTableId]);
 
- async function loadBillItems() {
-  if (!currentTableId) return;
+  async function loadBillItems() {
+    if (!currentTableId) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    console.log('LOAD BILL ITEMS', currentTableId);
+      console.log('LOAD BILL ITEMS', currentTableId);
 
-    const rows =
-      await window.posApi.getBillItems(currentTableId);
+      const rows =
+        await window.posApi.getBillItems(currentTableId);
 
-    console.log('BILL ROWS', rows);
+      console.log('BILL ROWS', rows);
 
-    setBillRows(rows);
-  } catch (e) {
-    console.error(
-      'Failed to load bill items',
-      e
-    );
-  } finally {
-    setLoading(false);
+      setBillRows(rows);
+    } catch (e) {
+      console.error(
+        'Failed to load bill items',
+        e
+      );
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   // =====================================================
   // FORM STATE
   // =====================================================
-  const [customerName, setCustomerName] =
-    useState('Customer');
 
-  const [customerPhone, setCustomerPhone] =
-    useState('');
 
-  const [discount, setDiscount] =
-    useState(0);
 
-  const [deliveryFee, setDeliveryFee] =
-    useState(0);
 
-  const [paymentMode, setPaymentMode] =
-    useState<'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'CREDIT'>('CASH');
+  const { billDraft, setBillDraft } = usePosSession();
 
-  const [paidAmount, setPaidAmount] =
-    useState(0);
+  const discount = billDraft.discount;
+  const discountPercent = billDraft.discountPercent;
+  const deliveryFee = billDraft.deliveryFee;
+  const customerName = billDraft.customerName;
+  const customerPhone = billDraft.customerPhone;
+  const paidAmount = billDraft.paidAmount;
+  const paymentMode = billDraft.paymentMode;
+
+
+
+
+
+  // const [paymentMode, setPaymentMode] =
+  //   useState<'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'CREDIT'>('CASH');
+
+
 
   // =====================================================
   // GROUP BILL ITEMS (MERGED QTY)
@@ -92,15 +99,59 @@ useEffect(() => {
     [billRows]
   );
 
-  const calculation = useMemo(
-    () =>
-      calculateBill(
-        billItems,
-        discount,
-        deliveryFee
+  const calculation = useMemo(() => {
+    const result = calculateBillAndroid({
+      items: billItems.map((i) => ({
+        productId: i.productId,
+        name: i.name,
+        quantity: Number(i.quantity || 0),
+        basePrice: Number(i.basePrice || 0),
+        taxRate: Number(i.taxRate || 0),
+        taxType:
+          (i.taxType || 'exclusive') as
+          | 'inclusive'
+          | 'exclusive',
+      })),
+
+      taxMode: 'PER_ITEM',
+
+      discountFlat: discount,
+
+      discountPercent,
+
+      deliveryFee,
+
+      deliveryTaxPercent: 0,
+    });
+
+    return {
+      itemSubtotal: fromPaise(
+        result.itemSubtotalPaise
       ),
-    [billItems, discount, deliveryFee]
-  );
+
+      itemTax: fromPaise(
+        result.totalTaxPaise
+      ),
+
+      discount: fromPaise(
+        result.discountPaise
+      ),
+
+      deliveryFee: fromPaise(
+        result.deliveryFeePaise
+      ),
+
+      deliveryTax: fromPaise(
+        result.deliveryTaxPaise
+      ),
+
+      grandTotal: fromPaise(
+        result.grandTotalPaise
+      ),
+
+      raw: result,
+    };
+ }, [billItems, discount, discountPercent, deliveryFee]);
 
   const dueAmount = Math.max(
     0,
@@ -124,10 +175,18 @@ useEffect(() => {
     try {
       setProcessing(true);
       setError(null);
+      console.log('ANDROID CALCULATION', calculation.raw);
 
+      console.log('DISPLAY TOTALS', {
+        subtotal: calculation.itemSubtotal,
+        tax: calculation.itemTax,
+        discount: calculation.discount,
+        delivery: calculation.deliveryFee,
+        grandTotal: calculation.grandTotal,
+      });
       const result =
         await window.posApi.createBill({
-       tableNo: currentTableId,
+          tableNo: currentTableId,
           orderType: 'DINE_IN',
 
           customerName:
@@ -142,7 +201,8 @@ useEffect(() => {
           deliveryFee:
             calculation.deliveryFee,
 
-          deliveryTax: 0,
+          deliveryTax:
+            calculation.deliveryTax,
 
           paymentMode,
           paymentStatus,
@@ -153,12 +213,12 @@ useEffect(() => {
           payments:
             paidAmount > 0
               ? [
-                  {
-                    mode: paymentMode,
-                    amount:
-                      Number(paidAmount),
-                  },
-                ]
+                {
+                  mode: paymentMode,
+                  amount:
+                    Number(paidAmount),
+                },
+              ]
               : [],
 
           deviceId: 'POS',
@@ -180,6 +240,16 @@ useEffect(() => {
         );
       }
 
+      setBillDraft({
+        customerName: 'Customer',
+        customerPhone: '',
+        discount: 0,
+        discountPercent: 0,
+        deliveryFee: 0,
+        paymentMode: 'CASH',
+        paidAmount: 0,
+      });
+
       console.log('BILL CREATED', result);
 
       // clear UI immediately
@@ -189,7 +259,7 @@ useEffect(() => {
       await loadBillItems();
 
       // go back to cart
-     // setRightSidebarView('cart');
+      // setRightSidebarView('cart');
 
       onSuccess?.();
     } catch (e: any) {
@@ -219,7 +289,7 @@ useEffect(() => {
         </div>
 
         <p className="mt-1 text-xs text-gray-500">
-       Table: {currentTableName}
+          Table: {currentTableName}
         </p>
       </div>
 
@@ -243,7 +313,7 @@ useEffect(() => {
 
             {billItems.map((item) => (
               <div
-                key={item.id}
+                key={item.name}
                 className="px-3 py-3"
               >
                 <div className="flex items-center justify-between">
@@ -294,64 +364,152 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Calculations */}
-      <div className="space-y-2 border-t border-gray-100 p-3 text-sm">
+  {/* Calculations */}
+  <div className="space-y-2 border-t border-gray-100 p-3 text-sm">
 
-        <div className="flex justify-between text-gray-600">
-          <span>Subtotal</span>
-          <span>₹{calculation.itemSubtotal.toFixed(2)}</span>
+    <div className="flex justify-between text-gray-600">
+      <span>Subtotal</span>
+      <span>₹{calculation.itemSubtotal.toFixed(2)}</span>
+    </div>
+
+    <div className="flex justify-between text-gray-600">
+      <span>Tax</span>
+      <span>₹{calculation.itemTax.toFixed(2)}</span>
+    </div>
+
+    {/* Discount */}
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <span className="text-gray-600">Discount</span>
+
+        {/* Flat discount */}
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={discount}
+          onChange={(e) => {
+            const value = Number(e.target.value) || 0;
+
+            setBillDraft({
+              ...billDraft,
+              discount: value,
+              discountPercent: value > 0 ? 0 : billDraft.discountPercent,
+            });
+          }}
+          placeholder="₹"
+          className="h-8 w-16 rounded border border-gray-300 px-2 text-right text-sm outline-none focus:border-blue-500"
+        />
+
+        {/* Percent discount */}
+        <div className="flex items-center rounded border border-gray-300 focus-within:border-blue-500">
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            value={discountPercent}
+            onChange={(e) => {
+              const value = Number(e.target.value) || 0;
+
+              setBillDraft({
+                ...billDraft,
+                discountPercent: value,
+                discount: value > 0 ? 0 : billDraft.discount,
+              });
+            }}
+            placeholder="%"
+            className="h-8 w-14 px-2 text-right text-sm outline-none"
+          />
+
+          <span className="pr-2 text-xs text-gray-500">%</span>
         </div>
-
-        <div className="flex justify-between text-gray-600">
-          <span>Tax</span>
-          <span>₹{calculation.itemTax.toFixed(2)}</span>
-        </div>
-
-        <div className="flex justify-between text-gray-600">
-          <span>Discount</span>
-          <span>₹{calculation.discount.toFixed(2)}</span>
-        </div>
-
-        <div className="flex justify-between text-gray-600">
-          <span>Delivery</span>
-          <span>₹{calculation.deliveryFee.toFixed(2)}</span>
-        </div>
-
-        <div className="border-t pt-2 flex justify-between text-base font-semibold text-gray-900">
-          <span>Grand Total</span>
-          <span>₹{calculation.grandTotal.toFixed(2)}</span>
-        </div>
-
-        <div className="flex justify-between text-sm text-red-600">
-          <span>Due</span>
-          <span>₹{dueAmount.toFixed(2)}</span>
-        </div>
-
       </div>
 
-      {/* Inputs */}
-      <div className="space-y-2 border-t border-gray-100 p-3">
+      <span className="font-medium text-gray-900">
+        ₹{calculation.discount.toFixed(2)}
+      </span>
+    </div>
 
-        <input
-          value={customerPhone}
-          onChange={(e) =>
-            setCustomerPhone(e.target.value)
-          }
-          placeholder="Phone"
-          className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
-        />
+    {/* Delivery */}
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <span className="text-gray-600">Delivery</span>
 
         <input
           type="number"
-          value={paidAmount}
+          min="0"
+          step="0.01"
+          value={deliveryFee}
           onChange={(e) =>
-            setPaidAmount(Number(e.target.value))
+            setBillDraft({
+              ...billDraft,
+              deliveryFee: Number(e.target.value) || 0,
+            })
           }
-          placeholder="Paid amount"
-          className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
+          placeholder="₹"
+          className="h-8 w-20 rounded border border-gray-300 px-2 text-right text-sm outline-none focus:border-blue-500"
         />
-
       </div>
+
+      <span className="font-medium text-gray-900">
+        ₹{calculation.deliveryFee.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="border-t pt-2 flex justify-between text-base font-semibold text-gray-900">
+      <span>Grand Total</span>
+      <span>₹{calculation.grandTotal.toFixed(2)}</span>
+    </div>
+
+    <div className="flex justify-between text-sm text-red-600">
+      <span>Due</span>
+      <span>₹{dueAmount.toFixed(2)}</span>
+    </div>
+
+  </div>
+
+  {/* Inputs */}
+  {/* <div className="space-y-2 border-t border-gray-100 p-3">
+
+    <input
+      value={customerPhone}
+      onChange={(e) =>
+        setBillDraft({
+          ...billDraft,
+          customerPhone: e.target.value,
+        })
+      }
+      placeholder="Phone"
+      className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
+    />
+
+    <input
+      type="number"
+      value={paidAmount}
+      onChange={(e) =>
+        setBillDraft({
+          ...billDraft,
+          paidAmount: Number(e.target.value) || 0,
+        })
+      }
+      placeholder="Paid amount"
+      className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
+    />
+
+    <input
+  value={customerName}
+  onChange={(e) =>
+    setBillDraft({
+      ...billDraft,
+      customerName: e.target.value,
+    })
+  }
+  placeholder="Customer name"
+  className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
+/>
+
+  </div> */}
 
       {error && (
         <div className="border-t border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">

@@ -3,6 +3,16 @@ const crypto = require('crypto');
 const { db } = require('./sqlite.cjs');
 const { insertOrder } = require('./orderRepo.cjs');
 
+const {
+  getOrCreateOrderNo,
+  attachOrderId,
+  clearMapping,
+} = require('../lib/orderSequenceRepository');
+
+const {
+  TERMINAL_CODE,
+} = require('../lib/orderSequence');
+
 // =====================================================
 // HELPERS
 // =====================================================
@@ -134,8 +144,18 @@ async function createBillFromKitchen(input) {
   //
   // ===================================================
 
-  const srno =
-    `POS-${Date.now()}`;
+// =====================================================
+// ORDER NUMBER
+// Android-compatible order sequence
+// =====================================================
+
+const mapping = getOrCreateOrderNo(
+  db,
+  tableNo,
+  TERMINAL_CODE
+);
+
+const srno = mapping.srno;
 
 
   // ===================================================
@@ -606,7 +626,14 @@ async function createBillFromKitchen(input) {
           null,
       });
 
+// =====================================================
+// CLEAR SERIAL MAPPING
+// =====================================================
 
+clearMapping(
+  db,
+  tableNo
+);
       // ================================================
       // 2. CREATE ORDER ITEMS
       // ================================================
@@ -895,6 +922,13 @@ db.prepare(`
   // ===================================================
 
   transaction();
+
+
+attachOrderId(
+  db,
+  tableNo,
+  orderId
+);
 
 
   // ===================================================

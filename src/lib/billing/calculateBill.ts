@@ -1,5 +1,6 @@
 export type KitchenItem = {
   productId: string;
+  name: string;
   basePrice: number;
   finalPrice: number;
   modifierTotal?: number;
