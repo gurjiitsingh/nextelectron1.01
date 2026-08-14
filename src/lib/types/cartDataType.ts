@@ -17,7 +17,7 @@ export type cartProductType = {
   // =====================================================
 
   id: number; // local SQLite row id (0 before insert)
-
+ 
   productId: string;
   productMode: string;
 

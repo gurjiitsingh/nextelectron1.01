@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCartContext } from '@/store/CartContext';
 import { calculateBill, groupBillItems } from '@/lib/billing/calculateBill';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
-
+import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 
 
 type KitchenViewProps = {
@@ -15,9 +15,15 @@ type KitchenViewProps = {
 export default function KitchenView({
   onSuccess,
 }: KitchenViewProps) {
-  const { tableNo } = useCartContext();
+ const { activeTable } = usePosSession();
 
   const router = useRouter();
+
+  const currentTableId =
+  activeTable?.tableId ?? 'T1';
+
+const currentTableName =
+  activeTable?.tableName ?? 'T1';
 
   const [kitchenItems, setKitchenItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,31 +35,31 @@ export default function KitchenView({
   // =====================================================
   // LOAD KITCHEN ITEMS FOR CURRENT TABLE
   // =====================================================
-  useEffect(() => {
-    loadKitchen();
-  }, [tableNo]);
+useEffect(() => {
+  loadKitchen();
+}, [currentTableId]);
 
-  async function loadKitchen() {
-    if (!tableNo) return;
+async function loadKitchen() {
+  if (!currentTableId) return;
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const rows =
-        await window.posApi.getPendingKotByTable(
-          tableNo
-        );
-
-      setKitchenItems(rows);
-    } catch (e) {
-      console.error(
-        'Failed to load kitchen items',
-        e
+    const rows =
+      await window.posApi.getPendingKotByTable(
+        currentTableId
       );
-    } finally {
-      setLoading(false);
-    }
+
+    setKitchenItems(rows);
+  } catch (e) {
+    console.error(
+      'Failed to load kitchen items',
+      e
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
 
   const [customerName, setCustomerName] =
@@ -269,7 +275,7 @@ export default function KitchenView({
         </div>
 
         <p className="mt-1 text-xs text-gray-500">
-          Table: {tableNo ?? 'N/A'}
+          Table: {currentTableName ?? 'N/A'} 
         </p>
       </div>
 
@@ -316,9 +322,9 @@ export default function KitchenView({
                   </p>
                 ) : null}
 
-                <p className="mt-1 text-[11px] text-gray-400">
-                  Table {item.tableNo}
-                </p>
+                {/* <p className="mt-1 text-[11px] text-gray-400">
+                  Table {item.tableName}
+                </p> */}
               </div>
             ))}
 

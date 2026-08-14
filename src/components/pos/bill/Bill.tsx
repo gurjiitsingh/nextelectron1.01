@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useCartContext } from '@/store/CartContext';
 import { calculateBill, groupBillItems } from '@/lib/billing/calculateBill';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
-
+import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 type BillProps = {
   onSuccess?: () => void;
 };
@@ -12,7 +12,16 @@ type BillProps = {
 export default function Bill({
   onSuccess,
 }: BillProps) {
-  const { tableNo } = useCartContext();
+
+  const { activeTable } = usePosSession();
+
+const currentTableId =
+  activeTable?.tableId ||
+  activeTable?.tableName ||
+  'T1';
+
+const currentTableName =
+  activeTable?.tableName || 'N/A';
 
   const [billRows, setBillRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,29 +35,33 @@ export default function Bill({
   // =====================================================
   // LOAD BILL ITEMS FOR CURRENT TABLE
   // =====================================================
-  useEffect(() => {
-    loadBillItems();
-  }, [tableNo]);
+useEffect(() => {
+  loadBillItems();
+}, [currentTableId]);
 
-  async function loadBillItems() {
-    if (!tableNo) return;
+ async function loadBillItems() {
+  if (!currentTableId) return;
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const rows =
-        await window.posApi.getBillItems(tableNo);
+    console.log('LOAD BILL ITEMS', currentTableId);
 
-      setBillRows(rows);
-    } catch (e) {
-      console.error(
-        'Failed to load bill items',
-        e
-      );
-    } finally {
-      setLoading(false);
-    }
+    const rows =
+      await window.posApi.getBillItems(currentTableId);
+
+    console.log('BILL ROWS', rows);
+
+    setBillRows(rows);
+  } catch (e) {
+    console.error(
+      'Failed to load bill items',
+      e
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   // =====================================================
   // FORM STATE
@@ -114,7 +127,7 @@ export default function Bill({
 
       const result =
         await window.posApi.createBill({
-          tableNo: tableNo ?? 'T1',
+       tableNo: currentTableId,
           orderType: 'DINE_IN',
 
           customerName:
@@ -206,7 +219,7 @@ export default function Bill({
         </div>
 
         <p className="mt-1 text-xs text-gray-500">
-          Table: {tableNo ?? 'N/A'}
+       Table: {currentTableName}
         </p>
       </div>
 

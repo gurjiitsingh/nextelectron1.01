@@ -6,13 +6,12 @@ import { ProductType } from "@/lib/types/productType";
 import { addOnType } from "@/lib/types/addOnType";
 import { cartProductType } from "@/lib/types/cartDataType";
 import { formatCurrencyNumber } from "@/utils/formatCurrency";
-import CartButtonAdd from "../AddToCart/CartButtonAdd";
-import Image from "next/image";
 import { useState } from "react";
 import type { TnewModifierItemSchema } from "@/lib/types/modifierItemType";
-import { IoClose } from "react-icons/io5";
 import { useCartContext } from "@/store/CartContext";
 import { usePosUi } from "@/PosUiStore/PosUiContext";
+import { usePosSession } from "@/PosSessionStore/PosSessionContext";
+
 export default function ProductCardHorizontical({
   product,
   variants,
@@ -29,29 +28,31 @@ export default function ProductCardHorizontical({
 }) {
 
   type ModifierItem = TnewModifierItemSchema & {
-  id: string;
-};
+    id: string;
+  };
   const { settings } = UseSiteContext();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ProductType | null>(null);
+
+  const { activeTable } = usePosSession();
+  const { addProductToCart } = useCartContext();
 
   const [selectedModifiers, setSelectedModifiers] = useState<{
     [groupId: string]: any[];
   }>({});
 
 
- const { addProductToCart, tableNo } = useCartContext();
   const shouldOpenPopup =
     product.hasVariants || product.hasModifier;
 
-     const {
-       rightSidebarView,
-       setRightSidebarView,
-     } = usePosUi();
+  const {
+    rightSidebarView,
+    setRightSidebarView,
+  } = usePosUi();
 
 
   const [simpleNoteOpen, setSimpleNoteOpen] = useState(false);
-//const [tableNo, setTableNo] = useState<string | null>(null);
+  //const [tableNo, setTableNo] = useState<string | null>(null);
 
   const [popupNote, setPopupNote] = useState("");
   const [quickNote, setQuickNote] = useState("");
@@ -71,11 +72,11 @@ export default function ProductCardHorizontical({
       .map((pm) => pm.groupId);
   }, [product.id, productModifiers]);
 
-const productModifierGroups = useMemo(() => {
-  return modifierGroups.filter((g) =>
-    productGroupIds.includes(g.id)
-  );
-}, [modifierGroups, productGroupIds]);
+  const productModifierGroups = useMemo(() => {
+    return modifierGroups.filter((g) =>
+      productGroupIds.includes(g.id)
+    );
+  }, [modifierGroups, productGroupIds]);
 
   useEffect(() => {
     if (!productModifierGroups.length) return;
@@ -118,68 +119,69 @@ const productModifierGroups = useMemo(() => {
       )
       : null;
 
-const cartProduct: cartProductType = {
-  // Android PosCartEntity fields
-  id: 0,
+  const cartProduct: cartProductType = {
 
-  productId: product.id,
-  productMode: product.productMode ?? 'raw_stock',
-  currentStock: product.currentStock ?? 0,
+    id: 0,
 
-  name: product.name,
-  categoryId: product.categoryId,
+    productId: product.id,
+    productMode: product.productMode ?? 'raw_stock',
+    currentStock: product.currentStock ?? 0,
 
-  // FIX: always provide a string
-  categoryName: product.productCat ?? '',
+    name: product.name,
+    categoryId: product.categoryId,
 
-  parentId: product.parentId ?? null,
-  isVariant: product.type === 'variant',
+    // FIX: always provide a string
+    categoryName: product.productCat ?? '',
 
-  basePrice: priceTarget,
-  finalPrice: priceTarget,
-  modifierTotal: 0,
+    parentId: product.parentId ?? null,
+    isVariant: product.type === 'variant',
 
-  quantity: 1,
+    basePrice: priceTarget,
+    finalPrice: priceTarget,
+    modifierTotal: 0,
 
-  taxRate: product.taxRate ?? 0,
-  taxType: product.taxType ?? 'exclusive',
+    quantity: 1,
 
-  // POS session
-  sessionId: 'DEFAULT',
+    taxRate: product.taxRate ?? 0,
+    taxType: product.taxType ?? 'exclusive',
 
-  // DINE_IN table
-  tableId: tableNo ?? null,
-  tableName: tableNo ?? null,
+    // POS session
+    sessionId: 'DEFAULT',
 
-  // user snapshot
-  createdById: '',
-  createdByName: '',
+    // DINE_IN table
 
-  // kitchen note
-  note: quickNote ?? '',
+    tableId: activeTable?.tableId ?? null,
+    tableName: activeTable?.tableName ?? null,
 
-  // modifiers
-  modifiersJson: JSON.stringify([]),
+    // user snapshot
+    createdById: '',
+    createdByName: '',
 
-  // kitchen workflow
-  sentToKitchen: false,
-  kitchenPrintReq: false,
-  printStatus: 'PENDING',
+    // kitchen note
+    note: quickNote ?? '',
 
-  createdAt: Date.now(),
+    // modifiers
+    modifiersJson: JSON.stringify([]),
 
-  // existing UI fields still used by React cart
-  uniqueKey:
-    product.id.toString() +
-    '_' +
-    (quickNote?.trim() || ''),
+    // kitchen workflow
+    sentToKitchen: false,
+    kitchenPrintReq: false,
+    printStatus: 'PENDING',
 
-   
-  image: product.image,
+    createdAt: Date.now(),
 
-  // FIX: if productCat in cartProductType is required, keep it a string too
-  productCat: product.productCat ?? '',
-};
+    // existing UI fields still used by React cart
+    uniqueKey:
+      product.id.toString() +
+      '_' +
+      (quickNote?.trim() || ''),
+
+
+    image: product.image,
+
+    // FIX: if productCat in cartProductType is required, keep it a string too
+    productCat: product.productCat ?? '',
+  };
 
   const modifiersFlat = Object.values(selectedModifiers).flat();
 
@@ -220,24 +222,24 @@ const cartProduct: cartProductType = {
 
   // ---------------- UI ----------------
 
-    const handleAdd = () => {
-   // if (lockRef.current) return;
+  const handleAdd = () => {
+    // if (lockRef.current) return;
 
-  //  lockRef.current = true;
-  setRightSidebarView('cart')
+    //  lockRef.current = true;
+    setRightSidebarView('cart')
     addProductToCart(cartProduct);
 
     // setTimeout(() => {
     //   lockRef.current = false;
     // }, 250);
   };
-return (
-  <>
-    {/* POS TILE */}
-    <button
-      type="button"
-     onClick={handleAdd}
-      className="
+  return (
+    <>
+      {/* POS TILE */}
+      <button
+        type="button"
+        onClick={handleAdd}
+        className="
         group w-[160px] min-h-[90px] 
         border border-slate-200 bg-white
         p-4 text-left shadow-sm
@@ -246,29 +248,29 @@ return (
         transition-all duration-100
         flex flex-col justify-between
       "
-    >
-      {/* Name */}
-      <div className="flex items-start justify-between gap-1">
-        <h3 className="text-[10px]   text-slate-600 leading-snug line-clamp-2">
-          {product.name}
-        </h3>
+      >
+        {/* Name */}
+        <div className="flex items-start justify-between gap-1">
+          <h3 className="text-[10px]   text-slate-600 leading-snug line-clamp-2">
+            {product.name}
+          </h3>
 
-        {shouldOpenPopup && (
-          <span className="text-[11px] font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
-            Options
-          </span>
-        )}
-      </div>
+          {shouldOpenPopup && (
+            <span className="text-[11px] font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
+              Options
+            </span>
+          )}
+        </div>
 
-      {/* Description */}
-      {/* {product.productDesc && (
+        {/* Description */}
+        {/* {product.productDesc && (
         <p className="mt-1 text-xs text-slate-500 line-clamp-2">
           {product.productDesc}
         </p>
       )} */}
 
-      {/* Footer */}
-      {/* <div className="mt-3 flex items-end justify-between">
+        {/* Footer */}
+        {/* <div className="mt-3 flex items-end justify-between">
         <div className="flex items-baseline gap-1">
           {priceDiscounted ? (
             <>
@@ -288,20 +290,20 @@ return (
 
        
       </div> */}
-    </button>
+      </button>
 
-    {/* KEEP YOUR EXISTING POPUPS BELOW THIS LINE */}
-    {isOpen && (
-      <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-0 rounded-xl">
-        {/* existing popup code */}
-      </div>
-    )}
+      {/* KEEP YOUR EXISTING POPUPS BELOW THIS LINE */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-0 rounded-xl">
+          {/* existing popup code */}
+        </div>
+      )}
 
-    {simpleNoteOpen && (
-      <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
-        {/* existing note popup code */}
-      </div>
-    )}
-  </>
-);
+      {simpleNoteOpen && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+          {/* existing note popup code */}
+        </div>
+      )}
+    </>
+  );
 }

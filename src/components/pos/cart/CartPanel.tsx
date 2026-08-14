@@ -1,10 +1,12 @@
 'use client';
 
+import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { useCartContext } from '@/store/CartContext';
 import { useRouter } from 'next/navigation';
 
 export default function CartPanel() {
+
   const {
     cartData,
     reloadCart,
@@ -13,117 +15,136 @@ export default function CartPanel() {
     decCartProduct,
     removeCartProduct,
     setCartData,
-    tableNo,
   } = useCartContext();
 
+  const { activeTable } = usePosSession();
+
   const router = useRouter();
-     const {
-        
-         setRightSidebarView,
-       } = usePosUi();
+  const {
+
+    setRightSidebarView,
+  } = usePosUi();
 
   // =====================================================
   // SEND TO KITCHEN (KOT)
   // =====================================================
- async function sendToKitchenHandle() {
-  if (cartData.length === 0) return;
+  async function sendToKitchenHandle() {
+    if (cartData.length === 0) return;
 
-  try {
-    const kotBatchId = crypto.randomUUID();
-    const kotNumber = `KOT-${Date.now()}`;
+    try {
+      const kotBatchId = crypto.randomUUID();
+      const kotNumber = `KOT-${Date.now()}`;
 
-    // =====================================================
-    // COMMON ITEM DATA
-    // =====================================================
-    const commonItems = cartData.map((item) => ({
-      categoryName: item.categoryName,
-      productMode: item.productMode,
-      currentStock: item.currentStock ?? 0,
-      sessionId: item.sessionId,
-      tableNo: item.tableId,
-      tableName: item.tableName,
-      productId: item.productId,
-      name: item.name,
-      categoryId: item.categoryId,
-      createdById: item.createdById ?? '',
-      createdByName: item.createdByName ?? '',
-      parentId: item.parentId ?? null,
-      isVariant: item.isVariant ?? false,
-      basePrice: item.basePrice,
-      finalPrice: item.finalPrice,
-      modifierTotal: item.modifierTotal ?? 0,
-      quantity: item.quantity,
-      taxRate: item.taxRate ?? 0,
-      taxType: item.taxType ?? 'exclusive',
-      note: item.note ?? '',
-      modifiersJson:
-        item.modifiersJson ??
-        JSON.stringify(item.modifiers ?? []),
-      createdAt: Date.now(),
-      source: 'POS',
-      syncedToCloud: false,
-      syncedFromCloud: false,
-    }));
+      // =====================================================
+      // COMMON ITEM DATA
+      // =====================================================
+     const currentTableId =
+  activeTable?.tableId ??
+  item.tableId ??
+  'T1';
 
-    // =====================================================
-    // KOT ITEMS (KITCHEN)
-    // =====================================================
-    const kotItems = commonItems.map((item) => ({
-      id: crypto.randomUUID(),
-      kotNumber,
-      kotBatchId,
-      status: 'PENDING',
-      kitchenPrintReq: true,
-      kitchenPrinted: false,
-      ...item,
-    }));
+const currentTableName =
+  activeTable?.tableName ??
+  item.tableName ??
+  'T1';
 
-    // =====================================================
-    // BILL ITEMS (BILLING)
-    // =====================================================
-    const billItems = commonItems.map((item) => ({
-      id: crypto.randomUUID(),
-      billItemGroupKey: [
-        item.productId,
-        item.basePrice,
-        item.taxRate,
-        item.taxType,
-        item.note,
-        item.modifiersJson,
-      ].join('|'),
-      status: 'OPEN',
-      billed: false,
-      billNo: '',
-      billId: '',
-      ...item,
-    }));
+const commonItems = cartData.map((item) => ({
+  categoryName: item.categoryName,
+  productMode: item.productMode,
+  currentStock: item.currentStock ?? 0,
+  sessionId: item.sessionId,
 
-    // Save kitchen items
-    await window.posApi.insertKotItems(kotItems);
+  // IMPORTANT
+  tableNo: currentTableId,
+  tableName: currentTableName,
+  tableId: currentTableId,
 
-    // Save bill items
-    await window.posApi.insertBillItems(billItems);
+  productId: item.productId,
+  name: item.name,
+  categoryId: item.categoryId,
+  createdById: item.createdById ?? '',
+  createdByName: item.createdByName ?? '',
+  parentId: item.parentId ?? null,
+  isVariant: item.isVariant ?? false,
+  basePrice: item.basePrice,
+  finalPrice: item.finalPrice,
+  modifierTotal: item.modifierTotal ?? 0,
+  quantity: item.quantity,
+  taxRate: item.taxRate ?? 0,
+  taxType: item.taxType ?? 'exclusive',
+  note: item.note ?? '',
+  modifiersJson:
+    item.modifiersJson ??
+    JSON.stringify(item.modifiers ?? []),
+  createdAt: Date.now(),
+  source: 'POS',
+  syncedToCloud: false,
+  syncedFromCloud: false,
+}));
 
-    console.log('KOT SAVED', kotBatchId);
-    console.log('BILL ITEMS SAVED', billItems.length);
+      // =====================================================
+      // KOT ITEMS (KITCHEN)
+      // =====================================================
+      const kotItems = commonItems.map((item) => ({
+        id: crypto.randomUUID(),
+        kotNumber,
+        kotBatchId,
+        status: 'PENDING',
+        kitchenPrintReq: true,
+        kitchenPrinted: false,
+        ...item,
+      }));
 
-    // Clear cart
-    await window.posApi.clearCart(tableNo ?? 'T1');
-    setCartData([]);
-    await reloadCart();
+      // =====================================================
+      // BILL ITEMS (BILLING)
+      // =====================================================
+      const billItems = commonItems.map((item) => ({
+        id: crypto.randomUUID(),
+        billItemGroupKey: [
+          item.productId,
+          item.basePrice,
+          item.taxRate,
+          item.taxType,
+          item.note,
+          item.modifiersJson,
+        ].join('|'),
+        status: 'OPEN',
+        billed: false,
+        billNo: '',
+        billId: '',
+        ...item,
+      }));
+console.log('BILL ITEMS PAYLOAD', billItems);
+      // Save kitchen items
+      await window.posApi.insertKotItems(kotItems);
 
-    // Switch to kitchen view
-    setRightSidebarView('bill');
+      // Save bill items
+      await window.posApi.insertBillItems(billItems);
 
-  } catch (e: any) {
-    console.error('KOT/BILL SAVE FAILED', e);
+      console.log('KOT SAVED', kotBatchId);
+      console.log('BILL ITEMS SAVED', billItems.length);
 
-    alert(
-      'Failed to send items to kitchen: ' +
-      (e?.message ?? JSON.stringify(e))
-    );
+     // Clear cart
+    await window.posApi.clearCart(
+  activeTable?.tableId ??
+  activeTable?.tableName ??
+  'T1'
+);
+//await window.posApi.clearCart(currentTableId);
+      setCartData([]);
+     await reloadCart(currentTableId);
+      // Switch to kitchen view
+      setRightSidebarView('bill');
+
+    } catch (e: any) {
+      console.error('KOT/BILL SAVE FAILED', e);
+
+      alert(
+        'Failed to send items to kitchen: ' +
+        (e?.message ?? JSON.stringify(e))
+      );
+    }
   }
-}
 
   return (
     <aside className="relative flex h-[93%] w-full flex-col overflow-hidden">
@@ -142,7 +163,7 @@ export default function CartPanel() {
         </div>
 
         <p className="mt-1 text-xs text-gray-500">
-          Table: {tableNo ?? 'N/A'}
+        Table: {activeTable?.tableName ?? 'N/A'}
         </p>
       </div>
 
@@ -227,45 +248,44 @@ export default function CartPanel() {
               </div>
             </div>
 
-          
+
 
           </div>
         )}
       </div>
-        {/* ACTION BAR */}
-            <div className="border-y border-gray-200 bg-gray-50 px-2 py-0 shadow-sm">
+      {/* ACTION BAR */}
+      <div className="border-y border-gray-200 bg-gray-50 px-2 py-0 shadow-sm">
 
-              <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2">
 
-                <button
-                  type="button"
-                  onClick={sendToKitchenHandle}
-                  disabled={cartData.length === 0}
-                  className={`h-9 text-xs font-semibold  text-white ${
-                    cartData.length === 0
-                      ? 'cursor-not-allowed bg-slate-300'
-                      : 'bg-orange-600 hover:bg-orange-700'
-                  }`}
-                >
-                  SEND
-                </button>
+          <button
+            type="button"
+            onClick={sendToKitchenHandle}
+            disabled={cartData.length === 0}
+            className={`h-9 text-xs font-semibold  text-white ${cartData.length === 0
+              ? 'cursor-not-allowed bg-slate-300'
+              : 'bg-orange-600 hover:bg-orange-700'
+              }`}
+          >
+            SEND
+          </button>
 
-                <button
-                  type="button"
-                  className="h-9 bg-red-500 text-xs font-semibold text-white hover:bg-red-600"
-                >
-                  CANCEL
-                </button>
+          <button
+            type="button"
+            className="h-9 bg-red-500 text-xs font-semibold text-white hover:bg-red-600"
+          >
+            CANCEL
+          </button>
 
-                <button
-                  type="button"
-                  className="h-9 border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100"
-                >
-                  NOTE
-                </button>
+          <button
+            type="button"
+            className="h-9 border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100"
+          >
+            NOTE
+          </button>
 
-              </div>
-            </div>
+        </div>
+      </div>
 
       {/* Footer */}
       <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3">

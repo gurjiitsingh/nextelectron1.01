@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
  
 import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
+import { useRouter } from 'next/navigation';
 
 export default function TablesPage() {
   const [tables, setTables] = useState<any[]>([]);
@@ -11,6 +12,8 @@ export default function TablesPage() {
 
   const { activeTable, setActiveTable } = usePosSession();
   const { setRightSidebarView } = usePosUi();
+ 
+const router = useRouter();
 
   useEffect(() => {
     loadTables();
@@ -33,6 +36,44 @@ export default function TablesPage() {
     }
   }
 
+  // =====================================================
+// GROUP TABLES BY AREA
+// =====================================================
+const tablesByArea = useMemo(() => {
+  const grouped: Record<string, any[]> = {};
+
+  for (const table of tables) {
+    const area = table.area || 'General';
+
+    if (!grouped[area]) {
+      grouped[area] = [];
+    }
+
+    grouped[area].push(table);
+  }
+
+  // sort tables inside each area
+  for (const area of Object.keys(grouped)) {
+    grouped[area].sort((a, b) => {
+      const aOrder = a.sortOrder ?? 9999;
+      const bOrder = b.sortOrder ?? 9999;
+
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+
+      return (a.tableName || '').localeCompare(
+        b.tableName || ''
+      );
+    });
+  }
+
+  // sort area names alphabetically
+  return Object.entries(grouped).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+}, [tables]);
+
 function handleTableClick(table: any) {
   setActiveTable({
     tableId: table.id,
@@ -41,11 +82,16 @@ function handleTableClick(table: any) {
   });
 
   setRightSidebarView('cart');
+   // navigate to POS page
+setTimeout(() => {
+    router.push('/');
+  }, 50);
 }
 
   return (
-    <div className="p-4">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="p-4 h-screen overflow-y-auto">
+      <div className='mb-40'>
+      {/* <div className="mb-4 flex items-center justify-between ">
         <div>
           <h1 className="text-xl font-semibold">Tables</h1>
 
@@ -62,93 +108,79 @@ function handleTableClick(table: any) {
         >
           Refresh
         </button>
-      </div>
+      </div> */}
 
       {loading ? (
         <p className="text-sm text-gray-500">
           Loading tables...
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-          {tables.map((table) => {
-             
+   <div className="space-y-6">
+  {tablesByArea.map(([area, areaTables]) => (
+    <div key={area} className="space-y-3">
+      {/* Area Header */}
+      <div className="sticky top-0 z-10 flex items-center justify-between rounded bg-gray-100 px-3 py-2">
+        <h2 className="text-sm font-semibold text-gray-800">
+          {area}
+        </h2>
 
-              const isActive =
-  activeTable?.tableId === table.id;
+        <span className="text-xs text-gray-500">
+          {areaTables.length} tables
+        </span>
+      </div>
 
-            return (
-              <button
-                type="button"
-                key={table.id}
-                onClick={() =>
-                  handleTableClick(table)
-                }
-                className={`rounded border bg-white p-3 text-left shadow-sm transition-all ${
-                  isActive
-                    ? 'border-blue-500 ring-2 ring-blue-200'
-                    : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">
-                    {table.tableName}
-                  </h2>
+      {/* Area Tables */}
+      <div className="grid grid-cols-3 gap-2 md:grid-cols-8 lg:grid-cols-13">
+        {areaTables.map((table) => {
+          const isActive =
+            activeTable?.tableId === table.id;
 
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs ${
-                      table.status === 'AVAILABLE'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}
-                  >
-                    {table.status}
+          return (
+            <button
+              type="button"
+              key={table.id}
+              onClick={() => handleTableClick(table)}
+              className={`rounded border bg-white p-3 text-left shadow-sm transition-all ${
+                isActive
+                  ? 'border-blue-500 ring-2 ring-blue-200'
+                  : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold">
+                  {table.tableName}
+                </h2>
+              </div>
+
+              <div className="mt-3 pt-2 text-xs text-gray-600">
+                <div className="flex justify-between w-full bg-red-100 rounded-sm mb-1 p-1">
+                 
+                  <span>{table.cartCount}</span>
+                </div>
+
+                <div className="flex justify-between bg-orange-100 rounded-sm mb-1 p-1">
+                  
+                  <span>{table.billCount}</span>
+                </div>
+
+                <div className="mt-1 flex justify-between font-medium bg-green-100 rounded-sm p-1">
+                  
+                  <span>
+                    ₹{Number(
+                      table.billAmount || 0
+                    ).toFixed(2)}
                   </span>
                 </div>
-
-                <p className="mt-2 text-xs text-gray-500">
-                  Area: {table.area || 'General'}
-                </p>
-
-                <p className="text-xs text-gray-500">
-                  Guests: {table.guestsCount ?? 0}
-                </p>
-
-                {table.waiterName ? (
-                  <p className="text-xs text-gray-500">
-                    Waiter: {table.waiterName}
-                  </p>
-                ) : null}
-
-                <div className="mt-3 border-t pt-2 text-xs text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Cart</span>
-                    <span>{table.cartCount}</span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span>Kitchen</span>
-                    <span>{table.kitchenCount}</span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span>Bill</span>
-                    <span>{table.billCount}</span>
-                  </div>
-
-                  <div className="mt-1 flex justify-between font-medium">
-                    <span>Amount</span>
-                    <span>
-                      ₹{Number(
-                        table.billAmount || 0
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  ))}
+</div>
       )}
+      </div>
     </div>
   );
 }

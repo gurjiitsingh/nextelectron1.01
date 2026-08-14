@@ -1,9 +1,15 @@
 export const posApi = {
-  addCartItem: (item: any, tableNo: string) =>
-    window.posApi.addCartItem(item, tableNo),
+  addCartItem: (
+    item: any,
+    tableNo: string
+  ) => window.posApi.addCartItem(item, tableNo),
 
-  getCartItems: (tableNo: string) =>
-    window.posApi.getCartItems(tableNo),
+  getCartItems: (
+    tableNo?: string
+  ) =>
+    window.posApi.getCartItems(
+      tableNo ?? 'T1'
+    ),
 
   removeCartItem: (
     uniqueKey: string,
@@ -16,8 +22,12 @@ export const posApi = {
       removeAll
     ),
 
-  clearCart: (tableNo: string) =>
-    window.posApi.clearCart(tableNo),
+  clearCart: (
+    tableNo?: string
+  ) =>
+    window.posApi.clearCart(
+      tableNo ?? 'T1'
+    ),
 
   syncAll: () => window.posApi.syncAll(),
 };

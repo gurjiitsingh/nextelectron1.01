@@ -7,6 +7,7 @@ import { posApi } from '@/lib/pos/clientApi';
 
 import { addressT } from '@/lib/types/addressType';
 import { cartProductType } from '@/lib/types/cartDataType';
+import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 
 type OrderType = 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
 
@@ -44,30 +45,39 @@ export const CartProvider: React.FC<Props> = ({ children }) => {
   const [scheduledAt, setScheduledAt] = useState<
     string | null
   >(null);
-
-  const [tableNo, setTableNo] = useState<string | null>(
-    'T1'
-  );
+const { activeTable } =  usePosSession();
+ 
 
   // =====================================================
   // LOAD CART FROM SQLITE
   // =====================================================
 
+ 
+const currentTable =
+  activeTable?.tableId ||
+  activeTable?.tableName ||
+  'T1';
+ 
 useEffect(() => {
-  reloadCart();
-}, [tableNo]);
-
+  reloadCart(currentTable);
+}, [currentTable]);
       // =====================================================
     // RELOAD CART FROM SQLITE
     // Location: src/store/CartProvider.tsx
     // =====================================================
-    async function reloadCart() {
-      const rows = await posApi.getCartItems(
-        tableNo || 'T1'
-      );
 
-      setCartData(rows as cartProductType[]);
-    }
+
+async function reloadCart(
+  tableName?: string
+) {
+  const table =
+    tableName || currentTable;
+
+  const rows =
+    await posApi.getCartItems(table);
+
+  setCartData(rows as cartProductType[]);
+}
 
   // =====================================================
   // CALCULATE TOTALS
@@ -120,68 +130,80 @@ useEffect(() => {
       return;
     }
 
-    await posApi.addCartItem(
-      {
-        id: newProduct.id ?? 0,
+  await posApi.addCartItem(
+  {
+    id: newProduct.id ?? 0,
 
-        productId: newProduct.productId,
-        productMode: newProduct.productMode,
+    productId: newProduct.productId,
+    productMode: newProduct.productMode,
 
-        currentStock: newProduct.currentStock ?? 0,
+    currentStock: newProduct.currentStock ?? 0,
 
-        name: newProduct.name,
+    name: newProduct.name,
 
-        categoryId: newProduct.categoryId,
-        categoryName: newProduct.categoryName,
+    categoryId: newProduct.categoryId,
+    categoryName: newProduct.categoryName,
 
-        parentId: newProduct.parentId ?? null,
+    parentId: newProduct.parentId ?? null,
 
-        isVariant: newProduct.isVariant ?? false,
+    isVariant: newProduct.isVariant ?? false,
 
-        basePrice: Number(newProduct.basePrice),
-        finalPrice: Number(newProduct.finalPrice),
-        modifierTotal: Number(newProduct.modifierTotal ?? 0),
+    basePrice: Number(newProduct.basePrice),
+    finalPrice: Number(newProduct.finalPrice),
+    modifierTotal: Number(newProduct.modifierTotal ?? 0),
 
-        quantity: 1, // always increase by 1
+    quantity: 1,
 
-        taxRate: Number(newProduct.taxRate ?? 0),
-        taxType: newProduct.taxType ?? 'exclusive',
+    taxRate: Number(newProduct.taxRate ?? 0),
+    taxType: newProduct.taxType ?? 'exclusive',
 
-        sessionId: newProduct.sessionId ?? 'DEFAULT',
+    sessionId: newProduct.sessionId ?? 'DEFAULT',
 
-        tableId: newProduct.tableId ?? tableNo ?? 'T1',
-        tableName:
-          newProduct.tableName ??
-          tableNo ??
-          'T1',
+    // ACTIVE TABLE
+    tableId:
+      newProduct.tableId ??
+      activeTable?.tableId ??
+      currentTable,
 
-        createdById:
-          newProduct.createdById ?? '',
-        createdByName:
-          newProduct.createdByName ?? '',
+    tableName:
+      newProduct.tableName ??
+      activeTable?.tableName ??
+      currentTable,
 
-        note: newProduct.note ?? '',
+    createdById:
+      newProduct.createdById ?? '',
 
-        modifiersJson:
-          newProduct.modifiersJson ??
-          JSON.stringify(
-            newProduct.modifiers ?? []
-          ),
+    createdByName:
+      newProduct.createdByName ?? '',
 
-        sentToKitchen:
-          newProduct.sentToKitchen ?? false,
+    note: newProduct.note ?? '',
 
-        kitchenPrintReq:
-          newProduct.kitchenPrintReq ?? false,
+    modifiersJson:
+      newProduct.modifiersJson ??
+      JSON.stringify(
+        newProduct.modifiers ?? []
+      ),
 
-        printStatus:
-          newProduct.printStatus ?? 'PENDING',
+    sentToKitchen:
+      newProduct.sentToKitchen ?? false,
 
-        createdAt:
-          newProduct.createdAt ?? Date.now(),
-      },
-      newProduct.tableId ?? tableNo ?? 'T1'
-    );
+    kitchenPrintReq:
+      newProduct.kitchenPrintReq ?? false,
+
+    printStatus:
+      newProduct.printStatus ?? 'PENDING',
+
+    createdAt:
+      newProduct.createdAt ?? Date.now(),
+  },
+
+  // SQLITE PARTITION KEY
+  newProduct.tableId ??
+    activeTable?.tableId ??
+    currentTable
+);
+
+await reloadCart(currentTable);
 
    await reloadCart();
 
@@ -191,64 +213,72 @@ useEffect(() => {
   // DECREASE QUANTITY BY 1
   // =====================================================
 
-  async function decCartProduct(
-    item: cartProductType
-  ) {
-    await posApi.removeCartItem(
-      String(item.id), // SQLite row id
-      tableNo || 'T1',
-      false // decrease by 1
-    );
+async function decCartProduct(
+  item: cartProductType
+) {
+  await posApi.removeCartItem(
+    String(item.id), // SQLite row id
+    currentTable,
+    false // decrease by 1
+  );
 
-   await reloadCart();
-
-    
-  }
+  await reloadCart(currentTable);
+}
 
   // =====================================================
   // REMOVE ALL OF A PRODUCT LINE
   // =====================================================
 
-  async function decCartProductAll(
-    item: cartProductType
-  ) {
-    if (!item.uniqueKey) return;
+async function decCartProductAll(
+  item: cartProductType
+) {
+  if (!item.uniqueKey) return;
 
-    await posApi.removeCartItem(
-      item.uniqueKey,
-      tableNo || 'T1',
-      true
-    );
+  await posApi.removeCartItem(
+    item.uniqueKey,
+    currentTable,
+    true
+  );
 
-await reloadCart();
-  }
+  await reloadCart(currentTable);
+}
 
   // =====================================================
   // REMOVE PRODUCT
   // =====================================================
 
-  async function removeCartProduct(
-    item: cartProductType | undefined
-  ) {
-    if (!item?.uniqueKey) return;
+async function removeCartProduct(
+  item: cartProductType | undefined
+) {
+  if (!item?.uniqueKey) return;
 
-    await posApi.removeCartItem(
-      item.uniqueKey,
-      tableNo || 'T1'
-    );
+  const currentTable =
+  activeTable?.tableId ||
+  activeTable?.tableName ||
+  'T1';
 
-   await reloadCart();
-  }
+  await posApi.removeCartItem(
+    item.uniqueKey,
+    currentTable
+  );
+
+  await reloadCart(currentTable);
+}
 
   // =====================================================
   // EMPTY CART
   // =====================================================
 
-  async function emptyCart() {
-    await posApi.clearCart(tableNo || 'T1');
+ async function emptyCart() {
+  const currentTable =
+    activeTable?.tableId ||
+    activeTable?.tableName ||
+    'T1';
 
-     await reloadCart();
-  }
+  await posApi.clearCart(currentTable);
+
+  await reloadCart(currentTable);
+}
 
   // =====================================================
   // ADD PRODUCT (LEGACY HELPER)
@@ -283,35 +313,43 @@ await reloadCart();
     setTotalDiscountL(d);
   }
 
-  return (
-<CartContext.Provider
-  value={{
-    cartData,
-    setCartData, // 👈 ADD THIS LINE
-    address,
-    addProduct,
-    addAddress,
-    endTotalG,
-    setEndTotalG,
-    counter,
-    productTotalCost,
-    reloadCart,
-    addProductToCart,
-    decCartProduct,
-    decCartProductAll,
-    removeCartProduct,
-    emptyCart,
-    totalDiscountG,
-    setTotalDiscountG,
-    orderType,
-    setOrderType,
-    tableNo,
-    setTableNo,
-    scheduledAt,
-    setScheduledAt,
-  }}
->
-      {children}
-    </CartContext.Provider>
-  );
-};
+return (
+  <CartContext.Provider
+    value={{
+      cartData,
+      setCartData,
+
+      address,
+      addProduct,
+      addAddress,
+
+      endTotalG,
+      setEndTotalG,
+
+      counter,
+      productTotalCost,
+
+      reloadCart,
+
+      addProductToCart,
+      decCartProduct,
+      decCartProductAll,
+      removeCartProduct,
+      emptyCart,
+
+      totalDiscountG,
+      setTotalDiscountG,
+
+      orderType,
+      setOrderType,
+
+      tableNo: currentTable,
+      setTableNo: () => {},
+
+      scheduledAt,
+      setScheduledAt,
+    }}
+  >
+    {children}
+  </CartContext.Provider>
+);}

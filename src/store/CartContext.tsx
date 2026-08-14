@@ -24,7 +24,7 @@ interface CartContextType {
 // RELOAD CART FROM SQLITE
 // =====================================================
 setCartData: React.Dispatch<React.SetStateAction<cartProductType[]>>;
-reloadCart: () => Promise<void>;
+reloadCart: (tableName?: string) => Promise<void>;
   emptyCart: () => void;
   endTotalG: number;
   setEndTotalG: (c: number) => void;
