@@ -224,4 +224,23 @@ contextBridge.exposeInMainWorld('posApi', {
   ipcRenderer.invoke(
     'orderCounter:upload'
   ),
+
+   // =====================================================
+  // PRINTER
+  // =====================================================
+
+  print: (payload) =>
+    ipcRenderer.invoke(
+      'printer:print',
+      payload
+    ),
+
+  getPrintQueueLength: () =>
+    ipcRenderer.invoke(
+      'printer:queue-length'
+    ),
+
+
+    
+
 });

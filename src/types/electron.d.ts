@@ -176,6 +176,17 @@ declare global {
     }>;
 
 
+    print: (payload: {
+  role: string;
+  source?: 'POS' | 'WAITER' | 'SYSTEM';
+  data: any;
+}) => Promise<{
+  success: boolean;
+  jobId?: string;
+  error?: string;
+}>;
+
+
       // Modifiers
       getModifierGroups: () => Promise<any[]>;
 

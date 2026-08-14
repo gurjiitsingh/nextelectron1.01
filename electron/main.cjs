@@ -13,7 +13,10 @@ const { syncAll } = require('./sync/syncAll.cjs');
 const { db, getDebugCounts } = require('./db/sqlite.cjs');
 const tableRepo = require('./db/tableRepo.cjs');
 console.log('MAIN STARTED');
- 
+ console.log(
+  'USER DATA PATH:',
+  app.getPath('userData')
+);
 const {
   getModifierGroups,
 } = require('./db/modifierGroupRepo.cjs');
@@ -28,6 +31,17 @@ const billItemRepo = require('./db/billItemRepo.cjs');
 
 const { getAllUsers } = require('./db/userRepo.cjs');
 const { getOutlet } = require('./db/outletRepo.cjs');
+
+// =====================================================
+// PRINTER
+// =====================================================
+const {
+  printManager,
+} = require('../shared/printer/PrintManager.cjs');
+
+const {
+  PrinterRole,
+} = require('../shared/printer/types.js');
 
  
 const {
@@ -69,6 +83,44 @@ ipcMain.handle(
         error: e?.message || String(e),
       };
     }
+  }
+);
+
+// =====================================================
+// PRINTER IPC
+// =====================================================
+
+ipcMain.handle(
+  'printer:print',
+  async (_event, payload) => {
+    try {
+      const { role, data, source } = payload;
+
+      const jobId = await printManager.enqueue(
+        role,
+        data,
+        source || 'POS'
+      );
+
+      return {
+        success: true,
+        jobId,
+      };
+    } catch (e) {
+      console.error('PRINTER PRINT FAILED', e);
+
+      return {
+        success: false,
+        error: e?.message || String(e),
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  'printer:queue-length',
+  async () => {
+    return printManager.getQueueLength();
   }
 );
 

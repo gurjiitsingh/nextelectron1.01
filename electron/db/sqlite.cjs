@@ -7,6 +7,23 @@ const dbPath = path.join(
   'pos-local.db'
 );
 
+
+
+console.log(
+  '===================================='
+);
+
+console.log(
+  'SQLITE DATABASE PATH:',
+  dbPath
+);
+
+console.log(
+  '===================================='
+);
+
+ 
+
 // Create database connection
 const db = new Database(dbPath);
 

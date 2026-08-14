@@ -1,3 +1,4 @@
+import TestPrinter from "@/components/systemButton/TestPrinter";
 import SyncButton from "../SyncButton";
 import UploadOrderCounterButton from "../UploadOrderCounterButton";
 
@@ -5,13 +6,13 @@ export default function Page() {
   return (
     <main className="flex-1 overflow-y-auto bg-slate-100 p-4">
       <div className="text-xl font-semibold text-slate-800">
-        KOT Screen
+      Setting Buttons
       </div>
+      <div className="flex gap-2">
   <SyncButton />
    <UploadOrderCounterButton />
-      <div className="mt-2 text-sm text-slate-500">
-        KOT orders will appear here.
-      </div>
+   <TestPrinter />
+    </div>
     </main>
   );
 }
