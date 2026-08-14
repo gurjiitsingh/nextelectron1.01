@@ -1,8 +1,12 @@
 const TERMINAL_CODE = 'P2';
 
-function getFinancialYearCode(date = new Date()) {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
+function getFinancialYearCode() {
+
+  const now = new Date();
+
+  const year = now.getFullYear();
+
+  const month = now.getMonth() + 1;
 
   let startYear;
   let endYear;

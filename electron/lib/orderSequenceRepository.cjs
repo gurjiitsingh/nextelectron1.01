@@ -1,4 +1,4 @@
-const { getFinancialYearCode } = require('./orderSequence');
+const { getFinancialYearCode } = require('./orderSequence.cjs');
 
 function getOrCreateOrderNo(db, mapKey, deviceCode = 'P2') {
   const now = Date.now();

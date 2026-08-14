@@ -167,7 +167,13 @@ declare global {
 
 
 
-
+    uploadOrderCounter: () => Promise<{
+      success: boolean;
+      invoiceSerialNo?: number;
+      docId?: string;
+      source?: string;
+      error?: string;
+    }>;
 
 
       // Modifiers

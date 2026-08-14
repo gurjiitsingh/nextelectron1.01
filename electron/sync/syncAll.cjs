@@ -3,7 +3,7 @@ const { syncProducts } = require('./productSync.cjs');
 const { syncTables } = require('./tableSync.cjs');
 const { syncUsers } = require('./userSync.cjs');
 const { syncOutlet } = require('./outletSync.cjs');
-
+const { syncOrderCounter } = require('./orderCounterSync.cjs');
 const {
   syncModifierGroups,
   syncModifierItems,
@@ -50,7 +50,7 @@ async function syncAll() {
     await runStep('TABLES', syncTables);
     await runStep('USERS', syncUsers);
     await runStep('OUTLET', syncOutlet);
-
+    await runStep('ORDER COUNTER', syncOrderCounter);
     console.log('\n==============================');
     console.log(
       `🎉 FULL SYNC COMPLETED in ${Date.now() - startedAt}ms`

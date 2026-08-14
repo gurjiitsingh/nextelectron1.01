@@ -1,4 +1,5 @@
 import SyncButton from "../SyncButton";
+import UploadOrderCounterButton from "../UploadOrderCounterButton";
 
 export default function Page() {
   return (
@@ -7,6 +8,7 @@ export default function Page() {
         KOT Screen
       </div>
   <SyncButton />
+   <UploadOrderCounterButton />
       <div className="mt-2 text-sm text-slate-500">
         KOT orders will appear here.
       </div>

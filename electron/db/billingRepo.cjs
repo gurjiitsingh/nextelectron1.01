@@ -7,11 +7,18 @@ const {
   getOrCreateOrderNo,
   attachOrderId,
   clearMapping,
-} = require('../lib/orderSequenceRepository');
+} = require('../lib/orderSequenceRepository.cjs');
+
+// const {
+//   getOrCreateOrderNo,
+//   attachOrderId,
+//   clearMapping,
+//   moveTableMapping,
+// } = require('../lib/orderSequence.cjs');
 
 const {
   TERMINAL_CODE,
-} = require('../lib/orderSequence');
+} = require('../lib/orderSequence.cjs');
 
 // =====================================================
 // HELPERS

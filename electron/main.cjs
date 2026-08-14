@@ -29,6 +29,49 @@ const billItemRepo = require('./db/billItemRepo.cjs');
 const { getAllUsers } = require('./db/userRepo.cjs');
 const { getOutlet } = require('./db/outletRepo.cjs');
 
+ 
+const {
+  uploadOrderCounter,
+} = require('./sync/orderCounterUpload.cjs');
+
+
+
+// =====================================================
+// UPLOAD DATA
+// =====================================================
+app.on('before-quit', async () => {
+  try {
+    await uploadOrderCounter();
+  } catch (e) {
+    console.error(
+      'Failed to upload order counter on quit',
+      e
+    );
+  }
+});
+
+
+ipcMain.handle(
+  'orderCounter:upload',
+  async () => {
+    try {
+      const result = await uploadOrderCounter();
+
+      return {
+        success: true,
+        ...result,
+      };
+    } catch (e) {
+      console.error('ORDER COUNTER UPLOAD FAILED', e);
+
+      return {
+        success: false,
+        error: e?.message || String(e),
+      };
+    }
+  }
+);
+
 
  // =====================================================
 // SYNC DATA
@@ -442,7 +485,15 @@ ipcMain.handle(
   // CREATE WINDOW
   // -------------------------------
 
+
+
   const win = createWindow();
+
+
+    // Upload local counter every 5 minutes
+  setInterval(() => {
+    uploadOrderCounter().catch(console.error);
+  }, 5 * 60 * 1000);
 
   // F12 = Toggle DevTools
   globalShortcut.register(
