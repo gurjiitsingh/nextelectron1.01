@@ -18,6 +18,7 @@ import SyncButton from "./SyncButton";
 import PosTopBar from "@/components/pos/home/PosTopBar";
 import { PosUiProvider } from "@/PosUiStore/PosUiContext";
 import { PosSessionProvider } from "@/PosSessionStore/PosSessionContext";
+import { PosThemeProvider } from "@/PosThemeStore/PosThemeContext";
 
 
 
@@ -39,7 +40,7 @@ export default function RootLayout({
 
     <div className="text-[#2B2E4A]  ">
       <div translate="no">
-     
+     <PosThemeProvider>
         <PosUiProvider>
           <PosSessionProvider>
 
@@ -65,6 +66,7 @@ export default function RootLayout({
             </Providers>
           </PosSessionProvider>
         </PosUiProvider>
+        </PosThemeProvider>
         <Toaster
           position="top-center"
           containerStyle={{ top: "30%" }}

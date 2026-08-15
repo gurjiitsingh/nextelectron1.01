@@ -11,7 +11,8 @@ import type { TnewModifierItemSchema } from "@/lib/types/modifierItemType";
 import { useCartContext } from "@/store/CartContext";
 import { usePosUi } from "@/PosUiStore/PosUiContext";
 import { usePosSession } from "@/PosSessionStore/PosSessionContext";
-
+import { useRouter } from 'next/navigation';
+import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
 export default function ProductCardHorizontical({
   product,
   variants,
@@ -26,10 +27,11 @@ export default function ProductCardHorizontical({
   productModifiers: any[];
 
 }) {
-
+const router = useRouter();
   type ModifierItem = TnewModifierItemSchema & {
     id: string;
   };
+const { theme, background } = usePosTheme();
   const { settings } = UseSiteContext();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ProductType | null>(null);
@@ -222,36 +224,49 @@ export default function ProductCardHorizontical({
 
   // ---------------- UI ----------------
 
-  const handleAdd = () => {
-    // if (lockRef.current) return;
+const handleAdd = () => {
+  // No table selected
+  if (!activeTable?.tableId) {
+    router.push('/tables');
+    return;
+  }
 
-    //  lockRef.current = true;
-    setRightSidebarView('cart')
-    addProductToCart(cartProduct);
+  // Table selected
+  setRightSidebarView('cart');
+  addProductToCart(cartProduct);
+};
 
-    // setTimeout(() => {
-    //   lockRef.current = false;
-    // }, 250);
-  };
+
   return (
     <>
-      {/* POS TILE */}
-      <button
-        type="button"
-        onClick={handleAdd}
-        className="
-        group w-[160px] min-h-[90px] 
-        border border-slate-200 bg-white
-        p-4 text-left shadow-sm
-        hover:border-slate-300 hover:shadow-md
-        active:scale-[0.99]
-        transition-all duration-100
-        flex flex-col justify-between
-      "
-      >
+      
+<button
+  type="button"
+  onClick={handleAdd}
+  style={{
+    borderColor: undefined,
+  }}
+  className={`
+    group
+    w-[160px]
+    min-h-[90px]
+    border
+    ${background.border}
+    p-4
+    text-left
+    shadow-sm
+    hover:shadow-md
+    active:scale-[0.99]
+    transition-all
+    duration-100
+    flex
+    flex-col
+    justify-between
+  `}
+>
         {/* Name */}
         <div className="flex items-start justify-between gap-1">
-          <h3 className="text-[10px]   text-slate-600 leading-snug line-clamp-2">
+          <h3 className="text-[10px]    leading-snug line-clamp-2">
             {product.name}
           </h3>
 

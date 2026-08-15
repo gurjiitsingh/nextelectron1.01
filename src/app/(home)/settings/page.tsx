@@ -1,5 +1,6 @@
 'use client';
 
+import PosThemeSelector from '@/components/pos/PosThemeSelector';
 import { useEffect, useState } from 'react';
 
 export default function TestPage() {
@@ -16,7 +17,11 @@ export default function TestPage() {
        {/* <pre>{JSON.stringify(users, null, 2)}</pre>
       <pre>{JSON.stringify(outlet, null, 2)}</pre> */}
 
-     
+      <div className="rounded-xl border bg-white p-5">
+
+        <PosThemeSelector />
+
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
+import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { useCartContext } from '@/store/CartContext';
 import { useRouter } from 'next/navigation';
@@ -20,86 +21,101 @@ export default function CartPanel() {
   const { activeTable } = usePosSession();
 
   const router = useRouter();
-  const {
 
+  const {
     setRightSidebarView,
   } = usePosUi();
 
   // =====================================================
+  // POS THEME
+  // =====================================================
+
+  const {
+    theme,
+    background,
+  } = usePosTheme();
+
+  // =====================================================
   // SEND TO KITCHEN (KOT)
   // =====================================================
+
   async function sendToKitchenHandle() {
+
     if (cartData.length === 0) return;
 
+    // NEVER send without a selected table
+    if (!activeTable?.tableId) {
+      alert('Please select a table first.');
+      return;
+    }
+
     try {
+
       const kotBatchId = crypto.randomUUID();
       const kotNumber = `KOT-${Date.now()}`;
 
-      // =====================================================
-      // COMMON ITEM DATA
-      // =====================================================
-     const currentTableId =
-  activeTable?.tableId ??
-  item.tableId ??
-  'T1';
+      const currentTableId = activeTable.tableId;
+      const currentTableName = activeTable.tableName;
 
-const currentTableName =
-  activeTable?.tableName ??
-  item.tableName ??
-  'T1';
+      const commonItems = cartData.map((item) => ({
+        categoryName: item.categoryName,
+        productMode: item.productMode,
+        currentStock: item.currentStock ?? 0,
+        sessionId: item.sessionId,
 
-const commonItems = cartData.map((item) => ({
-  categoryName: item.categoryName,
-  productMode: item.productMode,
-  currentStock: item.currentStock ?? 0,
-  sessionId: item.sessionId,
+        tableNo: currentTableId,
+        tableName: currentTableName,
+        tableId: currentTableId,
 
-  // IMPORTANT
-  tableNo: currentTableId,
-  tableName: currentTableName,
-  tableId: currentTableId,
+        productId: item.productId,
+        name: item.name,
+        categoryId: item.categoryId,
 
-  productId: item.productId,
-  name: item.name,
-  categoryId: item.categoryId,
-  createdById: item.createdById ?? '',
-  createdByName: item.createdByName ?? '',
-  parentId: item.parentId ?? null,
-  isVariant: item.isVariant ?? false,
-  basePrice: item.basePrice,
-  finalPrice: item.finalPrice,
-  modifierTotal: item.modifierTotal ?? 0,
-  quantity: item.quantity,
-  taxRate: item.taxRate ?? 0,
-  taxType: item.taxType ?? 'exclusive',
-  note: item.note ?? '',
-  modifiersJson:
-    item.modifiersJson ??
-    JSON.stringify(item.modifiers ?? []),
-  createdAt: Date.now(),
-  source: 'POS',
-  syncedToCloud: false,
-  syncedFromCloud: false,
-}));
+        createdById: item.createdById ?? '',
+        createdByName: item.createdByName ?? '',
 
-      // =====================================================
-      // KOT ITEMS (KITCHEN)
-      // =====================================================
+        parentId: item.parentId ?? null,
+        isVariant: item.isVariant ?? false,
+
+        basePrice: item.basePrice,
+        finalPrice: item.finalPrice,
+        modifierTotal: item.modifierTotal ?? 0,
+
+        quantity: item.quantity,
+
+        taxRate: item.taxRate ?? 0,
+        taxType: item.taxType ?? 'exclusive',
+
+        note: item.note ?? '',
+
+        modifiersJson:
+          item.modifiersJson ??
+          JSON.stringify(item.modifiers ?? []),
+
+        createdAt: Date.now(),
+
+        source: 'POS',
+        syncedToCloud: false,
+        syncedFromCloud: false,
+      }));
+
       const kotItems = commonItems.map((item) => ({
         id: crypto.randomUUID(),
+
         kotNumber,
         kotBatchId,
+
         status: 'PENDING',
+
         kitchenPrintReq: true,
         kitchenPrinted: false,
+
         ...item,
       }));
 
-      // =====================================================
-      // BILL ITEMS (BILLING)
-      // =====================================================
       const billItems = commonItems.map((item) => ({
         id: crypto.randomUUID(),
+
         billItemGroupKey: [
           item.productId,
           item.basePrice,
@@ -108,173 +124,288 @@ const commonItems = cartData.map((item) => ({
           item.note,
           item.modifiersJson,
         ].join('|'),
+
         status: 'OPEN',
+
         billed: false,
+
         billNo: '',
         billId: '',
+
         ...item,
       }));
-console.log('BILL ITEMS PAYLOAD', billItems);
-   // Save kitchen items
-await window.posApi.insertKotItems(kotItems);
 
-// =====================================================
-// PRINT KITCHEN KOT
-// =====================================================
-await window.posApi.print({
-  role: 'KITCHEN',
-  source: 'POS',
-  data: {
-    kotNumber,
-    tableNo: currentTableId,
-    tableName: currentTableName,
-    orderType: 'DINE_IN', // later make dynamic
-    createdAt: Date.now(),
-    items: cartData.map((i) => ({
-      name: i.name,
-      quantity: i.quantity,
-      note: i.note ?? '',
-    })),
-  },
-});
+      await window.posApi.insertKotItems(kotItems);
 
-// Save bill items
-await window.posApi.insertBillItems(billItems);
+      await window.posApi.print({
+        role: 'KITCHEN',
+        source: 'POS',
 
-console.log('KOT SAVED', kotBatchId);
-console.log('BILL ITEMS SAVED', billItems.length);
+        data: {
+          kotNumber,
 
-// Clear cart
-await window.posApi.clearCart(
-  activeTable?.tableId ??
-  activeTable?.tableName ??
-  'T1'
-);
-//await window.posApi.clearCart(currentTableId);
+          tableNo: currentTableId,
+          tableName: currentTableName,
+
+          orderType: 'DINE_IN',
+
+          createdAt: Date.now(),
+
+          items: cartData.map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            note: i.note ?? '',
+          })),
+        },
+      });
+
+      await window.posApi.insertBillItems(billItems);
+
+      await window.posApi.clearCart(currentTableId);
+
       setCartData([]);
-     await reloadCart(currentTableId);
-      // Switch to kitchen view
+
+      await reloadCart(currentTableId);
+
       setRightSidebarView('bill');
 
-    } catch (e: any) {
-      console.error('KOT/BILL SAVE FAILED', e);
+    } catch (e) {
+
+      console.error(
+        'KOT/BILL SAVE FAILED',
+        e
+      );
 
       alert(
-        'Failed to send items to kitchen: ' +
-        (e?.message ?? JSON.stringify(e))
+        'Failed to send items to kitchen: '
       );
     }
   }
+// console.log("background.border---------------",background.border)
+//   // =====================================================
+//   // UI
+//   // =====================================================
+//   console.log('===== POS THEME DEBUG =====');
+// console.log('background:', background);
+// console.log('backgroundName:', backgroundName);
+// console.log('background keys:', Object.keys(background));
+// console.log('background.border:', background.border);
+// console.log('background.className:', background.className);
+// console.log('===========================');
 
   return (
-    <aside className="relative flex h-[93%] w-full flex-col overflow-hidden">
+    <aside
+      className={`
+        relative
+        flex
+        h-[93%]
+        w-full
+        flex-col
+        overflow-hidden
+        ${background.className}
+        ${background.text}
+      `}
+    >
 
-      {/* Header */}
-      <div className="shrink-0 border-b border-gray-200 px-4 py-3">
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
+      <div
+        className={`
+          flex
+          justify-between
+          shrink-0
+          border-b
+          ${background.border}
+          px-4
+          py-3
+        `}
+      >
+
+        <p className="mt-1 text-xs">
+          {activeTable
+            ? `Table: ${activeTable.tableName}`
+            : 'No table selected'}
+        </p>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-900">
-            Current Order
-          </h2>
 
-          <span className="text-sm text-gray-500">
+          <span className="text-sm">
             {cartData.length} items
           </span>
+
         </div>
 
-        <p className="mt-1 text-xs text-gray-500">
-        Table: {activeTable?.tableName ?? 'N/A'}
-        </p>
       </div>
 
-      {/* Content */}
+
+      {/* =================================================
+          CONTENT
+      ================================================= */}
+
       <div className="min-h-0 flex-1 overflow-y-auto app-scrollbar">
 
         {cartData.length === 0 ? (
+
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-gray-500">
+
+            <p className="text-sm opacity-60">
               Cart is empty
             </p>
+
           </div>
+
         ) : (
+
           <div>
+
             <div className="h-full overflow-y-auto app-scrollbar">
-              <div className="divide-y divide-gray-200">
-                {cartData.map((item) => (
-                  <div
-                    key={`${item.productId}-${item.id}`}
-                    className="px-2 py-2"
-                  >
-                    <div className="flex items-center justify-between gap-3">
 
-                      {/* Name + note */}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[10px] font-medium text-gray-900">
-                          {item.name}
-                        </p>
+              {/* DIM ITEM DIVIDERS */}
 
-                        {item.note ? (
-                          <p className="mt-0.5 truncate text-xs text-gray-500">
-                            {item.note}
-                          </p>
-                        ) : null}
-                      </div>
+              <div
+                className={`
+                  divide-y
+                  ${background.divide}
+                `}
+              >
 
-                      {/* Unit price */}
-                      <p className="shrink-0 whitespace-nowrap text-[9px] text-gray-900">
-                        ₹{item.finalPrice.toFixed(2)}
-                      </p>
+           {cartData.map((item) => (
 
-                      {/* Amount + Qty */}
-                      <div className="flex shrink-0 items-center gap-2">
+  <div
+    key={`${item.productId}-${item.id}`}
+    className={`
+      px-2
+      py-2
+      border-b
+      ${background.border}
+    `}
+  >
 
-                        <p className="whitespace-nowrap text-sm font-semibold text-gray-900">
-                          ₹{(item.finalPrice * item.quantity).toFixed(2)}
-                        </p>
+    <div className="flex items-center justify-between gap-3">
 
-                        <div className="flex w-fit items-center overflow-hidden border border-gray-300">
+      {/* NAME + NOTE */}
+      <div className="min-w-0 flex-1">
 
-                          <button
-                            type="button"
-                            onClick={() => decCartProduct(item)}
-                            className="flex h-5 w-5 items-center justify-center text-gray-700 hover:bg-gray-100"
-                          >
-                            −
-                          </button>
+        <p className="truncate text-[10px] font-medium">
+          {item.name}
+        </p>
 
-                          <span className="w-6 text-center text-[10px] font-medium">
-                            {item.quantity}
-                          </span>
+        {item.note && (
+          <p className="mt-0.5 truncate text-xs opacity-60">
+            {item.note}
+          </p>
+        )}
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              addProductToCart({
-                                ...item,
-                                quantity: 1,
-                              })
-                            }
-                            className="flex h-5 w-5 items-center justify-center text-gray-700 hover:bg-gray-100"
-                          >
-                            +
-                          </button>
+      </div>
 
-                        </div>
-                      </div>
 
-                    </div>
-                  </div>
-                ))}
+      {/* UNIT PRICE */}
+      <p className="shrink-0 whitespace-nowrap text-[9px] opacity-70">
+        ₹{item.finalPrice.toFixed(2)}
+      </p>
+
+
+      {/* AMOUNT + QTY */}
+      <div className="flex shrink-0 items-center gap-2">
+
+        <p className="whitespace-nowrap text-sm font-semibold">
+          ₹{(
+            item.finalPrice *
+            item.quantity
+          ).toFixed(2)}
+        </p>
+
+
+        {/* QUANTITY CONTROL */}
+        <div
+          className={`
+            flex
+            w-fit
+            items-center
+            overflow-hidden
+            border
+            ${background.border}
+          `}
+        >
+
+          <button
+            type="button"
+            onClick={() => decCartProduct(item)}
+            className="
+              flex
+              h-5
+              w-5
+              items-center
+              justify-center
+              opacity-70
+              transition
+              hover:opacity-100
+            "
+          >
+            −
+          </button>
+
+          <span className="w-6 text-center text-[10px] font-medium">
+            {item.quantity}
+          </span>
+
+          <button
+            type="button"
+            onClick={() =>
+              addProductToCart({
+                ...item,
+                quantity: 1,
+              })
+            }
+            className="
+              flex
+              h-5
+              w-5
+              items-center
+              justify-center
+              opacity-70
+              transition
+              hover:opacity-100
+            "
+          >
+            +
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+))}
               </div>
+
             </div>
 
-
-
           </div>
+
         )}
+
       </div>
-      {/* ACTION BAR */}
-      <div className="border-y border-gray-200 bg-gray-50 px-2 py-0 shadow-sm">
+
+
+      {/* =================================================
+          ACTION BAR
+      ================================================= */}
+
+      <div
+        className={`
+          border-t
+          ${background.border}
+          px-2
+          py-0
+          shadow-sm
+        `}
+      >
 
         <div className="grid grid-cols-3 gap-2">
 
@@ -282,37 +413,56 @@ await window.posApi.clearCart(
             type="button"
             onClick={sendToKitchenHandle}
             disabled={cartData.length === 0}
-            className={`h-9 text-xs font-semibold  text-white ${cartData.length === 0
-              ? 'cursor-not-allowed bg-slate-300'
-              : 'bg-orange-600 hover:bg-orange-700'
-              }`}
+            style={{
+              backgroundColor:
+                cartData.length === 0
+                  ? '#CBD5E1'
+                  : theme.primary,
+
+              color: '#FFFFFF',
+            }}
+            className="
+              h-9
+              text-xs
+              font-semibold
+              transition-all
+              hover:opacity-90
+              active:opacity-80
+              disabled:cursor-not-allowed
+            "
           >
             SEND
           </button>
 
-          <button
-            type="button"
-            className="h-9 bg-red-500 text-xs font-semibold text-white hover:bg-red-600"
-          >
-            CANCEL
-          </button>
-
-          <button
-            type="button"
-            className="h-9 border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100"
-          >
-            NOTE
-          </button>
-
         </div>
+
       </div>
 
-      {/* Footer */}
-      <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3">
+
+      {/* =================================================
+          FOOTER
+      ================================================= */}
+
+      <div
+        className={`
+          shrink-0
+          border-t
+          ${background.border}
+          px-4
+          py-3
+        `}
+      >
 
         <div className="mb-3 flex items-center justify-between text-base font-semibold">
-          <span>Total</span>
-          <span>₹{productTotalCost.toFixed(2)}</span>
+
+          <span>
+            Total
+          </span>
+
+          <span>
+            ₹{productTotalCost.toFixed(2)}
+          </span>
+
         </div>
 
       </div>

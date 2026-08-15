@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { UseSiteContext } from "@/SiteContext/SiteContext";
+import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
 
 export type CategoryType = {
   id: string;
@@ -27,6 +28,16 @@ export default function PosSidebarCategories() {
     settings,
   } = UseSiteContext();
 
+  // =====================================================
+  // POS THEME
+  // =====================================================
+
+  const { theme, background } = usePosTheme();
+
+  // =====================================================
+  // DISPLAY CATEGORY
+  // =====================================================
+
   useEffect(() => {
     if (!productCategoryIdG) {
       setDisplayCategory(
@@ -36,6 +47,10 @@ export default function PosSidebarCategories() {
       setDisplayCategory(productCategoryIdG);
     }
   }, [settings, productCategoryIdG]);
+
+  // =====================================================
+  // LOAD CATEGORIES
+  // =====================================================
 
   useEffect(() => {
     let isMounted = true;
@@ -60,10 +75,14 @@ export default function PosSidebarCategories() {
         setCategoryData(featured);
 
         const pickupDisabled = categories
-          .filter((c) => c.disablePickupDiscount === true)
+          .filter(
+            (c) => c.disablePickupDiscount === true
+          )
           .map((c) => c.id);
 
-        setDisablePickupCatDiscountIds(pickupDisabled);
+        setDisablePickupCatDiscountIds(
+          pickupDisabled
+        );
       } catch (error) {
         console.error(
           "SQLite category load error:",
@@ -79,47 +98,43 @@ export default function PosSidebarCategories() {
     };
   }, [setDisablePickupCatDiscountIds]);
 
+  // =====================================================
+  // UI
+  // =====================================================
+
   return (
-    <aside className="h-full w-full bg-white flex flex-col">
-      {/* <div className="h-12 shrink-0 flex items-center px-4 border-b border-slate-200">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-          Categories
-        </span>
-      </div> */}
-
-      <div className="pos-sidebar-scroll flex-1 overflow-y-auto app-scrollbar px-2 py-2 space-y-1">
-        {/* <button
-          type="button"
-          onClick={() => setProductCategoryIdG("")}
-          className={`
-            w-full
-            h-11
-            px-3
-            flex
-            items-center
-            text-left
-            border
-            transition-colors
-            ${
-              !displayCategory
-                ? "bg-slate-800 border-slate-800 text-white"
-                : "bg-white border-transparent text-slate-700 hover:bg-slate-100"
-            }
-          `}
-        >
-          <span className="text-sm font-medium">
-            All Items
-          </span>
-        </button> */}
-
+    <aside
+      className={`
+        h-full
+        w-full
+        ${background.className}
+        ${background.text}
+        flex
+        flex-col
+      `}
+    >
+      <div
+        className="
+          pos-sidebar-scroll
+          flex-1
+          overflow-y-auto
+          app-scrollbar
+          px-2
+          py-2
+          space-y-1
+        "
+      >
         {categoryData.map((cat) => {
-          const active = displayCategory === cat.id;
+          const active =
+            displayCategory === cat.id;
 
           return (
             <button
               key={cat.id}
               type="button"
-              onClick={() => setProductCategoryIdG(cat.id)}
+              onClick={() =>
+                setProductCategoryIdG(cat.id)
+              }
               className={`
                 w-full
                 h-11
@@ -127,21 +142,38 @@ export default function PosSidebarCategories() {
                 flex
                 items-center
                 text-left
-                
                 text-sm
-                
-              
-                transition-colors
+                border
+                transition-all
+                duration-100
+                ${background.border}
+
                 ${
                   active
-                    ? "bg-slate-400 border-slate-600 text-white"
-                    : "bg-slate-200 border-transparent text-slate-600  "
+                    ? "text-white"
+                    : `${background.text} hover:opacity-80`
                 }
               `}
+              style={
+                active
+                  ? {
+                      backgroundColor:
+                        theme.primary,
+                      borderColor:
+                        theme.primary,
+                    }
+                  : undefined
+              }
             >
-              <span className="text-[12px] font-medium truncate">
-  {cat.name}
-</span>
+              <span
+                className="
+                  text-[12px]
+                  font-medium
+                  truncate
+                "
+              >
+                {cat.name}
+              </span>
             </button>
           );
         })}
