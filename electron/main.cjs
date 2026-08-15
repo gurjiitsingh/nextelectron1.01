@@ -5,6 +5,9 @@ const {
   globalShortcut,
 } = require('electron');
 
+const { shell } = require('electron');
+ 
+const fs = require('fs');
 const path = require('path');
 
 const { syncAll } = require('./sync/syncAll.cjs');
@@ -47,6 +50,13 @@ const {
 const {
   uploadOrderCounter,
 } = require('./sync/orderCounterUpload.cjs');
+
+const {
+  PrinterSettingsRepository,
+} = require('../shared/printer/PrinterSettingsRepository.cjs');
+
+const printerSettingsRepo =
+  new PrinterSettingsRepository();
 
 
 
@@ -124,6 +134,155 @@ ipcMain.handle(
   }
 );
 
+// =====================================================
+// PRINTER SETTINGS
+// =====================================================
+
+ipcMain.handle(
+  'printer-settings:get-all',
+  async () => {
+    return printerSettingsRepo.readAll();
+  }
+);
+
+ipcMain.handle(
+  'printer-settings:save',
+  async (_event, config) => {
+    printerSettingsRepo.saveConfig(config);
+
+    return {
+      success: true,
+    };
+  }
+);
+
+
+// =====================================================
+// BILL IMAGE PREVIEW IPC
+// =====================================================
+
+ipcMain.handle(
+  'printer:preview-bill-image',
+  async (_event, data) => {
+    try {
+      console.log(
+        '[PREVIEW] Generating bill image...'
+      );
+
+      // -------------------------------------------------
+      // IMPORTANT:
+      // Use the SAME formatter as actual IMAGE printing.
+      // -------------------------------------------------
+
+      const {
+        BillImageFormatter80,
+      } = require('../shared/printer/formatters/BillImageFormatter80.cjs');
+
+      const formatter =
+        new BillImageFormatter80();
+
+      const pngBuffer =
+        await formatter.format(data);
+
+      // -------------------------------------------------
+      // Save temporary preview PNG
+      // -------------------------------------------------
+
+      const previewDir =
+        path.join(
+          app.getPath('temp'),
+          'pos-bill-previews'
+        );
+
+      if (!fs.existsSync(previewDir)) {
+        fs.mkdirSync(
+          previewDir,
+          { recursive: true }
+        );
+      }
+
+      const filePath =
+        path.join(
+          previewDir,
+          `bill-preview-${Date.now()}.png`
+        );
+
+      fs.writeFileSync(
+        filePath,
+        pngBuffer
+      );
+
+      console.log(
+        '[PREVIEW] PNG CREATED:',
+        filePath
+      );
+
+      return {
+        success: true,
+        filePath,
+      };
+
+    } catch (e) {
+
+      console.error(
+        '[PREVIEW] BILL IMAGE FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
+
+// =====================================================
+// OPEN BILL IMAGE
+// =====================================================
+
+ipcMain.handle(
+  'printer:open-file',
+  async (_event, filePath) => {
+    try {
+
+      if (!filePath) {
+        throw new Error(
+          'Missing file path'
+        );
+      }
+
+      const errorMessage =
+        await shell.openPath(filePath);
+
+      if (errorMessage) {
+        throw new Error(
+          errorMessage
+        );
+      }
+
+      return {
+        success: true,
+      };
+
+    } catch (e) {
+
+      console.error(
+        '[PREVIEW] OPEN FILE FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
 
  // =====================================================
 // SYNC DATA

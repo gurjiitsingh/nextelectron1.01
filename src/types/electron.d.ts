@@ -187,6 +187,18 @@ declare global {
 }>;
 
 
+// =====================================================
+  // PRINTER SETTINGS
+  // =====================================================
+getPrinterSettings: () => Promise<any[]>;
+
+savePrinterSetting: (
+  config: any
+) => Promise<{
+  success: boolean;
+}>;
+
+
       // Modifiers
       getModifierGroups: () => Promise<any[]>;
 

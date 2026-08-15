@@ -10,6 +10,8 @@ class PrinterSettingsRepository {
     );
   }
 
+  
+
   readAll() {
     if (!fs.existsSync(this.filePath)) {
       return [];
@@ -40,13 +42,39 @@ class PrinterSettingsRepository {
 
     all.push(config);
 
+    fs.mkdirSync(path.dirname(this.filePath), {
+  recursive: true,
+});
+
     fs.writeFileSync(
       this.filePath,
       JSON.stringify(all, null, 2),
       'utf8'
     );
   }
+
+ // =====================================================
+  // SAVE ALL PRINTER SETTINGS AT ONCE
+  // =====================================================
+  saveAll(configs) {
+    fs.mkdirSync(path.dirname(this.filePath), {
+      recursive: true,
+    });
+
+    fs.writeFileSync(
+      this.filePath,
+      JSON.stringify(configs, null, 2),
+      'utf8'
+    );
+
+    return configs;
+  }
+
+
 }
+
+
+
 
 module.exports = {
   PrinterSettingsRepository,

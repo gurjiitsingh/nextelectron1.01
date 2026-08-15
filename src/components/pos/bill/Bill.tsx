@@ -7,6 +7,7 @@ import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 import { fromPaise } from '@/lib/pos/billing/money';
 import { calculateBillAndroid } from '@/lib/pos/billing/calculator';
+import { Button } from '@/components/ui/button';
 type BillProps = {
   onSuccess?: () => void;
 };
@@ -273,8 +274,296 @@ export default function Bill({
     }
   }
 
+async function previewBillImage() {
+  if (billItems.length === 0) {
+    alert('No items to preview');
+    return;
+  }
+
+  console.log('PREVIEW BILL IMAGE CLICKED');
+
+  try {
+    const res = await window.posApi.previewBillImage({
+      // =================================================
+      // BILL INFORMATION
+      // =================================================
+
+      billNo: 'PREVIEW',
+      orderNo: '',
+
+      tableNo: currentTableId,
+      tableName: currentTableName,
+
+      orderType: 'DINE_IN',
+      paymentMode,
+
+      createdAt: Date.now(),
+
+      // =================================================
+      // ITEMS
+      // =================================================
+
+      items: billItems.map((i) => {
+        const price =
+          Number(i.basePrice || 0) +
+          Number(i.modifierTotal || 0);
+
+        const quantity =
+          Number(i.quantity || 0);
+
+        return {
+          name: i.name,
+
+          quantity,
+
+          rate: price,
+
+          amount: price * quantity,
+
+          modifiers:[],
+            // i.modifiers
+            //   ? Array.isArray(i.modifiers)
+            //     ? i.modifiers
+            //     : [i.modifiers]
+            //   : [],
+
+          modifiersJson:
+            i.modifiersJson || '',
+
+          note:
+            i.note || '',
+        };
+      }),
+
+      // =================================================
+      // TOTALS
+      // =================================================
+
+      subtotal:
+        calculation.itemSubtotal,
+
+      tax:
+        calculation.itemTax,
+
+      discount:
+        calculation.discount,
+
+      deliveryFee:
+        calculation.deliveryFee,
+
+      deliveryTax:
+        calculation.deliveryTax,
+
+      grandTotal:
+        calculation.grandTotal,
+
+      // =================================================
+      // OUTLET
+      // =================================================
+
+      outletName:"kjl",
+      addressLine1:"kjl",
+      addressLine2:"kjl",
+      addressLine3:"kjl",
+      city:"kjl",
+      phone:"kjl",
+      phone2:"kjl",
+      gstVatNumber:"kjl",
+
+      // =================================================
+      // TAX
+      // =================================================
+
+      taxMode:"EXCLUSIVE",
+      taxType:"GST",
+      countryCode:"IN",
+
+      // =================================================
+      // CUSTOMER
+      // =================================================
+
+      customerName,
+      customerPhone,
+
+      // =================================================
+      // IMAGE PREVIEW OPTIONS
+      // =================================================
+
+      qrEnabled: true,
+
+      upiId:"",
+
+      qrTitle: 'SCAN & PAY',
+
+      // =================================================
+      // OTHER
+      // =================================================
+
+      stewardName: '',
+      kotNumberText: '',
+    });
+
+    console.log(
+      'BILL IMAGE PREVIEW RESULT:',
+      res
+    );
+
+    if (!res?.success) {
+      throw new Error(
+        res?.error ||
+        'Failed to generate bill preview'
+      );
+    }
+
+    console.log(
+      'PREVIEW FILE:',
+      res.filePath
+    );
+
+    // Open generated PNG using Electron
+    if (res.filePath) {
+      window.posApi.openFile(res.filePath);
+    }
+
+  } catch (e) {
+
+    console.error(
+      'BILL IMAGE PREVIEW FAILED:',
+      e
+    );
+
+    alert(
+      'Preview failed: ' +
+      (e?.message || 'Unknown error')
+    );
+  }
+}
+// =====================================================
+// PRINT BILL ONLY (NO SAVE)
+// =====================================================
+async function printBill() {
+  if (billItems.length === 0) {
+    alert('No items to print');
+    return;
+  }
+
+  console.log('PRINT BILL CLICKED');
+
+  try {
+    const receiptData = {
+      // =================================================
+      // BILL INFORMATION
+      // =================================================
+
+      billNo: 'PREVIEW',
+      orderNo: '',
+
+      tableNo: currentTableId,
+      tableName: currentTableName,
+
+      orderType: 'DINE_IN',
+      paymentMode,
+
+      createdAt: Date.now(),
+
+      // =================================================
+      // ITEMS
+      // =================================================
+
+      items: billItems.map((i) => {
+        const price =
+          Number(i.basePrice || 0) +
+          Number(i.modifierTotal || 0);
+
+        const quantity =
+          Number(i.quantity || 0);
+
+        return {
+          name: i.name,
+          quantity,
+          price,
+          subtotal: price * quantity,
+
+          modifiersJson:
+            i.modifiersJson || '',
+
+          note:
+            i.note || '',
+        };
+      }),
+
+      // =================================================
+      // CALCULATED VALUES
+      // SINGLE SOURCE OF TRUTH
+      // =================================================
+
+      subtotal:
+        calculation.itemSubtotal,
+
+      tax:
+        calculation.itemTax,
+
+      discount:
+        calculation.discount,
+
+      deliveryFee:
+        calculation.deliveryFee,
+
+      deliveryTax:
+        calculation.deliveryTax,
+
+      grandTotal:
+        calculation.grandTotal,
+
+      // =================================================
+      // CUSTOMER
+      // =================================================
+
+      customerName,
+      customerPhone,
+
+      // =================================================
+      // OPTIONAL ANDROID-STYLE INFORMATION
+      // =================================================
+
+      kotNumberText: '',
+      stewardName: '',
+    };
+
+    const res =
+      await window.posApi.print({
+        role: 'BILL',
+        source: 'POS',
+        data: receiptData,
+      });
+
+    console.log('PRINT RESULT', res);
+
+    if (!res.success) {
+      throw new Error(
+        res.error || 'Print failed'
+      );
+    }
+
+    console.log(
+      'BILL PRINTED SUCCESSFULLY'
+    );
+
+  } catch (e: any) {
+    console.error(
+      'PRINT FAILED',
+      e
+    );
+
+    alert(
+      'Print failed: ' +
+        (e?.message || 'Unknown error')
+    );
+  }
+}
+
   return (
-    <div className="flex h-full flex-col bg-white mb-16">
+    <div className="flex h-full flex-col bg-white ">
 
       {/* Header */}
       <div className="shrink-0 border-b border-gray-200 px-4 py-2">
@@ -350,19 +639,46 @@ export default function Bill({
       </div>
 
       {/* BILL BUTTON */}
-      <div className="shrink-0 border-t border-gray-200 bg-gray-50 p-3">
-        <button
-          type="button"
-          onClick={handleCheckout}
-          disabled={
-            processing ||
-            billItems.length === 0
-          }
-          className="h-11 w-full rounded bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-        >
-          {processing ? 'PROCESSING...' : 'BILL'}
-        </button>
-      </div>
+  <div className="shrink-0 border-t border-gray-200 bg-gray-50 px-2">
+  <div className="grid grid-cols-2 gap-2">
+
+    {/* PRINT ONLY */}
+    <button
+      type="button"
+      onClick={printBill}
+      // disabled={
+      //   processing ||
+      //   billItems.length === 0
+      // }
+      className="h-8 rounded border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+    >
+      PRINT
+    </button>
+
+    {/* SAVE BILL */}
+    <button
+      type="button"
+      onClick={handleCheckout}
+      disabled={
+        processing ||
+        billItems.length === 0
+      }
+      className="h-8 rounded bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+    >
+      {processing ? 'PROCESSING...' : 'BILL'}
+    </button>
+
+
+
+    <Button
+  type="button"
+  onClick={previewBillImage}
+>
+  Preview Bill Image
+</Button>
+
+  </div>
+</div>
 
   {/* Calculations */}
   <div className="space-y-2 border-t border-gray-100 p-3 text-sm">

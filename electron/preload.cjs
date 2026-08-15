@@ -221,11 +221,11 @@ contextBridge.exposeInMainWorld('posApi', {
   // =====================================================
 
   uploadOrderCounter: () =>
-  ipcRenderer.invoke(
-    'orderCounter:upload'
-  ),
+    ipcRenderer.invoke(
+      'orderCounter:upload'
+    ),
 
-   // =====================================================
+    // =====================================================
   // PRINTER
   // =====================================================
 
@@ -240,7 +240,38 @@ contextBridge.exposeInMainWorld('posApi', {
       'printer:queue-length'
     ),
 
+  // =====================================================
+  // BILL IMAGE PREVIEW
+  // =====================================================
 
-    
+  previewBillImage: (data) =>
+    ipcRenderer.invoke(
+      'printer:preview-bill-image',
+      data
+    ),
+
+  openFile: (filePath) =>
+    ipcRenderer.invoke(
+      'printer:open-file',
+      filePath
+    ),
+
+  // =====================================================
+  // PRINTER SETTINGS
+  // =====================================================
+
+  getPrinterSettings: () =>
+    ipcRenderer.invoke(
+      'printer-settings:get-all'
+    ),
+
+  savePrinterSetting: (config) =>
+    ipcRenderer.invoke(
+      'printer-settings:save',
+      config
+    ),
+
+
+
 
 });

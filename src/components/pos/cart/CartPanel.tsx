@@ -115,17 +115,37 @@ const commonItems = cartData.map((item) => ({
         ...item,
       }));
 console.log('BILL ITEMS PAYLOAD', billItems);
-      // Save kitchen items
-      await window.posApi.insertKotItems(kotItems);
+   // Save kitchen items
+await window.posApi.insertKotItems(kotItems);
 
-      // Save bill items
-      await window.posApi.insertBillItems(billItems);
+// =====================================================
+// PRINT KITCHEN KOT
+// =====================================================
+await window.posApi.print({
+  role: 'KITCHEN',
+  source: 'POS',
+  data: {
+    kotNumber,
+    tableNo: currentTableId,
+    tableName: currentTableName,
+    orderType: 'DINE_IN', // later make dynamic
+    createdAt: Date.now(),
+    items: cartData.map((i) => ({
+      name: i.name,
+      quantity: i.quantity,
+      note: i.note ?? '',
+    })),
+  },
+});
 
-      console.log('KOT SAVED', kotBatchId);
-      console.log('BILL ITEMS SAVED', billItems.length);
+// Save bill items
+await window.posApi.insertBillItems(billItems);
 
-     // Clear cart
-    await window.posApi.clearCart(
+console.log('KOT SAVED', kotBatchId);
+console.log('BILL ITEMS SAVED', billItems.length);
+
+// Clear cart
+await window.posApi.clearCart(
   activeTable?.tableId ??
   activeTable?.tableName ??
   'T1'

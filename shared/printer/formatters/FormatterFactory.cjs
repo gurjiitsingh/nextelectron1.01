@@ -11,9 +11,25 @@ const {
   KitchenFormatter80,
 } = require('./KitchenFormatter80.cjs');
 
+const {
+  BillFormatter80,
+} = require('./BillFormatter80.cjs');
+
+const {
+  BillImageFormatter80,
+} = require('./BillImageFormatter80.cjs');
+
+
 class FormatterFactory {
+
+  // =====================================================
+  // KITCHEN TEXT
+  // =====================================================
+
   static createKitchenFormatter(paperSize) {
+
     switch (paperSize) {
+
       case PrinterPaperSize.MM58:
         return new KitchenFormatter58();
 
@@ -23,14 +39,57 @@ class FormatterFactory {
     }
   }
 
+  // =====================================================
+  // BILL TEXT
+  // =====================================================
+
+  static createBillFormatter(paperSize) {
+
+    switch (paperSize) {
+
+      case PrinterPaperSize.MM58:
+        return new BillFormatter80();
+
+      case PrinterPaperSize.MM80:
+      default:
+        return new BillFormatter80();
+    }
+  }
+
+  // =====================================================
+  // BILL IMAGE
+  // =====================================================
+
+  static createBillImageFormatter(paperSize) {
+
+    switch (paperSize) {
+
+      case PrinterPaperSize.MM58:
+        // Create BillImageFormatter58 later
+        return new BillImageFormatter80();
+
+      case PrinterPaperSize.MM80:
+      default:
+        return new BillImageFormatter80();
+    }
+  }
+
+  // =====================================================
+  // MAIN TEXT FACTORY
+  // =====================================================
+
   static create(role, paperSize) {
+
     switch (role) {
+
       case PrinterRole.KITCHEN:
-        return this.createKitchenFormatter(paperSize);
+        return this.createKitchenFormatter(
+          paperSize
+        );
 
       case PrinterRole.BILL:
-        throw new Error(
-          'Bill formatter not implemented yet'
+        return this.createBillFormatter(
+          paperSize
         );
 
       case PrinterRole.BAR:
@@ -40,7 +99,7 @@ class FormatterFactory {
 
       default:
         throw new Error(
-          'Unsupported printer role'
+          `Unsupported printer role: ${role}`
         );
     }
   }

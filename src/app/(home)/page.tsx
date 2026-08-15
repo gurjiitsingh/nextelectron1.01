@@ -23,7 +23,7 @@ export default async function Page() {
           <Products />
         </section>
 
-        <aside className="hidden xl:flex w-[440px] bg-white border-l border-slate-200">
+        <aside className=" xl:flex w-[440px] bg-white border-l border-slate-200">
           <RightSideBar  />
         </aside>
 
