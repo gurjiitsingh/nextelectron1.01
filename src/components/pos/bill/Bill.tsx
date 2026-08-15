@@ -3,13 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { groupBillItems } from '@/lib/billing/calculateBill';
-import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 import { fromPaise } from '@/lib/pos/billing/money';
 import { calculateBillAndroid } from '@/lib/pos/billing/calculator';
-import { Button } from '@/components/ui/button';
 import { POS_THEME } from '@/style/posTheme';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
+
 type BillProps = {
   onSuccess?: () => void;
 };
@@ -33,13 +32,18 @@ export default function Bill({
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // =====================================================
+  // POS THEME
+  // =====================================================
+
   const {
-    setRightSidebarView,
-  } = usePosUi();
+    background,
+  } = usePosTheme();
 
   // =====================================================
-  // LOAD BILL ITEMS FOR CURRENT TABLE
+  // LOAD BILL ITEMS
   // =====================================================
+
   useEffect(() => {
     loadBillItems();
   }, [currentTableId]);
@@ -50,12 +54,20 @@ export default function Bill({
     try {
       setLoading(true);
 
-      console.log('LOAD BILL ITEMS', currentTableId);
+      console.log(
+        'LOAD BILL ITEMS',
+        currentTableId
+      );
 
       const rows =
-        await window.posApi.getBillItems(currentTableId);
+        await window.posApi.getBillItems(
+          currentTableId
+        );
 
-      console.log('BILL ROWS', rows);
+      console.log(
+        'BILL ROWS',
+        rows
+      );
 
       setBillRows(rows);
     } catch (e) {
@@ -72,96 +84,149 @@ export default function Bill({
   // FORM STATE
   // =====================================================
 
+  const {
+    billDraft,
+    setBillDraft,
+  } = usePosSession();
 
+  const discount =
+    billDraft.discount;
 
+  const discountPercent =
+    billDraft.discountPercent;
 
-  const { billDraft, setBillDraft } = usePosSession();
+  const deliveryFee =
+    billDraft.deliveryFee;
 
-  const discount = billDraft.discount;
-  const discountPercent = billDraft.discountPercent;
-  const deliveryFee = billDraft.deliveryFee;
-  const customerName = billDraft.customerName;
-  const customerPhone = billDraft.customerPhone;
-  const paidAmount = billDraft.paidAmount;
-  const paymentMode = billDraft.paymentMode;
+  const customerName =
+    billDraft.customerName;
 
+  const customerPhone =
+    billDraft.customerPhone;
 
+  const paidAmount =
+    billDraft.paidAmount;
 
-
-
-  // const [paymentMode, setPaymentMode] =
-  //   useState<'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'CREDIT'>('CASH');
-
-
+  const paymentMode =
+    billDraft.paymentMode;
 
   // =====================================================
-  // GROUP BILL ITEMS (MERGED QTY)
+  // GROUP BILL ITEMS
   // =====================================================
+
   const billItems = useMemo(
-    () => groupBillItems(billRows),
+    () =>
+      groupBillItems(billRows),
     [billRows]
   );
-  const { background } = usePosTheme();
+
+  // =====================================================
+  // BILL CALCULATION
+  // =====================================================
 
   const calculation = useMemo(() => {
-    const result = calculateBillAndroid({
-      items: billItems.map((i) => ({
-        productId: i.productId,
-        name: i.name,
-        quantity: Number(i.quantity || 0),
-        basePrice: Number(i.basePrice || 0),
-        taxRate: Number(i.taxRate || 0),
-        taxType:
-          (i.taxType || 'exclusive') as
-          | 'inclusive'
-          | 'exclusive',
-      })),
 
-      taxMode: 'PER_ITEM',
+    const result =
+      calculateBillAndroid({
 
-      discountFlat: discount,
+        items: billItems.map((i) => ({
+          productId:
+            i.productId,
 
-      discountPercent,
+          name:
+            i.name,
 
-      deliveryFee,
+          quantity:
+            Number(
+              i.quantity || 0
+            ),
 
-      deliveryTaxPercent: 0,
-    });
+          basePrice:
+            Number(
+              i.basePrice || 0
+            ),
+
+          taxRate:
+            Number(
+              i.taxRate || 0
+            ),
+
+          taxType:
+            (i.taxType ||
+              'exclusive') as
+              | 'inclusive'
+              | 'exclusive',
+        })),
+
+        taxMode:
+          'PER_ITEM',
+
+        discountFlat:
+          discount,
+
+        discountPercent,
+
+        deliveryFee,
+
+        deliveryTaxPercent:
+          0,
+      });
 
     return {
-      itemSubtotal: fromPaise(
-        result.itemSubtotalPaise
-      ),
 
-      itemTax: fromPaise(
-        result.totalTaxPaise
-      ),
+      itemSubtotal:
+        fromPaise(
+          result.itemSubtotalPaise
+        ),
 
-      discount: fromPaise(
-        result.discountPaise
-      ),
+      itemTax:
+        fromPaise(
+          result.totalTaxPaise
+        ),
 
-      deliveryFee: fromPaise(
-        result.deliveryFeePaise
-      ),
+      discount:
+        fromPaise(
+          result.discountPaise
+        ),
 
-      deliveryTax: fromPaise(
-        result.deliveryTaxPaise
-      ),
+      deliveryFee:
+        fromPaise(
+          result.deliveryFeePaise
+        ),
 
-      grandTotal: fromPaise(
-        result.grandTotalPaise
-      ),
+      deliveryTax:
+        fromPaise(
+          result.deliveryTaxPaise
+        ),
 
-      raw: result,
+      grandTotal:
+        fromPaise(
+          result.grandTotalPaise
+        ),
+
+      raw:
+        result,
     };
-  }, [billItems, discount, discountPercent, deliveryFee]);
 
-  const dueAmount = Math.max(
-    0,
-    calculation.grandTotal -
-    Number(paidAmount || 0)
-  );
+  }, [
+    billItems,
+    discount,
+    discountPercent,
+    deliveryFee,
+  ]);
+
+  // =====================================================
+  // PAYMENT
+  // =====================================================
+
+  const dueAmount =
+    Math.max(
+      0,
+      calculation.grandTotal -
+        Number(
+          paidAmount || 0
+        )
+    );
 
   const paymentStatus =
     paymentMode === 'CREDIT'
@@ -173,28 +238,53 @@ export default function Bill({
   // =====================================================
   // FINALIZE BILL
   // =====================================================
+
   async function handleCheckout() {
+
     if (processing) return;
 
     try {
+
       setProcessing(true);
       setError(null);
-      console.log('ANDROID CALCULATION', calculation.raw);
 
-      console.log('DISPLAY TOTALS', {
-        subtotal: calculation.itemSubtotal,
-        tax: calculation.itemTax,
-        discount: calculation.discount,
-        delivery: calculation.deliveryFee,
-        grandTotal: calculation.grandTotal,
-      });
+      console.log(
+        'ANDROID CALCULATION',
+        calculation.raw
+      );
+
+      console.log(
+        'DISPLAY TOTALS',
+        {
+          subtotal:
+            calculation.itemSubtotal,
+
+          tax:
+            calculation.itemTax,
+
+          discount:
+            calculation.discount,
+
+          delivery:
+            calculation.deliveryFee,
+
+          grandTotal:
+            calculation.grandTotal,
+        }
+      );
+
       const result =
         await window.posApi.createBill({
-          tableNo: currentTableId,
-          orderType: 'DINE_IN',
+
+          tableNo:
+            currentTableId,
+
+          orderType:
+            'DINE_IN',
 
           customerName:
-            customerName.trim() || 'Customer',
+            customerName.trim() ||
+            'Customer',
 
           customerPhone:
             customerPhone.trim(),
@@ -209,35 +299,52 @@ export default function Bill({
             calculation.deliveryTax,
 
           paymentMode,
+
           paymentStatus,
 
           paidAmount:
-            Number(paidAmount) || 0,
+            Number(
+              paidAmount
+            ) || 0,
 
           payments:
             paidAmount > 0
               ? [
-                {
-                  mode: paymentMode,
-                  amount:
-                    Number(paidAmount),
-                },
-              ]
+                  {
+                    mode:
+                      paymentMode,
+
+                    amount:
+                      Number(
+                        paidAmount
+                      ),
+                  },
+                ]
               : [],
 
-          deviceId: 'POS',
-          deviceName: 'Electron POS',
-          appVersion: '1.0',
+          deviceId:
+            'POS',
+
+          deviceName:
+            'Electron POS',
+
+          appVersion:
+            '1.0',
 
           businessDate:
             new Date()
               .toISOString()
-              .slice(0, 10),
+              .slice(
+                0,
+                10
+              ),
 
-          currency: '₹',
+          currency:
+            '₹',
         });
 
       if (!result.success) {
+
         throw new Error(
           result.error ||
           'Failed to create bill'
@@ -245,166 +352,213 @@ export default function Bill({
       }
 
       setBillDraft({
-        customerName: 'Customer',
-        customerPhone: '',
-        discount: 0,
-        discountPercent: 0,
-        deliveryFee: 0,
-        paymentMode: 'CASH',
-        paidAmount: 0,
+
+        customerName:
+          'Customer',
+
+        customerPhone:
+          '',
+
+        discount:
+          0,
+
+        discountPercent:
+          0,
+
+        deliveryFee:
+          0,
+
+        paymentMode:
+          'CASH',
+
+        paidAmount:
+          0,
       });
 
-      console.log('BILL CREATED', result);
+      console.log(
+        'BILL CREATED',
+        result
+      );
 
-      // clear UI immediately
       setBillRows([]);
 
-      // reload from database
       await loadBillItems();
 
-      // go back to cart
-      // setRightSidebarView('cart');
-
       onSuccess?.();
+
     } catch (e: any) {
-      console.error('BILL FAILED', e);
+
+      console.error(
+        'BILL FAILED',
+        e
+      );
 
       setError(
-        e?.message || 'Payment failed'
+        e?.message ||
+        'Payment failed'
       );
+
     } finally {
+
       setProcessing(false);
     }
   }
 
+  // =====================================================
+  // PREVIEW BILL IMAGE
+  // =====================================================
+
   async function previewBillImage() {
+
     if (billItems.length === 0) {
-      alert('No items to preview');
+
+      alert(
+        'No items to preview'
+      );
+
       return;
     }
 
-    console.log('PREVIEW BILL IMAGE CLICKED');
+    console.log(
+      'PREVIEW BILL IMAGE CLICKED'
+    );
 
     try {
-      const res = await window.posApi.previewBillImage({
-        // =================================================
-        // BILL INFORMATION
-        // =================================================
 
-        billNo: 'PREVIEW',
-        orderNo: '',
+      const res =
+        await window.posApi.previewBillImage({
 
-        tableNo: currentTableId,
-        tableName: currentTableName,
+          billNo:
+            'PREVIEW',
 
-        orderType: 'DINE_IN',
-        paymentMode,
+          orderNo:
+            '',
 
-        createdAt: Date.now(),
+          tableNo:
+            currentTableId,
 
-        // =================================================
-        // ITEMS
-        // =================================================
+          tableName:
+            currentTableName,
 
-        items: billItems.map((i) => {
-          const price =
-            Number(i.basePrice || 0) +
-            Number(i.modifierTotal || 0);
+          orderType:
+            'DINE_IN',
 
-          const quantity =
-            Number(i.quantity || 0);
+          paymentMode,
 
-          return {
-            name: i.name,
+          createdAt:
+            Date.now(),
 
-            quantity,
+          items:
+            billItems.map((i) => {
 
-            rate: price,
+              const price =
+                Number(
+                  i.basePrice || 0
+                ) +
+                Number(
+                  i.modifierTotal || 0
+                );
 
-            amount: price * quantity,
+              const quantity =
+                Number(
+                  i.quantity || 0
+                );
 
-            modifiers: [],
-            // i.modifiers
-            //   ? Array.isArray(i.modifiers)
-            //     ? i.modifiers
-            //     : [i.modifiers]
-            //   : [],
+              return {
 
-            modifiersJson:
-              i.modifiersJson || '',
+                name:
+                  i.name,
 
-            note:
-              i.note || '',
-          };
-        }),
+                quantity,
 
-        // =================================================
-        // TOTALS
-        // =================================================
+                rate:
+                  price,
 
-        subtotal:
-          calculation.itemSubtotal,
+                amount:
+                  price * quantity,
 
-        tax:
-          calculation.itemTax,
+                modifiers:
+                  [],
 
-        discount:
-          calculation.discount,
+                modifiersJson:
+                  i.modifiersJson ||
+                  '',
 
-        deliveryFee:
-          calculation.deliveryFee,
+                note:
+                  i.note || '',
+              };
+            }),
 
-        deliveryTax:
-          calculation.deliveryTax,
+          subtotal:
+            calculation.itemSubtotal,
 
-        grandTotal:
-          calculation.grandTotal,
+          tax:
+            calculation.itemTax,
 
-        // =================================================
-        // OUTLET
-        // =================================================
+          discount:
+            calculation.discount,
 
-        outletName: "kjl",
-        addressLine1: "kjl",
-        addressLine2: "kjl",
-        addressLine3: "kjl",
-        city: "kjl",
-        phone: "kjl",
-        phone2: "kjl",
-        gstVatNumber: "kjl",
+          deliveryFee:
+            calculation.deliveryFee,
 
-        // =================================================
-        // TAX
-        // =================================================
+          deliveryTax:
+            calculation.deliveryTax,
 
-        taxMode: "EXCLUSIVE",
-        taxType: "GST",
-        countryCode: "IN",
+          grandTotal:
+            calculation.grandTotal,
 
-        // =================================================
-        // CUSTOMER
-        // =================================================
+          outletName:
+            'kjl',
 
-        customerName,
-        customerPhone,
+          addressLine1:
+            'kjl',
 
-        // =================================================
-        // IMAGE PREVIEW OPTIONS
-        // =================================================
+          addressLine2:
+            'kjl',
 
-        qrEnabled: true,
+          addressLine3:
+            'kjl',
 
-        upiId: "",
+          city:
+            'kjl',
 
-        qrTitle: 'SCAN & PAY',
+          phone:
+            'kjl',
 
-        // =================================================
-        // OTHER
-        // =================================================
+          phone2:
+            'kjl',
 
-        stewardName: '',
-        kotNumberText: '',
-      });
+          gstVatNumber:
+            'kjl',
+
+          taxMode:
+            'EXCLUSIVE',
+
+          taxType:
+            'GST',
+
+          countryCode:
+            'IN',
+
+          customerName,
+
+          customerPhone,
+
+          qrEnabled:
+            true,
+
+          upiId:
+            '',
+
+          qrTitle:
+            'SCAN & PAY',
+
+          stewardName:
+            '',
+
+          kotNumberText:
+            '',
+        });
 
       console.log(
         'BILL IMAGE PREVIEW RESULT:',
@@ -412,6 +566,7 @@ export default function Bill({
       );
 
       if (!res?.success) {
+
         throw new Error(
           res?.error ||
           'Failed to generate bill preview'
@@ -423,12 +578,14 @@ export default function Bill({
         res.filePath
       );
 
-      // Open generated PNG using Electron
       if (res.filePath) {
-        window.posApi.openFile(res.filePath);
+
+        window.posApi.openFile(
+          res.filePath
+        );
       }
 
-    } catch (e) {
+    } catch (e: any) {
 
       console.error(
         'BILL IMAGE PREVIEW FAILED:',
@@ -437,68 +594,93 @@ export default function Bill({
 
       alert(
         'Preview failed: ' +
-        (e?.message || 'Unknown error')
+        (
+          e?.message ||
+          'Unknown error'
+        )
       );
     }
   }
+
   // =====================================================
-  // PRINT BILL ONLY (NO SAVE)
+  // PRINT BILL ONLY
   // =====================================================
+
   async function printBill() {
+
     if (billItems.length === 0) {
-      alert('No items to print');
+
+      alert(
+        'No items to print'
+      );
+
       return;
     }
 
-    console.log('PRINT BILL CLICKED');
+    console.log(
+      'PRINT BILL CLICKED'
+    );
 
     try {
+
       const receiptData = {
-        // =================================================
-        // BILL INFORMATION
-        // =================================================
 
-        billNo: 'PREVIEW',
-        orderNo: '',
+        billNo:
+          'PREVIEW',
 
-        tableNo: currentTableId,
-        tableName: currentTableName,
+        orderNo:
+          '',
 
-        orderType: 'DINE_IN',
+        tableNo:
+          currentTableId,
+
+        tableName:
+          currentTableName,
+
+        orderType:
+          'DINE_IN',
+
         paymentMode,
 
-        createdAt: Date.now(),
+        createdAt:
+          Date.now(),
 
-        // =================================================
-        // ITEMS
-        // =================================================
+        items:
+          billItems.map((i) => {
 
-        items: billItems.map((i) => {
-          const price =
-            Number(i.basePrice || 0) +
-            Number(i.modifierTotal || 0);
+            const price =
+              Number(
+                i.basePrice || 0
+              ) +
+              Number(
+                i.modifierTotal || 0
+              );
 
-          const quantity =
-            Number(i.quantity || 0);
+            const quantity =
+              Number(
+                i.quantity || 0
+              );
 
-          return {
-            name: i.name,
-            quantity,
-            price,
-            subtotal: price * quantity,
+            return {
 
-            modifiersJson:
-              i.modifiersJson || '',
+              name:
+                i.name,
 
-            note:
-              i.note || '',
-          };
-        }),
+              quantity,
 
-        // =================================================
-        // CALCULATED VALUES
-        // SINGLE SOURCE OF TRUTH
-        // =================================================
+              price,
+
+              subtotal:
+                price * quantity,
+
+              modifiersJson:
+                i.modifiersJson ||
+                '',
+
+              note:
+                i.note || '',
+            };
+          }),
 
         subtotal:
           calculation.itemSubtotal,
@@ -518,33 +700,40 @@ export default function Bill({
         grandTotal:
           calculation.grandTotal,
 
-        // =================================================
-        // CUSTOMER
-        // =================================================
-
         customerName,
+
         customerPhone,
 
-        // =================================================
-        // OPTIONAL ANDROID-STYLE INFORMATION
-        // =================================================
+        kotNumberText:
+          '',
 
-        kotNumberText: '',
-        stewardName: '',
+        stewardName:
+          '',
       };
 
       const res =
         await window.posApi.print({
-          role: 'BILL',
-          source: 'POS',
-          data: receiptData,
+
+          role:
+            'BILL',
+
+          source:
+            'POS',
+
+          data:
+            receiptData,
         });
 
-      console.log('PRINT RESULT', res);
+      console.log(
+        'PRINT RESULT',
+        res
+      );
 
       if (!res.success) {
+
         throw new Error(
-          res.error || 'Print failed'
+          res.error ||
+          'Print failed'
         );
       }
 
@@ -553,6 +742,7 @@ export default function Bill({
       );
 
     } catch (e: any) {
+
       console.error(
         'PRINT FAILED',
         e
@@ -560,165 +750,253 @@ export default function Bill({
 
       alert(
         'Print failed: ' +
-        (e?.message || 'Unknown error')
+        (
+          e?.message ||
+          'Unknown error'
+        )
       );
     }
   }
 
-  return (
-    <div className="flex h-full flex-col posBackground ">
+  // =====================================================
+  // UI
+  // =====================================================
 
-      {/* Header */}
+  return (
+    <div
+      className={`
+        flex
+        h-full
+        flex-col
+        ${background.className}
+        ${background.text}
+      `}
+    >
+
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
       <div
         className={`
-    shrink-0
-    w-full
-    border-b
-    ${background.border}
-    px-4
-    py-2
-    flex
-    items-center
-    justify-between
-  `}
+          shrink-0
+          w-full
+          border-b
+          ${background.border}
+          px-4
+          py-2
+          flex
+          items-center
+          justify-between
+        `}
       >
-        <div className="text-sm ">
+
+        <div className="text-sm opacity-80">
           {currentTableName}
         </div>
 
-        <div className="text-sm">
+        <div className="text-sm opacity-60">
           {billItems.length} items
         </div>
+
       </div>
 
-      {/* Item List */}
-      <div className="min-h-0 flex-1 overflow-y-auto app-scrollbar">
+
+      {/* =================================================
+          ITEM LIST
+      ================================================= */}
+
+      <div
+        className="
+          min-h-0
+          flex-1
+          overflow-y-auto
+          app-scrollbar
+        "
+      >
 
         {loading ? (
+
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-gray-500">
+
+            <p className="text-sm opacity-50">
               Loading...
             </p>
+
           </div>
+
         ) : billItems.length === 0 ? (
+
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-gray-500">
+
+            <p className="text-sm opacity-50">
               No bill items
             </p>
+
           </div>
+
         ) : (
-          <div className="divide-y divide-gray-200">
 
-            {/* Item List */}
-            <div className="min-h-0 flex-1 overflow-y-auto app-scrollbar">
+          <div
+            className={`
+              divide-y
+              ${background.divide}
+            `}
+          >
 
-              {loading ? (
-                <div className="flex h-full items-center justify-center">
-                  <p className="text-sm opacity-60">
-                    Loading...
-                  </p>
-                </div>
-              ) : billItems.length === 0 ? (
-                <div className="flex h-full items-center justify-center">
-                  <p className="text-sm opacity-60">
-                    No bill items
-                  </p>
-                </div>
-              ) : (
-                <div className={`divide-y ${background.divide}`}>
+            {billItems.map((item) => (
 
-                  {billItems.map((item) => (
-                    <div
-                      key={item.name}
-                      className={`
-            px-3
-            py-3
-            border-b
-            ${background.border}
-          `}
+              <div
+                key={item.name}
+                className="
+                  px-3
+                  py-3
+                "
+              >
+
+                <div className="flex items-center justify-between">
+
+                  {/* ITEM NAME */}
+
+                  <div className="min-w-0 flex-1">
+
+                    <p
+                      className="
+                        truncate
+                        text-sm
+                        font-medium
+                        opacity-80
+                      "
                     >
+                      {item.name}
+                    </p>
 
-                      <div className="flex items-center justify-between">
+                    {item.note ? (
 
-                        {/* ITEM NAME */}
-                        <div className="min-w-0 flex-1">
+                      <p
+                        className="
+                          truncate
+                          text-xs
+                          opacity-45
+                        "
+                      >
+                        {item.note}
+                      </p>
 
-                          <p className="truncate text-sm font-medium">
-                            {item.name}
-                          </p>
+                    ) : null}
 
-                          {item.note ? (
-                            <p className="truncate text-xs opacity-60">
-                              {item.note}
-                            </p>
-                          ) : null}
-
-                        </div>
-
-                        {/* QTY + PRICE */}
-                        <div className="ml-3 text-right opacity-60">
+                  </div>
 
 
-                          {item.quantity}
+                  {/* QTY */}
 
-                        </div>
-
-                        {/* QTY + PRICE */}
-                        <div className="ml-3 text-right">
-
-
-
-                          <p className="text-xs opacity-60">
-                            ₹{(
-                              item.basePrice +
-                              (item.modifierTotal || 0)
-                            ).toFixed(2)}
-                          </p>
-
-                        </div>
-
-                        <div className="ml-3 text-right">
+                  <div
+                    className="
+                      ml-3
+                      min-w-[24px]
+                      text-right
+                      text-sm
+                      opacity-55
+                    "
+                  >
+                    {item.quantity}
+                  </div>
 
 
+                  {/* UNIT PRICE */}
 
-                          <p className="text-xs opacity-90">
-                            ₹{(
-                              (item.basePrice +
-                                (item.modifierTotal || 0)) * item.quantity
-                            ).toFixed(2)}
-                          </p>
+                  <div
+                    className="
+                      ml-3
+                      min-w-[65px]
+                      text-right
+                    "
+                  >
 
-                        </div>
+                    <p className="text-xs opacity-50">
 
-                      </div>
+                      ₹
+                      {(
+                        item.basePrice +
+                        (
+                          item.modifierTotal ||
+                          0
+                        )
+                      ).toFixed(2)}
 
-                    </div>
-                  ))}
+                    </p>
+
+                  </div>
+
+
+                  {/* TOTAL */}
+
+                  <div
+                    className="
+                      ml-3
+                      min-w-[75px]
+                      text-right
+                    "
+                  >
+
+                    <p className="text-xs opacity-80">
+
+                      ₹
+                      {(
+                        (
+                          item.basePrice +
+                          (
+                            item.modifierTotal ||
+                            0
+                          )
+                        ) *
+                        item.quantity
+                      ).toFixed(2)}
+
+                    </p>
+
+                  </div>
 
                 </div>
-              )}
 
-            </div>
+              </div>
+
+            ))}
 
           </div>
+
         )}
 
       </div>
 
-      {/* BILL BUTTON */}
-      <div className="shrink-0   px-2">
+
+      {/* =================================================
+          BILL BUTTONS
+      ================================================= */}
+
+      <div className="shrink-0 px-2 pt-2">
+
         <div className="grid grid-cols-3 gap-2">
 
-          {/* PRINT ONLY */}
+          {/* PRINT */}
+
           <button
             type="button"
             onClick={printBill}
-            className={`h-8 rounded text-sm font-semibold ${POS_THEME.BillButton}`}
+            className={`
+              h-8
+              rounded
+              text-sm
+              font-semibold
+              ${POS_THEME.BillButton}
+            `}
           >
             PRINT
           </button>
 
-          {/* SAVE BILL */}
+
+          {/* BILL */}
+
           <button
             type="button"
             onClick={handleCheckout}
@@ -726,62 +1004,177 @@ export default function Bill({
               processing ||
               billItems.length === 0
             }
-            className={`h-8 rounded text-sm font-semibold ${POS_THEME.BillButton}`}    >
-            {processing ? 'PROCESSING...' : 'BILL'}
+            className={`
+              h-8
+              rounded
+              text-sm
+              font-semibold
+              ${POS_THEME.BillButton}
+            `}
+          >
+            {processing
+              ? 'PROCESSING...'
+              : 'BILL'}
           </button>
 
 
+          {/* PREVIEW */}
 
           <button
             type="button"
             onClick={previewBillImage}
-            className={`h-8 rounded text-sm font-semibold ${POS_THEME.BillButton}`}
+            className={`
+              h-8
+              rounded
+              text-sm
+              font-semibold
+              ${POS_THEME.BillButton}
+            `}
           >
             Preview
           </button>
 
         </div>
+
       </div>
 
-      {/* Calculations */}
-      <div className="space-y-2  p-3 text-sm">
 
-        <div className="flex justify-between ">
-          <span>Subtotal</span>
-          <span>₹{calculation.itemSubtotal.toFixed(2)}</span>
+      {/* =================================================
+          CALCULATIONS
+      ================================================= */}
+
+      <div
+        className={`
+          space-y-2
+          border-t
+          ${background.border}
+          p-3
+          text-sm
+        `}
+      >
+
+        {/* SUBTOTAL */}
+
+        <div
+          className="
+            flex
+            justify-between
+            opacity-70
+          "
+        >
+          <span>
+            Subtotal
+          </span>
+
+          <span>
+            ₹
+            {calculation.itemSubtotal.toFixed(2)}
+          </span>
         </div>
 
-        <div className="flex justify-between ">
-          <span>Tax</span>
-          <span>₹{calculation.itemTax.toFixed(2)}</span>
+
+        {/* TAX */}
+
+        <div
+          className="
+            flex
+            justify-between
+            opacity-65
+          "
+        >
+          <span>
+            Tax
+          </span>
+
+          <span>
+            ₹
+            {calculation.itemTax.toFixed(2)}
+          </span>
         </div>
 
-        {/* Discount */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-600">Discount</span>
 
-            {/* Flat discount */}
+        {/* DISCOUNT */}
+
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            gap-2
+          "
+        >
+
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
+
+            <span className="opacity-60">
+              Discount
+            </span>
+
+
+            {/* FLAT DISCOUNT */}
+
             <input
               type="number"
               min="0"
               step="0.01"
               value={discount}
               onChange={(e) => {
-                const value = Number(e.target.value) || 0;
+
+                const value =
+                  Number(
+                    e.target.value
+                  ) || 0;
 
                 setBillDraft({
+
                   ...billDraft,
-                  discount: value,
-                  discountPercent: value > 0 ? 0 : billDraft.discountPercent,
+
+                  discount:
+                    value,
+
+                  discountPercent:
+                    value > 0
+                      ? 0
+                      : billDraft.discountPercent,
                 });
+
               }}
               placeholder="₹"
-              className="h-8 w-16 rounded border border-gray-300 px-2 text-right text-sm outline-none focus:border-blue-500"
+              className={`
+                h-8
+                w-16
+                rounded
+                border
+                ${background.border}
+                ${background.text}
+                px-2
+                text-right
+                text-sm
+                opacity-80
+                outline-none
+                focus:opacity-100
+              `}
             />
 
-            {/* Percent discount */}
-            <div className="flex items-center rounded border border-gray-300 focus-within:border-blue-500">
+
+            {/* PERCENT DISCOUNT */}
+
+            <div
+              className={`
+                flex
+                items-center
+                rounded
+                border
+                ${background.border}
+              `}
+            >
+
               <input
                 type="number"
                 min="0"
@@ -789,31 +1182,89 @@ export default function Bill({
                 step="0.01"
                 value={discountPercent}
                 onChange={(e) => {
-                  const value = Number(e.target.value) || 0;
+
+                  const value =
+                    Number(
+                      e.target.value
+                    ) || 0;
 
                   setBillDraft({
+
                     ...billDraft,
-                    discountPercent: value,
-                    discount: value > 0 ? 0 : billDraft.discount,
+
+                    discountPercent:
+                      value,
+
+                    discount:
+                      value > 0
+                        ? 0
+                        : billDraft.discount,
                   });
+
                 }}
                 placeholder="%"
-                className="h-8 w-14 px-2 text-right text-sm outline-none"
+                className={`
+                  h-8
+                  w-14
+                  bg-transparent
+                  px-2
+                  text-right
+                  text-sm
+                  opacity-80
+                  outline-none
+                `}
               />
 
-              <span className="pr-2 text-xs text-gray-500">%</span>
+              <span
+                className="
+                  pr-2
+                  text-xs
+                  opacity-50
+                "
+              >
+                %
+              </span>
+
             </div>
+
           </div>
 
-          <span className="font-medium text-gray-900">
-            ₹{calculation.discount.toFixed(2)}
+
+          <span
+            className="
+              font-medium
+              opacity-75
+            "
+          >
+            ₹
+            {calculation.discount.toFixed(2)}
           </span>
+
         </div>
 
-        {/* Delivery */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-600">Delivery</span>
+
+        {/* DELIVERY */}
+
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            gap-2
+          "
+        >
+
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
+
+            <span className="opacity-60">
+              Delivery
+            </span>
 
             <input
               type="number"
@@ -822,78 +1273,119 @@ export default function Bill({
               value={deliveryFee}
               onChange={(e) =>
                 setBillDraft({
+
                   ...billDraft,
-                  deliveryFee: Number(e.target.value) || 0,
+
+                  deliveryFee:
+                    Number(
+                      e.target.value
+                    ) || 0,
                 })
               }
               placeholder="₹"
-              className="h-8 w-20 rounded border border-gray-300 px-2 text-right text-sm outline-none focus:border-blue-500"
+              className={`
+                h-8
+                w-20
+                rounded
+                border
+                ${background.border}
+                ${background.text}
+                px-2
+                text-right
+                text-sm
+                opacity-80
+                outline-none
+                focus:opacity-100
+              `}
             />
+
           </div>
 
-          <span className="font-medium text-gray-900">
-            ₹{calculation.deliveryFee.toFixed(2)}
+          <span
+            className="
+              font-medium
+              opacity-75
+            "
+          >
+            ₹
+            {calculation.deliveryFee.toFixed(2)}
           </span>
+
         </div>
 
-        <div className="border-t pt-2 flex justify-between text-base font-semibold text-gray-900">
-          <span>Grand Total</span>
-          <span>₹{calculation.grandTotal.toFixed(2)}</span>
+
+        {/* GRAND TOTAL */}
+
+        <div
+          className={`
+            flex
+            justify-between
+            border-t
+            ${background.border}
+            pt-2
+            text-base
+            font-semibold
+          `}
+        >
+
+          <span className="opacity-85">
+            Grand Total
+          </span>
+
+          <span className="opacity-90">
+            ₹
+            {calculation.grandTotal.toFixed(2)}
+          </span>
+
         </div>
 
-        <div className="flex justify-between text-sm text-red-600">
-          <span>Due</span>
-          <span>₹{dueAmount.toFixed(2)}</span>
-        </div>
+
+        {/* DUE */}
+
+        {/* <div
+          className="
+            flex
+            justify-between
+            text-sm
+            text-red-500
+            opacity-80
+          "
+        >
+
+          <span>
+            Due
+          </span>
+
+          <span>
+            ₹
+            {dueAmount.toFixed(2)}
+          </span>
+
+        </div> */}
 
       </div>
 
-      {/* Inputs */}
-      {/* <div className="space-y-2 border-t border-gray-100 p-3">
 
-    <input
-      value={customerPhone}
-      onChange={(e) =>
-        setBillDraft({
-          ...billDraft,
-          customerPhone: e.target.value,
-        })
-      }
-      placeholder="Phone"
-      className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
-    />
-
-    <input
-      type="number"
-      value={paidAmount}
-      onChange={(e) =>
-        setBillDraft({
-          ...billDraft,
-          paidAmount: Number(e.target.value) || 0,
-        })
-      }
-      placeholder="Paid amount"
-      className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
-    />
-
-    <input
-  value={customerName}
-  onChange={(e) =>
-    setBillDraft({
-      ...billDraft,
-      customerName: e.target.value,
-    })
-  }
-  placeholder="Customer name"
-  className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
-/>
-
-  </div> */}
+      {/* =================================================
+          ERROR
+      ================================================= */}
 
       {error && (
-        <div className="border-t border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+
+        <div
+          className="
+            border-t
+            border-red-500/20
+            bg-red-500/5
+            px-3
+            py-2
+            text-sm
+            text-red-500
+          "
+        >
           {error}
         </div>
+
       )}
 
     </div>

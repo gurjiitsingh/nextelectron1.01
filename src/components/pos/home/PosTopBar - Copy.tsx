@@ -142,7 +142,7 @@ borderColor: theme.primaryLight,
       {/* MAIN NAVIGATION */}
       {/* ================================================= */}
 
-      {/* <div
+      <div
         className="
           flex
           items-center
@@ -155,7 +155,7 @@ borderColor: theme.primaryLight,
           backgroundColor: theme.primaryLight,
           borderColor: theme.primarySelected,
         }}
-      > */}
+      >
 
         {/* ================================================= */}
         {/* POS */}
@@ -163,7 +163,7 @@ borderColor: theme.primaryLight,
 
         <Link
           href="/"
-           className={sidebarButtonClass}
+          className={navButtonClass(isPOS)}
           style={{
             backgroundColor: isPOS
               ? theme.primary
@@ -211,7 +211,7 @@ borderColor: theme.primaryLight,
 
         <Link
           href="/kot"
-          className={sidebarButtonClass}
+          className={navButtonClass(isKOT)}
           style={{
             backgroundColor: isKOT
               ? theme.primary
@@ -259,7 +259,7 @@ borderColor: theme.primaryLight,
 
         <Link
           href="/orders"
-           className={sidebarButtonClass}
+          className={navButtonClass(isOrders)}
           style={{
             backgroundColor: isOrders
               ? theme.primary
@@ -307,7 +307,7 @@ borderColor: theme.primaryLight,
 
         <Link
           href="/tables"
-           className={sidebarButtonClass}
+          className={navButtonClass(isTables)}
           style={{
             backgroundColor: isTables
               ? theme.primary
@@ -355,7 +355,7 @@ borderColor: theme.primaryLight,
 
         <Link
           href="/settings/printer"
-           className={sidebarButtonClass}
+          className={navButtonClass(isPrinter)}
           style={{
             backgroundColor: isPrinter
               ? theme.primary
@@ -403,7 +403,7 @@ borderColor: theme.primaryLight,
 
         <Link
           href="/settings"
-           className={sidebarButtonClass}
+          className={navButtonClass(isSettings)}
           style={{
             backgroundColor: isSettings
               ? theme.primary
@@ -446,7 +446,7 @@ borderColor: theme.primaryLight,
         </Link>
 
       </div>
-    {/* </div> */}
+    </div>
 
     {/* ================================================= */}
     {/* RIGHT SIDEBAR SWITCH */}

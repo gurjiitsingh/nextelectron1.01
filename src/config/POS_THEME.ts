@@ -1,3 +1,4 @@
+ 
 // POS_THEME.ts
 
 
@@ -23,6 +24,12 @@ export type PosBackgroundConfig = {
 
   // Default text color
   text: string;
+
+  // Muted / secondary text color
+  mutedText: string;
+
+  // Text color for light theme surfaces
+  surfaceText: string;
 
   // Normal UI border
   border: string;
@@ -58,16 +65,16 @@ export const POS_BACKGROUNDS: Record<
 
     text: 'text-slate-800',
 
-    // Normal UI border
+    mutedText: 'text-slate-500',
+
+    surfaceText: 'text-slate-800',
+
     border: 'border-slate-200',
 
-    // Softer item/card border
     itemBorder: 'border-slate-200/60',
 
-    // Very subtle row separator
     divide: 'divide-slate-100',
 
-    // CSS line color
     line: '#E2E8F0',
   },
 
@@ -83,16 +90,16 @@ export const POS_BACKGROUNDS: Record<
 
     text: 'text-slate-800',
 
-    // Normal UI border
+    mutedText: 'text-slate-500',
+
+    surfaceText: 'text-slate-800',
+
     border: 'border-slate-300',
 
-    // Softer item/card border
     itemBorder: 'border-slate-300/60',
 
-    // Subtle row separator
     divide: 'divide-slate-200',
 
-    // CSS line color
     line: '#CBD5E1',
   },
 
@@ -108,16 +115,17 @@ export const POS_BACKGROUNDS: Record<
 
     text: 'text-white',
 
-    // Normal UI border
+    mutedText: 'text-slate-200',
+
+    // Used on light surfaces inside dark mode
+    surfaceText: 'text-slate-800',
+
     border: 'border-slate-500/50',
 
-    // Softer item/card border
     itemBorder: 'border-slate-500/30',
 
-    // Subtle row separator
     divide: 'divide-slate-500/30',
 
-    // CSS line color
     line: 'rgba(100, 116, 139, 0.30)',
   },
 };
@@ -138,11 +146,26 @@ export type PosThemeName =
 // =====================================================
 
 export type PosThemeConfig = {
+  // Selected / active color
   primary: string;
+
+  // Hover color
   primaryHover: string;
+
+  // Very light theme surface
   primaryLight: string;
+
+  // Hover / selected-light surface
   primarySelected: string;
+
+  // Primary readable text
   primaryText: string;
+
+  // =================================================
+  // NEW
+  // Inactive button background
+  // =================================================
+  inactive: string;
 };
 
 
@@ -161,10 +184,17 @@ export const POS_THEMES: Record<
 
   blue: {
     primary: '#4275EC',
+
     primaryHover: '#3569DF',
+
     primaryLight: '#EEF3FF',
+
     primarySelected: '#DCE6FF',
+
     primaryText: '#315FCF',
+
+    // Inactive button
+    inactive: '#6f86bd',
   },
 
 
@@ -174,10 +204,17 @@ export const POS_THEMES: Record<
 
   orange: {
     primary: '#E98A3A',
+
     primaryHover: '#D97A2B',
+
     primaryLight: '#FFF3E8',
+
     primarySelected: '#FFE5D0',
+
     primaryText: '#C96F25',
+
+    // Inactive button
+    inactive: '#7b7570',
   },
 
 
@@ -187,9 +224,17 @@ export const POS_THEMES: Record<
 
   teal: {
     primary: '#3BA7A0',
+
     primaryHover: '#31938D',
+
     primaryLight: '#E9F7F6',
+
     primarySelected: '#D4EFED',
+
     primaryText: '#287F7A',
+
+    // Inactive button
+    inactive: '#68827f',
   },
 };
+ 
