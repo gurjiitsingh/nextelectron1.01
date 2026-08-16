@@ -48,8 +48,7 @@ return ( <div className="p-4"> <div className="mb-4 flex items-center justify-be
           <tr>
             <th className="border-b px-3 py-2">Bill No</th>
             <th className="border-b px-3 py-2">Table</th>
-            <th className="border-b px-3 py-2">Customer</th>
-            <th className="border-b px-3 py-2">Type</th>
+             <th className="border-b px-3 py-2">Type</th>
             <th className="border-b px-3 py-2 text-right">Total</th>
             <th className="border-b px-3 py-2">Payment</th>
             <th className="border-b px-3 py-2">Status</th>
@@ -67,12 +66,10 @@ return ( <div className="p-4"> <div className="mb-4 flex items-center justify-be
               </td>
 
               <td className="px-3 py-2">
-                {order.tableNo || '-'}
+                {order.tableName || '-'}
               </td>
 
-              <td className="px-3 py-2">
-                {order.customerName || 'Customer'}
-              </td>
+             
 
               <td className="px-3 py-2">
                 {order.orderType}

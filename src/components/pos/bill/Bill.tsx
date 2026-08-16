@@ -154,8 +154,8 @@ export default function Bill({
           taxType:
             (i.taxType ||
               'exclusive') as
-              | 'inclusive'
-              | 'exclusive',
+            | 'inclusive'
+            | 'exclusive',
         })),
 
         taxMode:
@@ -223,9 +223,9 @@ export default function Bill({
     Math.max(
       0,
       calculation.grandTotal -
-        Number(
-          paidAmount || 0
-        )
+      Number(
+        paidAmount || 0
+      )
     );
 
   const paymentStatus =
@@ -239,170 +239,181 @@ export default function Bill({
   // FINALIZE BILL
   // =====================================================
 
-  async function handleCheckout() {
+async function handleCheckout(
+  selectedPaymentMode: 'CASH' | 'CARD' | 'UPI'
+) {
+  if (processing) return;
 
-    if (processing) return;
+  if (billItems.length === 0) {
+    setError('No items in bill');
+    return;
+  }
 
-    try {
+  try {
+    setProcessing(true);
+    setError(null);
 
-      setProcessing(true);
-      setError(null);
+    const totalAmount = Number(
+      calculation.grandTotal
+    ) || 0;
 
-      console.log(
-        'ANDROID CALCULATION',
-        calculation.raw
-      );
+    console.log(
+      'CHECKOUT PAYMENT MODE:',
+      selectedPaymentMode
+    );
 
-      console.log(
-        'DISPLAY TOTALS',
-        {
-          subtotal:
-            calculation.itemSubtotal,
+    console.log(
+      'CHECKOUT AMOUNT:',
+      totalAmount
+    );
+console.log("tableName--------------", currentTableName)
+    const result =
+      await window.posApi.createBill({
 
-          tax:
-            calculation.itemTax,
+        tableNo:
+          currentTableId,
+           tableName:
+          currentTableName,
 
-          discount:
-            calculation.discount,
-
-          delivery:
-            calculation.deliveryFee,
-
-          grandTotal:
-            calculation.grandTotal,
-        }
-      );
-
-      const result =
-        await window.posApi.createBill({
-
-          tableNo:
-            currentTableId,
-
-          orderType:
-            'DINE_IN',
-
-          customerName:
-            customerName.trim() ||
-            'Customer',
-
-          customerPhone:
-            customerPhone.trim(),
-
-          discountTotal:
-            calculation.discount,
-
-          deliveryFee:
-            calculation.deliveryFee,
-
-          deliveryTax:
-            calculation.deliveryTax,
-
-          paymentMode,
-
-          paymentStatus,
-
-          paidAmount:
-            Number(
-              paidAmount
-            ) || 0,
-
-          payments:
-            paidAmount > 0
-              ? [
-                  {
-                    mode:
-                      paymentMode,
-
-                    amount:
-                      Number(
-                        paidAmount
-                      ),
-                  },
-                ]
-              : [],
-
-          deviceId:
-            'POS',
-
-          deviceName:
-            'Electron POS',
-
-          appVersion:
-            '1.0',
-
-          businessDate:
-            new Date()
-              .toISOString()
-              .slice(
-                0,
-                10
-              ),
-
-          currency:
-            '₹',
-        });
-
-      if (!result.success) {
-
-        throw new Error(
-          result.error ||
-          'Failed to create bill'
-        );
-      }
-
-      setBillDraft({
+        orderType:
+          'DINE_IN',
 
         customerName:
+          customerName.trim() ||
           'Customer',
 
         customerPhone:
-          '',
+          customerPhone.trim(),
 
-        discount:
-          0,
-
-        discountPercent:
-          0,
+        discountTotal:
+          calculation.discount,
 
         deliveryFee:
-          0,
+          calculation.deliveryFee,
+
+        deliveryTax:
+          calculation.deliveryTax,
+
+        // =============================================
+        // PAYMENT
+        // =============================================
 
         paymentMode:
-          'CASH',
+          selectedPaymentMode,
+
+        paymentStatus:
+          'PAID',
 
         paidAmount:
-          0,
+          totalAmount,
+
+        payments: [
+          {
+            mode:
+              selectedPaymentMode,
+
+            amount:
+              totalAmount,
+          },
+        ],
+
+        // =============================================
+        // DEVICE
+        // =============================================
+
+        deviceId:
+          'POS',
+
+        deviceName:
+          'Electron POS',
+
+        appVersion:
+          '1.0',
+
+        businessDate:
+          new Date()
+            .toISOString()
+            .slice(0, 10),
+
+        currency:
+          '₹',
       });
 
-      console.log(
-        'BILL CREATED',
-        result
+    if (!result.success) {
+      throw new Error(
+        result.error ||
+        'Failed to create bill'
       );
-
-      setBillRows([]);
-
-      await loadBillItems();
-
-      onSuccess?.();
-
-    } catch (e: any) {
-
-      console.error(
-        'BILL FAILED',
-        e
-      );
-
-      setError(
-        e?.message ||
-        'Payment failed'
-      );
-
-    } finally {
-
-      setProcessing(false);
     }
+
+    // ===============================================
+    // RESET BILL DRAFT
+    // ===============================================
+
+    setBillDraft({
+
+      customerName:
+        'Customer',
+
+      customerPhone:
+        '',
+
+      discount:
+        0,
+
+      discountPercent:
+        0,
+
+      deliveryFee:
+        0,
+
+      paymentMode:
+        'CASH',
+
+      paidAmount:
+        0,
+    });
+
+    console.log(
+      'BILL CREATED SUCCESSFULLY',
+      {
+        paymentMode:
+          selectedPaymentMode,
+
+        paidAmount:
+          totalAmount,
+
+        result,
+      }
+    );
+
+    // ===============================================
+    // CLEAR BILL
+    // ===============================================
+
+    setBillRows([]);
+
+    await loadBillItems();
+
+    onSuccess?.();
+
+  } catch (e: any) {
+
+    console.error(
+      'BILL FAILED',
+      e
+    );
+
+    setError(
+      e?.message ||
+      'Payment failed'
+    );
+
+  } finally {
+
+    setProcessing(false);
   }
+}
 
   // =====================================================
   // PREVIEW BILL IMAGE
@@ -974,80 +985,142 @@ export default function Bill({
           BILL BUTTONS
       ================================================= */}
 
-      <div className="shrink-0 px-2 pt-2">
+     <div className="shrink-0 px-2 pt-2">
 
-        <div className="grid grid-cols-3 gap-2">
+  <div className="flex items-center gap-2">
 
-          {/* PRINT */}
+    {/* =============================================
+        PRINT
+    ============================================= */}
 
-          <button
-            type="button"
-            onClick={printBill}
-            className={`
-              h-8
-              rounded
-              text-sm
-              font-semibold
-              ${POS_THEME.BillButton}
-            `}
-          >
-            PRINT
-          </button>
-
-
-          {/* BILL */}
-
-          <button
-            type="button"
-            onClick={handleCheckout}
-            disabled={
-              processing ||
-              billItems.length === 0
-            }
-            className={`
-              h-8
-              rounded
-              text-sm
-              font-semibold
-              ${POS_THEME.BillButton}
-            `}
-          >
-            {processing
-              ? 'PROCESSING...'
-              : 'BILL'}
-          </button>
+    <button
+      type="button"
+      onClick={printBill}
+      className={`
+        h-8
+        w-fit
+        px-3
+        rounded
+        text-xs
+        font-semibold
+        ${POS_THEME.BillButton}
+      `}
+    >
+      PRINT
+    </button>
 
 
-          {/* PREVIEW */}
+    {/* =============================================
+        CASH
+    ============================================= */}
 
-          <button
-            type="button"
-            onClick={previewBillImage}
-            className={`
-              h-8
-              rounded
-              text-sm
-              font-semibold
-              ${POS_THEME.BillButton}
-            `}
-          >
-            Preview
-          </button>
+    <button
+      type="button"
+      onClick={() =>
+        handleCheckout('CASH')
+      }
+      disabled={
+        processing ||
+        billItems.length === 0
+      }
+      className="
+        h-8
+        w-fit
+        px-3
+        rounded-md
+        text-xs
+        font-semibold
+        text-white
+        bg-green-600
+        hover:bg-green-700
+        transition-colors
+        disabled:opacity-50
+        disabled:cursor-not-allowed
+      "
+    >
+      {processing
+        ? 'PROCESSING...'
+        : 'CASH'}
+    </button>
 
-        </div>
 
-      </div>
+    {/* =============================================
+        CARD
+    ============================================= */}
+
+    <button
+      type="button"
+      onClick={() =>
+        handleCheckout('CARD')
+      }
+      disabled={
+        processing ||
+        billItems.length === 0
+      }
+      className="
+        h-8
+        w-fit
+        px-3
+        rounded-md
+        text-xs
+        font-semibold
+        text-white
+        bg-blue-600
+        hover:bg-blue-700
+        transition-colors
+        disabled:opacity-50
+        disabled:cursor-not-allowed
+      "
+    >
+      CARD
+    </button>
+
+
+    {/* =============================================
+        UPI
+    ============================================= */}
+
+    <button
+      type="button"
+      onClick={() =>
+        handleCheckout('UPI')
+      }
+      disabled={
+        processing ||
+        billItems.length === 0
+      }
+      className="
+        h-8
+        w-fit
+        px-3
+        rounded-md
+        text-xs
+        font-semibold
+        text-white
+        bg-purple-600
+        hover:bg-purple-700
+        transition-colors
+        disabled:opacity-50
+        disabled:cursor-not-allowed
+      "
+    >
+      UPI
+    </button>
+
+  </div>
+
+</div>
 
 
       {/* =================================================
-          CALCULATIONS
+          CALCULATIONS   border-t
+          ${background.border}
       ================================================= */}
 
       <div
         className={`
           space-y-2
-          border-t
-          ${background.border}
+        
           p-3
           text-sm
         `}

@@ -1,5 +1,4 @@
- 
-// POS_THEME.ts
+ // POS_THEME.ts
 
 
 // =====================================================
@@ -9,7 +8,10 @@
 export type PosBackground =
   | 'white'
   | 'softSlate'
-  | 'darkSlate';
+  | 'darkSlate'
+  | 'black'
+  | 'dark'
+  | 'blue';
 
 
 // =====================================================
@@ -19,16 +21,22 @@ export type PosBackground =
 export type PosBackgroundConfig = {
   name: string;
 
-  // Background class
+  // Tailwind background class
   className: string;
 
-  // Default text color
+  // Tailwind main text class
   text: string;
 
-  // Muted / secondary text color
+  // Actual CSS main text color
+  textColor: string;
+
+  // Tailwind muted text class
   mutedText: string;
 
-  // Text color for light theme surfaces
+  // Actual CSS muted text color
+  mutedTextColor: string;
+
+  // Text color used on light surfaces
   surfaceText: string;
 
   // Normal UI border
@@ -40,7 +48,7 @@ export type PosBackgroundConfig = {
   // Row separator
   divide: string;
 
-  // CSS color value
+  // Actual CSS line/separator color
   line: string;
 };
 
@@ -63,18 +71,27 @@ export const POS_BACKGROUNDS: Record<
 
     className: 'bg-white',
 
+    // Main text
     text: 'text-slate-800',
+    textColor: '#1E293B',
 
+    // Secondary text
     mutedText: 'text-slate-500',
+    mutedTextColor: '#64748B',
 
+    // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
+    // Normal UI border
     border: 'border-slate-200',
 
+    // Softer item/card border
     itemBorder: 'border-slate-200/60',
 
+    // Row separator
     divide: 'divide-slate-100',
 
+    // CSS line color
     line: '#E2E8F0',
   },
 
@@ -86,20 +103,29 @@ export const POS_BACKGROUNDS: Record<
   softSlate: {
     name: 'Soft Slate',
 
-    className: 'bg-slate-100',
+    className: 'bg-slate-200',
 
+    // Main text
     text: 'text-slate-800',
+    textColor: '#1E293B',
 
+    // Secondary text
     mutedText: 'text-slate-500',
+    mutedTextColor: '#64748B',
 
+    // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
+    // Normal UI border
     border: 'border-slate-300',
 
+    // Softer item/card border
     itemBorder: 'border-slate-300/60',
 
+    // Row separator
     divide: 'divide-slate-200',
 
+    // CSS line color
     line: '#CBD5E1',
   },
 
@@ -113,20 +139,131 @@ export const POS_BACKGROUNDS: Record<
 
     className: 'bg-slate-700',
 
+    // Main text
     text: 'text-white',
+    textColor: '#FFFFFF',
 
+    // Secondary text
     mutedText: 'text-slate-200',
+    mutedTextColor: '#E2E8F0',
 
-    // Used on light surfaces inside dark mode
+    // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
+    // Normal UI border
     border: 'border-slate-500/50',
 
+    // Softer item/card border
     itemBorder: 'border-slate-500/30',
 
+    // Row separator
     divide: 'divide-slate-500/30',
 
-    line: 'rgba(100, 116, 139, 0.30)',
+    // CSS line color
+    line: '#64748B',
+  },
+
+
+  // ===================================================
+  // BLACK
+  // ===================================================
+
+  black: {
+    name: 'Black',
+
+    className: 'bg-black',
+
+    // Main text
+    text: 'text-white',
+    textColor: '#FFFFFF',
+
+    // Secondary text
+    mutedText: 'text-slate-300',
+    mutedTextColor: '#CBD5E1',
+
+    // Text used on light surfaces
+    surfaceText: 'text-slate-800',
+
+    // Normal UI border
+    border: 'border-slate-700',
+
+    // Softer item/card border
+    itemBorder: 'border-slate-800',
+
+    // Row separator
+    divide: 'divide-slate-800',
+
+    // CSS line color
+    line: '#334155',
+  },
+
+
+  // ===================================================
+  // DARK
+  // ===================================================
+
+  dark: {
+    name: 'Dark',
+
+    className: 'bg-slate-800',
+
+    // Main text
+    text: 'text-white',
+    textColor: '#FFFFFF',
+
+    // Secondary text
+    mutedText: 'text-slate-300',
+    mutedTextColor: '#CBD5E1',
+
+    // Text used on light surfaces
+    surfaceText: 'text-slate-800',
+
+    // Normal UI border
+    border: 'border-slate-600',
+
+    // Softer item/card border
+    itemBorder: 'border-slate-700',
+
+    // Row separator
+    divide: 'divide-slate-700',
+
+    // CSS line color
+    line: '#475569',
+  },
+
+
+  // ===================================================
+  // BLUE
+  // ===================================================
+
+  blue: {
+    name: 'Blue',
+
+    // Main background
+    className: 'bg-[#406093]',
+
+    // Main text
+    text: 'text-white',
+    textColor: '#FFFFFF',
+
+    // Clearly visible secondary text
+    mutedText: 'text-[#C7D2E3]',
+    mutedTextColor: '#D6E2F2',
+
+    // Text used on light surfaces
+    surfaceText: 'text-slate-800',
+
+    // Normal UI border
+    border: 'border-[#6F8FBE]',
+
+    // Softer item/card border
+    itemBorder: 'border-[#5878AA]',
+
+    // Row separator
+    divide: 'divide-[#6F8FBE]',
+
+    // Clearly visible CSS line
+    line: '#9DB9DE',
   },
 };
 
@@ -161,10 +298,7 @@ export type PosThemeConfig = {
   // Primary readable text
   primaryText: string;
 
-  // =================================================
-  // NEW
   // Inactive button background
-  // =================================================
   inactive: string;
 };
 
@@ -193,7 +327,6 @@ export const POS_THEMES: Record<
 
     primaryText: '#315FCF',
 
-    // Inactive button
     inactive: '#6f86bd',
   },
 
@@ -213,8 +346,7 @@ export const POS_THEMES: Record<
 
     primaryText: '#C96F25',
 
-    // Inactive button
-    inactive: '#7b7570',
+    inactive: '#4c4c4cb8',
   },
 
 
@@ -233,8 +365,6 @@ export const POS_THEMES: Record<
 
     primaryText: '#287F7A',
 
-    // Inactive button
     inactive: '#68827f',
   },
 };
- 

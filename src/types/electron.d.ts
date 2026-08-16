@@ -94,7 +94,7 @@ declare global {
       createBill: (input: {
         tableNo: string;
         orderType?: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
-
+ 
         customerName?: string;
         customerPhone?: string;
         customerId?: string | null;

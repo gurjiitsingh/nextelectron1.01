@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 import { usePosUi } from "@/PosUiStore/PosUiContext";
 import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
@@ -40,7 +40,7 @@ const {
 rightSidebarView,
 setRightSidebarView,
 } = usePosUi();
-
+ const router = useRouter();
 // =====================================================
 // NAV BUTTON CLASS
 // =====================================================
@@ -211,53 +211,7 @@ borderColor: theme.primaryLight,
           POS
         </Link>
 
-        {/* ================================================= */}
-        {/* KOT */}
-        {/* ================================================= */}
-
-        <Link
-          href="/kot"
-          className={sidebarButtonClass}
-          style={{
-            backgroundColor: isKOT
-              ? theme.primary
-              : theme.inactive,
-
-            borderColor: isKOT
-              ? theme.primary
-              : theme.primarySelected,
-
-            color: isKOT
-              ? "#FFFFFF"
-              : "#EEEEEE",
-          }}
-          onMouseEnter={(e) => {
-            if (!isKOT) {
-              e.currentTarget.style.backgroundColor =
-                theme.primaryHover;
-
-              e.currentTarget.style.borderColor =
-                theme.primary;
-
-              e.currentTarget.style.color =
-                "#FFFFFF";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isKOT) {
-              e.currentTarget.style.backgroundColor =
-                theme.inactive;
-
-              e.currentTarget.style.borderColor =
-                theme.primarySelected;
-
-              e.currentTarget.style.color =
-                "#EEEEEE";
-            }
-          }}
-        >
-          KOT
-        </Link>
+     
 
         {/* ================================================= */}
         {/* ORDERS */}
@@ -355,107 +309,15 @@ borderColor: theme.primaryLight,
           TABLES
         </Link>
 
-        {/* ================================================= */}
-        {/* PRINTER */}
-        {/* ================================================= */}
+    
 
-        <Link
-          href="/settings/printer"
-           className={sidebarButtonClass}
-          style={{
-            backgroundColor: isPrinter
-              ? theme.primary
-              : theme.inactive,
-
-            borderColor: isPrinter
-              ? theme.primary
-              : theme.primarySelected,
-
-            color: isPrinter
-              ? "#FFFFFF"
-              : "#EEEEEE",
-          }}
-          onMouseEnter={(e) => {
-            if (!isPrinter) {
-              e.currentTarget.style.backgroundColor =
-                theme.primaryHover;
-
-              e.currentTarget.style.borderColor =
-                theme.primary;
-
-              e.currentTarget.style.color =
-                "#FFFFFF";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isPrinter) {
-              e.currentTarget.style.backgroundColor =
-                theme.inactive;
-
-              e.currentTarget.style.borderColor =
-                theme.primarySelected;
-
-              e.currentTarget.style.color =
-                "#EEEEEE";
-            }
-          }}
-        >
-          Printer
-        </Link>
-
-        {/* ================================================= */}
-        {/* SETTINGS */}
-        {/* ================================================= */}
-
-        <Link
-          href="/settings"
-           className={sidebarButtonClass}
-          style={{
-            backgroundColor: isSettings
-              ? theme.primary
-              : theme.inactive,
-
-            borderColor: isSettings
-              ? theme.primary
-              : theme.primarySelected,
-
-            color: isSettings
-              ? "#FFFFFF"
-              : "#EEEEEE",
-          }}
-          onMouseEnter={(e) => {
-            if (!isSettings) {
-              e.currentTarget.style.backgroundColor =
-                theme.primaryHover;
-
-              e.currentTarget.style.borderColor =
-                theme.primary;
-
-              e.currentTarget.style.color =
-                "#FFFFFF";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isSettings) {
-              e.currentTarget.style.backgroundColor =
-                theme.inactive;
-
-              e.currentTarget.style.borderColor =
-                theme.primarySelected;
-
-              e.currentTarget.style.color =
-                "#EEEEEE";
-            }
-          }}
-        >
-          Settings
-        </Link>
+     
 
       </div>
     {/* </div> */}
 
     {/* ================================================= */}
-    {/* RIGHT SIDEBAR SWITCH */}
+    {/* RIGHT SIDE SWITCH */}
     {/* ================================================= */}
 
     <div className="shrink-0 p-2">
@@ -467,8 +329,10 @@ borderColor: theme.primaryLight,
 
         <button
           type="button"
-          onClick={() =>
+          onClick={() =>{
             setRightSidebarView("cart")
+              router.push('/');
+          }
           }
           className={sidebarButtonClass}
           style={{
@@ -521,8 +385,9 @@ borderColor: theme.primaryLight,
 
         <button
           type="button"
-          onClick={() =>
+          onClick={() =>{
             setRightSidebarView("bill")
+              router.push('/');}
           }
           className={sidebarButtonClass}
           style={{
@@ -575,8 +440,10 @@ borderColor: theme.primaryLight,
 
         <button
           type="button"
-          onClick={() =>
+          onClick={() =>{
             setRightSidebarView("kitchen")
+              router.push('/');
+          }
           }
           className={sidebarButtonClass}
           style={{

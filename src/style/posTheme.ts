@@ -66,7 +66,7 @@ export const POS_THEME = {
   // =====================================================
 
   BillButton:
-    'bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800 disabled:cursor-not-allowed disabled:bg-orange-300',
+    'bg-orange-700 text-white hover:bg-orange-600 active:bg-orange-800 disabled:cursor-not-allowed disabled:bg-orange-300',
 
   // =====================================================
   // TOPBAR

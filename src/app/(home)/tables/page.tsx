@@ -2,7 +2,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-
+import {
+  ShoppingBasket,
+  Receipt,
+  IndianRupee,
+} from 'lucide-react';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
@@ -103,11 +107,22 @@ export default function TablesPage() {
   // =====================================================
 
   function getTableStatus(table: any) {
-    const status = String(
+    return String(
       table.status || 'FREE'
     ).toUpperCase();
+  }
 
-    return status;
+  // =====================================================
+  // CHECK DARK BACKGROUND
+  // =====================================================
+
+  function isDarkBackground() {
+    return (
+      background.className === 'bg-black' ||
+      background.className === 'bg-slate-800' ||
+      background.className === 'bg-slate-700' ||
+      background.className === 'bg-[#406093]'
+    );
   }
 
   // =====================================================
@@ -120,17 +135,22 @@ export default function TablesPage() {
   ) {
     const status = getTableStatus(table);
 
-    // Selected table always gets the POS theme
+    // ===================================================
+    // SELECTED
+    // ===================================================
+
     if (isActive) {
       return {
         background: theme.primarySelected,
         color: theme.primaryText,
         border: theme.primary,
+        secondaryText: theme.primaryText,
+        separator: theme.primary,
       };
     }
 
     // ===================================================
-    // RUNNING
+    // RUNNING / OCCUPIED
     // ===================================================
 
     if (
@@ -141,6 +161,8 @@ export default function TablesPage() {
         background: theme.primaryLight,
         color: theme.primaryText,
         border: theme.primary,
+        secondaryText: theme.primaryText,
+        separator: theme.primary,
       };
     }
 
@@ -153,6 +175,8 @@ export default function TablesPage() {
         background: '#FFF3E8',
         color: '#C96F25',
         border: '#F4C7A1',
+        secondaryText: '#C96F25',
+        separator: '#F4C7A1',
       };
     }
 
@@ -160,20 +184,88 @@ export default function TablesPage() {
     // FREE
     // ===================================================
 
+    if (background.className === 'bg-white') {
+      return {
+        background: '#FFFFFF',
+        color: '#334155',
+        border: background.line,
+        secondaryText: '#64748B',
+        separator: background.line,
+      };
+    }
+
+    if (background.className === 'bg-slate-200') {
+      return {
+        background: '#E2E8F0',
+        color: '#1E293B',
+        border: background.line,
+        secondaryText: '#475569',
+        separator: background.line,
+      };
+    }
+
+    if (background.className === 'bg-slate-700') {
+      return {
+        background: '#475569',
+        color: '#FFFFFF',
+        border: '#94A3B8',
+        secondaryText: '#CBD5E1',
+        separator: '#94A3B8',
+      };
+    }
+
+    // ===================================================
+    // BLACK
+    // ===================================================
+
+    if (background.className === 'bg-black') {
+      return {
+        background: '#111111',
+        color: '#FFFFFF',
+        border: '#475569',
+        secondaryText: '#CBD5E1',
+        separator: '#475569',
+      };
+    }
+
+    // ===================================================
+    // DARK
+    // ===================================================
+
+    if (background.className === 'bg-slate-800') {
+      return {
+        background: '#1E293B',
+        color: '#FFFFFF',
+        border: '#64748B',
+        secondaryText: '#CBD5E1',
+        separator: '#64748B',
+      };
+    }
+
+    // ===================================================
+    // BLUE
+    // ===================================================
+
+    if (background.className === 'bg-[#406093]') {
+      return {
+        background: '#334F7A',
+        color: '#FFFFFF',
+        border: '#8FAED6',
+        secondaryText: '#C7D2E3',
+        separator: '#8FAED6',
+      };
+    }
+
+    // ===================================================
+    // FALLBACK
+    // ===================================================
+
     return {
-      background:
-        background.className === 'bg-white'
-          ? '#FFFFFF'
-          : background.className === 'bg-slate-100'
-            ? '#F1F5F9'
-            : '#475569',
-
-      color:
-        background.className === 'bg-slate-700'
-          ? '#FFFFFF'
-          : '#475569',
-
+      background: '#FFFFFF',
+      color: '#334155',
       border: background.line,
+      secondaryText: '#64748B',
+      separator: background.line,
     };
   }
 
@@ -221,17 +313,19 @@ export default function TablesPage() {
                       justify-between
                       rounded-xl
                       border
-                      ${background.border}
                       px-3
                       py-2
                       backdrop-blur
                     `}
+                    style={{
+                      borderColor: background.line,
+                    }}
                   >
                     <h2 className="text-sm font-semibold opacity-80">
                       {area}
                     </h2>
 
-                    <span className="text-xs opacity-50">
+                    <span className="text-xs opacity-60">
                       {areaTables.length} tables
                     </span>
                   </div>
@@ -310,68 +404,105 @@ export default function TablesPage() {
                               STATUS
                           ================================================= */}
 
-                          <div className="mt-1">
+                          {/* <div className="mt-1">
                             <span
                               className="
                                 text-[10px]
                                 font-semibold
                                 uppercase
                                 tracking-wide
-                                opacity-60
                               "
+                              style={{
+                                color:
+                                  statusStyle.secondaryText,
+                                opacity: 0.75,
+                              }}
                             >
                               {status}
                             </span>
-                          </div>
+                          </div> */}
 
                           {/* =================================================
                               TABLE INFORMATION
                           ================================================= */}
 
-                          <div
-                            className={`
-                              mt-3
-                              space-y-1
-                              border-t
-                              pt-2
-                              ${background.border}
-                            `}
-                          >
+                <div
+  className="
+    mt-3
+    space-y-1
+    border-t
+    pt-2
+  "
+  style={{
+    borderColor: statusStyle.separator,
+  }}
+>
+  {/* ITEMS */}
 
-                            <div className="flex justify-between text-xs">
-                              <span className="opacity-50">
-                                Items
-                              </span>
+  <div className="flex items-center justify-between text-xs">
+    <ShoppingBasket
+      size={14}
+      strokeWidth={2}
+      style={{
+        color: statusStyle.secondaryText,
+        opacity: 0.75,
+      }}
+    />
 
-                              <span className="font-medium opacity-80">
-                                {table.cartCount || 0}
-                              </span>
-                            </div>
+    <span
+      className="font-medium"
+      style={{
+        color: statusStyle.color,
+      }}
+    >
+      {table.cartCount || 0}
+    </span>
+  </div>
 
-                            <div className="flex justify-between text-xs">
-                              <span className="opacity-50">
-                                Bills
-                              </span>
+  {/* BILLS */}
 
-                              <span className="font-medium opacity-80">
-                                {table.billCount || 0}
-                              </span>
-                            </div>
+  <div className="flex items-center justify-between text-xs">
+    <Receipt
+      size={14}
+      strokeWidth={2}
+      style={{
+        color: statusStyle.secondaryText,
+        opacity: 0.75,
+      }}
+    />
 
-                            <div className="flex justify-between text-xs">
-                              <span className="opacity-50">
-                                Amount
-                              </span>
+    <span
+      className="font-medium"
+      style={{
+        color: statusStyle.color,
+      }}
+    >
+      {table.billCount || 0}
+    </span>
+  </div>
 
-                              <span className="font-semibold opacity-90">
-                                ₹
-                                {Number(
-                                  table.billAmount || 0
-                                ).toFixed(2)}
-                              </span>
-                            </div>
+  {/* AMOUNT */}
 
-                          </div>
+  <div className="flex items-center justify-between text-xs">
+    <IndianRupee
+      size={14}
+      strokeWidth={2}
+      style={{
+        color: statusStyle.secondaryText,
+        opacity: 0.75,
+      }}
+    />
+
+    <span
+      className="font-semibold"
+      style={{
+        color: statusStyle.color,
+      }}
+    >
+      {Number(table.billAmount || 0).toFixed(2)}
+    </span>
+  </div>
+</div>
 
                         </button>
                       );
@@ -389,4 +520,4 @@ export default function TablesPage() {
     </div>
   );
 }
- 
+

@@ -348,6 +348,8 @@ CREATE TABLE IF NOT EXISTS pos_order_master (
 
   tableNo TEXT,
 
+  tableName TEXT,
+
   saleType TEXT DEFAULT '',
 
   reason TEXT DEFAULT '',
@@ -476,27 +478,51 @@ CREATE TABLE IF NOT EXISTS pos_order_master (
 
 -- =====================================================
 -- INDEXES
--- Matches Android Room indexes
 -- =====================================================
 
+-- Sync queue
 CREATE INDEX IF NOT EXISTS idx_pos_order_master_syncStatus
 ON pos_order_master(syncStatus);
 
+
+-- General chronological lookup
 CREATE INDEX IF NOT EXISTS idx_pos_order_master_createdAt
 ON pos_order_master(createdAt);
 
+
+-- Order type filtering
 CREATE INDEX IF NOT EXISTS idx_pos_order_master_orderType
 ON pos_order_master(orderType);
 
+
+-- Date search
 CREATE INDEX IF NOT EXISTS idx_pos_order_master_businessDate
 ON pos_order_master(businessDate);
 
+
+-- Table lookup
 CREATE INDEX IF NOT EXISTS idx_pos_order_master_tableNo
 ON pos_order_master(tableNo);
 
+
+-- Bill/order number lookup
 CREATE INDEX IF NOT EXISTS idx_pos_order_master_srno
 ON pos_order_master(srno);
 
+
+-- =====================================================
+-- IMPORTANT FOR ORDERS SCREEN
+-- =====================================================
+-- Used by:
+--
+-- WHERE businessDate = ?
+-- ORDER BY createdAt DESC
+--
+CREATE INDEX IF NOT EXISTS idx_pos_order_master_date_created
+ON pos_order_master(
+  businessDate,
+  createdAt DESC
+);
 
 
 

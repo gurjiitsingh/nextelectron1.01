@@ -4,6 +4,7 @@ import PosSidebarCategories from "@/components/pos/PosSidebarCategories";
 import Products from "@/components/level-1/Products";
 import RightSideBar from "@/components/pos/rightSideBar/RightSidebar";
 import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
+import { SideCart } from "@/components/MiniCart/SideCart";
 
 export default function Page() {
 
@@ -45,6 +46,7 @@ export default function Page() {
             ${background.className}
           `}
         >
+          
           <PosSidebarCategories />
         </aside>
 

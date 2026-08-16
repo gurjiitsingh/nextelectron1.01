@@ -196,25 +196,26 @@ contextBridge.exposeInMainWorld('posApi', {
     ),
 
   // =====================================================
-  // ORDERS
-  // =====================================================
+// ORDERS
+// =====================================================
 
-  getOrders: () =>
-    ipcRenderer.invoke(
-      'orders:list'
-    ),
+getOrders: (date) =>
+  ipcRenderer.invoke(
+    'orders:list',
+    date
+  ),
 
-  getOrderById: (orderId) =>
-    ipcRenderer.invoke(
-      'orders:get',
-      orderId
-    ),
+getOrderById: (orderId) =>
+  ipcRenderer.invoke(
+    'orders:get',
+    orderId
+  ),
 
-  getOrderItems: (orderId) =>
-    ipcRenderer.invoke(
-      'orders:items',
-      orderId
-    ),
+getOrderItems: (orderId) =>
+  ipcRenderer.invoke(
+    'orders:items',
+    orderId
+  ),
 
   // =====================================================
   // ORDER COUNTER

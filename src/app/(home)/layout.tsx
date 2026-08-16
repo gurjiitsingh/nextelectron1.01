@@ -19,6 +19,7 @@ import PosTopBar from "@/components/pos/home/PosTopBar";
 import { PosUiProvider } from "@/PosUiStore/PosUiContext";
 import { PosSessionProvider } from "@/PosSessionStore/PosSessionContext";
 import { PosThemeProvider } from "@/PosThemeStore/PosThemeContext";
+import { SideCart } from "@/components/MiniCart/SideCart";
 
 
 
@@ -50,7 +51,8 @@ export default function RootLayout({
 
               <div className="flex flex-col gap-0 my-0">
                 <div className="z-50">
-                  <SafeSideCart />
+                  {/* <SafeSideCart /> */}
+                  <SideCart />
                 </div>
 
                 {/* NEW TOP BAR */}

@@ -225,7 +225,7 @@ export default function CartPanel() {
 
         <p className="mt-1 text-xs">
           {activeTable
-            ? `Table: ${activeTable.tableName}`
+            ? `${activeTable.tableName}`
             : 'No table selected'}
         </p>
 
@@ -394,7 +394,7 @@ export default function CartPanel() {
 
 
       {/* =================================================
-          ACTION BAR
+          ACTION BAR // ${background.border}
       ================================================= */}
 
       <div
@@ -402,7 +402,7 @@ export default function CartPanel() {
           border-t
           ${background.border}
           px-2
-          py-0
+          py-2
           shadow-sm
         `}
       >
@@ -426,6 +426,7 @@ export default function CartPanel() {
               text-xs
               font-semibold
               transition-all
+              rounded-lg
               hover:opacity-90
               active:opacity-80
               disabled:cursor-not-allowed
@@ -446,7 +447,7 @@ export default function CartPanel() {
       <div
         className={`
           shrink-0
-          border-t
+        
           ${background.border}
           px-4
           py-3

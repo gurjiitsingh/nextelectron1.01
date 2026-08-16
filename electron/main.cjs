@@ -474,30 +474,30 @@ ipcMain.handle(
 );
 
 
-// =====================================================
-// ORDERS
-// =====================================================
+ // =====================================================
+ // ORDERS
+ // =====================================================
 
-ipcMain.handle(
-  'orders:list',
-  async () => {
-    return orderRepo.getOrders();
-  }
-);
+ ipcMain.handle(
+   'orders:list',
+   async (_e, date) => {
+     return orderRepo.getOrders(date);
+   }
+ );
 
-ipcMain.handle(
-  'orders:get',
-  async (_e, orderId) => {
-    return orderRepo.getOrderById(orderId);
-  }
-);
+ ipcMain.handle(
+   'orders:get',
+   async (_e, orderId) => {
+     return orderRepo.getOrderById(orderId);
+   }
+ );
 
-ipcMain.handle(
-  'orders:items',
-  async (_e, orderId) => {
-    return orderRepo.getOrderItems(orderId);
-  }
-);
+ ipcMain.handle(
+   'orders:items',
+   async (_e, orderId) => {
+     return orderRepo.getOrderItems(orderId);
+   }
+ );
 // =====================================================
 // WINDOW
 // =====================================================

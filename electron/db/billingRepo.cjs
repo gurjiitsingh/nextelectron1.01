@@ -65,7 +65,7 @@ async function createBillFromKitchen(input) {
   const {
     tableNo,
     orderType = 'DINE_IN',
-
+tableName,
     customerName = 'Customer',
     customerPhone = '',
     customerId = null,
@@ -390,13 +390,18 @@ const srno = mapping.srno;
     }
   }
 
-
+//  await db.exec(`
+//     ALTER TABLE pos_order_master
+//     ADD COLUMN tableName TEXT;
+//   `);
   // ===================================================
   // TRANSACTION
   // ===================================================
 
   const transaction =
     db.transaction(() => {
+
+      
 
       // ================================================
       // 1. CREATE ORDER MASTER
@@ -409,6 +414,7 @@ const srno = mapping.srno;
           srno,
           orderType,
           tableNo,
+          tableName,
 
           saleType,
           reason,
@@ -469,7 +475,7 @@ const srno = mapping.srno;
           @srno,
           @orderType,
           @tableNo,
-
+@tableName,
           @saleType,
           @reason,
 
@@ -532,6 +538,7 @@ const srno = mapping.srno;
         orderType,
 
         tableNo,
+         tableName: tableName || '',
 
         saleType: '',
 

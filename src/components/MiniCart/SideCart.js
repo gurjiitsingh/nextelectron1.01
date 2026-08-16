@@ -66,7 +66,7 @@ export const SideCart = () => {
   const sidebarLinkClass = (href) => `
     block
     px-4
-    py-2
+    py-1
     text-sm
     font-medium
     transition-colors
@@ -79,7 +79,7 @@ export const SideCart = () => {
 
   const sectionTitleClass = `
     px-4
-    py-2
+    py-1
     text-xs
     font-bold
     uppercase
@@ -110,7 +110,7 @@ export const SideCart = () => {
               max-w-[250px]
               h-[calc(100vh-60px)]
               shadow-2xl
-              border-r
+              
               flex
               flex-col
               overflow-y-auto
@@ -136,7 +136,7 @@ export const SideCart = () => {
                 justify-between
                 px-4
                 py-2
-                border-b
+               
               "
               style={{
                 borderColor: theme.primarySelected,
@@ -152,7 +152,7 @@ export const SideCart = () => {
                   color: theme.primaryText,
                 }}
               >
-                POS
+                Menu
               </span>
 
               <button
@@ -185,62 +185,16 @@ export const SideCart = () => {
             {/* MAIN */}
             {/* ================================================= */}
 
-            <div className="py-2">
+         
 
-              <div
-                className={sectionTitleClass}
-                style={{
-                  backgroundColor: theme.primary,
-                  color: "#FFFFFF",
-                }}
-              >
-                Main
-              </div>
 
-              <Link
-                href="/"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/")}
-                style={{
-                  color: isActive("/")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/")
-                    ? 700
-                    : 500,
-                }}
-              >
-                POS
-              </Link>
-
-              <Link
-                href="/tables"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/tables")}
-                style={{
-                  color: isActive("/tables")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/tables")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Tables
-              </Link>
-
-            </div>
 
 
             {/* ================================================= */}
             {/* ORDERS */}
             {/* ================================================= */}
 
-            <div className="py-2">
+            <div className="py-1">
 
               <div
                 className={sectionTitleClass}
@@ -313,7 +267,7 @@ export const SideCart = () => {
             {/* REPORTS */}
             {/* ================================================= */}
 
-            <div className="py-2">
+            <div className="py-1">
 
               <div
                 className={sectionTitleClass}
@@ -368,7 +322,7 @@ export const SideCart = () => {
             {/* CUSTOMERS */}
             {/* ================================================= */}
 
-            <div className="py-2">
+            <div className="py-1">
 
               <div
                 className={sectionTitleClass}
@@ -405,7 +359,7 @@ export const SideCart = () => {
             {/* SYSTEM */}
             {/* ================================================= */}
 
-            <div className="py-2">
+            <div className="py-1">
 
               <div
                 className={sectionTitleClass}
@@ -442,7 +396,7 @@ export const SideCart = () => {
             {/* SETTINGS */}
             {/* ================================================= */}
 
-            <div className="py-2">
+            <div className="py-1">
 
               <div
                 className={sectionTitleClass}
