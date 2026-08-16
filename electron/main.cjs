@@ -30,10 +30,23 @@ const {
   getProductModifiers,
 } = require('./db/productModifierRepo.cjs');
 
+const dayClosingRepo =
+  require('./db/dayClosingRepository.cjs');
+
+const businessDayRepo =
+  require('./db/businessDayRepository.cjs');
+
+  const kotHistoryRepo =
+  require('./db/kotHistoryRepository.cjs');
+
 const billItemRepo = require('./db/billItemRepo.cjs');
 
 const { getAllUsers } = require('./db/userRepo.cjs');
 const { getOutlet } = require('./db/outletRepo.cjs');
+
+const saleReportRepo = require(
+  './db/saleReportRepo.cjs'
+);
 
 // =====================================================
 // PRINTER
@@ -381,7 +394,75 @@ ipcMain.handle(
   }
 );
 
+// =====================================================
+// KOT HISTORY
+// =====================================================
 
+ipcMain.handle(
+  'kot-history:list',
+  async (_event, options = {}) => {
+
+    try {
+
+      return {
+        success: true,
+
+        data:
+          kotHistoryRepo.getKotHistory(
+            options
+          ),
+      };
+
+    } catch (error) {
+
+      console.error(
+        'GET KOT HISTORY FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error?.message ||
+          String(error),
+      };
+    }
+  }
+);
+
+
+
+ipcMain.handle(
+  'kot-history:detail',
+  async (_event, kotHistoryId) => {
+
+    try {
+
+      return {
+        success: true,
+
+        data:
+          kotHistoryRepo.getKotHistoryDetail(
+            kotHistoryId
+          ),
+      };
+
+    } catch (error) {
+
+      console.error(
+        'GET KOT HISTORY DETAIL FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error?.message ||
+          String(error),
+      };
+    }
+  }
+);
 
 
 // =====================================================
@@ -624,6 +705,9 @@ app.whenReady().then(() => {
     }
   );
 
+
+
+
   // -------------------------------
   // SYNC
   // -------------------------------
@@ -723,6 +807,247 @@ ipcMain.handle(
   );
 });
 
+
+
+
+// =====================================================
+// BUSINESS DAY
+// =====================================================
+
+ipcMain.handle(
+  'businessDay:getCurrent',
+  async () => {
+
+    try {
+
+      return {
+        success: true,
+        data:
+          businessDayRepo
+            .getCurrentBusinessDay(),
+      };
+
+    } catch (e) {
+
+      console.error(
+        'GET CURRENT BUSINESS DAY FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
+
+
+// =====================================================
+// DAY CLOSING SUMMARY
+// =====================================================
+
+ipcMain.handle(
+  'dayClosing:getSummary',
+  async (
+    _event,
+    businessDate
+  ) => {
+
+    try {
+
+      const summary =
+        dayClosingRepo
+          .getSummary(
+            businessDate
+          );
+
+      return {
+        success: true,
+        data: summary,
+      };
+
+    } catch (e) {
+
+      console.error(
+        'GET DAY CLOSING SUMMARY FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
+
+
+// =====================================================
+// DAY CLOSING HISTORY
+// =====================================================
+
+ipcMain.handle(
+  'dayClosing:getHistory',
+  async () => {
+
+    try {
+
+      const history =
+        dayClosingRepo
+          .getHistory();
+
+      return {
+        success: true,
+        data: history,
+      };
+
+    } catch (e) {
+
+      console.error(
+        'GET DAY CLOSING HISTORY FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
+
+
+// =====================================================
+// CLOSE BUSINESS DAY
+// =====================================================
+
+ipcMain.handle(
+  'dayClosing:close',
+  async (
+    _event,
+    data
+  ) => {
+
+    try {
+
+      console.log(
+        '===================================='
+      );
+
+      console.log(
+        'DAY CLOSING REQUEST'
+      );
+
+      console.log(
+        'DATA:',
+        data
+      );
+
+      console.log(
+        '===================================='
+      );
+
+
+      const result =
+        dayClosingRepo
+          .closeBusinessDay({
+            actualCash:
+              Number(
+                data?.actualCash || 0
+              ),
+
+            notes:
+              data?.notes || '',
+
+            closedById:
+              data?.closedById || '',
+
+            closedByName:
+              data?.closedByName || '',
+          });
+
+
+      console.log(
+        'DAY CLOSED SUCCESSFULLY:',
+        result
+      );
+
+
+      return {
+        success: true,
+        data: result,
+      };
+
+    } catch (e) {
+
+      console.error(
+        'DAY CLOSING FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
+
+
+
+
+
+// =====================================================
+// SALE REPORT
+// =====================================================
+ipcMain.handle(
+  'saleReport:getReport',
+  async (_event, businessDate) => {
+
+    try {
+
+      if (!businessDate) {
+        return {
+          success: false,
+          error: 'Business date is required',
+        };
+      }
+
+      const report =
+        saleReportRepo.getSalesReport(
+          businessDate
+        );
+
+      return {
+        success: true,
+        data: report,
+      };
+
+    } catch (e) {
+
+      console.error(
+        'GET SALES REPORT FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
 // =====================================================
 // CLEANUP
 // =====================================================

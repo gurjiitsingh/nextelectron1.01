@@ -181,17 +181,17 @@ export default function CartPanel() {
       );
     }
   }
-// console.log("background.border---------------",background.border)
-//   // =====================================================
-//   // UI
-//   // =====================================================
-//   console.log('===== POS THEME DEBUG =====');
-// console.log('background:', background);
-// console.log('backgroundName:', backgroundName);
-// console.log('background keys:', Object.keys(background));
-// console.log('background.border:', background.border);
-// console.log('background.className:', background.className);
-// console.log('===========================');
+  // console.log("background.border---------------",background.border)
+  //   // =====================================================
+  //   // UI
+  //   // =====================================================
+  //   console.log('===== POS THEME DEBUG =====');
+  // console.log('background:', background);
+  // console.log('backgroundName:', backgroundName);
+  // console.log('background keys:', Object.keys(background));
+  // console.log('background.border:', background.border);
+  // console.log('background.className:', background.className);
+  // console.log('===========================');
 
   return (
     <aside
@@ -271,56 +271,56 @@ export default function CartPanel() {
                 `}
               >
 
-           {cartData.map((item) => (
+                {cartData.map((item) => (
 
-  <div
-    key={`${item.productId}-${item.id}`}
-    className={`
+                  <div
+                    key={`${item.productId}-${item.id}`}
+                    className={`
       px-2
       py-2
       border-b
       ${background.border}
     `}
-  >
+                  >
 
-    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3">
 
-      {/* NAME + NOTE */}
-      <div className="min-w-0 flex-1">
+                      {/* NAME + NOTE */}
+                      <div className="min-w-0 flex-1">
 
-        <p className="truncate text-[10px] font-medium">
-          {item.name}
-        </p>
+                        <p className="truncate text-[10px] font-medium">
+                          {item.name}
+                        </p>
 
-        {item.note && (
-          <p className="mt-0.5 truncate text-xs opacity-60">
-            {item.note}
-          </p>
-        )}
+                        {item.note && (
+                          <p className="mt-0.5 truncate text-xs opacity-60">
+                            {item.note}
+                          </p>
+                        )}
 
-      </div>
-
-
-      {/* UNIT PRICE */}
-      <p className="shrink-0 whitespace-nowrap text-[9px] opacity-70">
-        ₹{item.finalPrice.toFixed(2)}
-      </p>
+                      </div>
 
 
-      {/* AMOUNT + QTY */}
-      <div className="flex shrink-0 items-center gap-2">
-
-        <p className="whitespace-nowrap text-sm font-semibold">
-          ₹{(
-            item.finalPrice *
-            item.quantity
-          ).toFixed(2)}
-        </p>
+                      {/* UNIT PRICE */}
+                      <p className="shrink-0 whitespace-nowrap text-[9px] opacity-70">
+                        ₹{item.finalPrice.toFixed(2)}
+                      </p>
 
 
-        {/* QUANTITY CONTROL */}
-        <div
-          className={`
+                      {/* AMOUNT + QTY */}
+                      <div className="flex shrink-0 items-center gap-2">
+
+                        <p className="whitespace-nowrap text-sm font-semibold">
+                          ₹{(
+                            item.finalPrice *
+                            item.quantity
+                          ).toFixed(2)}
+                        </p>
+
+
+                        {/* QUANTITY CONTROL */}
+                        <div
+                          className={`
             flex
             w-fit
             items-center
@@ -328,12 +328,12 @@ export default function CartPanel() {
             border
             ${background.border}
           `}
-        >
+                        >
 
-          <button
-            type="button"
-            onClick={() => decCartProduct(item)}
-            className="
+                          <button
+                            type="button"
+                            onClick={() => decCartProduct(item)}
+                            className="
               flex
               h-5
               w-5
@@ -343,23 +343,23 @@ export default function CartPanel() {
               transition
               hover:opacity-100
             "
-          >
-            −
-          </button>
+                          >
+                            −
+                          </button>
 
-          <span className="w-6 text-center text-[10px] font-medium">
-            {item.quantity}
-          </span>
+                          <span className="w-6 text-center text-[10px] font-medium">
+                            {item.quantity}
+                          </span>
 
-          <button
-            type="button"
-            onClick={() =>
-              addProductToCart({
-                ...item,
-                quantity: 1,
-              })
-            }
-            className="
+                          <button
+                            type="button"
+                            onClick={() =>
+                              addProductToCart({
+                                ...item,
+                                quantity: 1,
+                              })
+                            }
+                            className="
               flex
               h-5
               w-5
@@ -369,19 +369,19 @@ export default function CartPanel() {
               transition
               hover:opacity-100
             "
-          >
-            +
-          </button>
+                          >
+                            +
+                          </button>
 
-        </div>
+                        </div>
 
-      </div>
+                      </div>
 
-    </div>
+                    </div>
 
-  </div>
+                  </div>
 
-))}
+                ))}
               </div>
 
             </div>

@@ -4,7 +4,6 @@ import PosSidebarCategories from "@/components/pos/PosSidebarCategories";
 import Products from "@/components/level-1/Products";
 import RightSideBar from "@/components/pos/rightSideBar/RightSidebar";
 import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
-import { SideCart } from "@/components/MiniCart/SideCart";
 
 export default function Page() {
 
@@ -13,7 +12,7 @@ export default function Page() {
   return (
     <div
       className={`
-        h-screen
+        h-full
         flex
         flex-col
         overflow-hidden
@@ -22,14 +21,14 @@ export default function Page() {
       `}
     >
 
-      <main
+      <div
         className={`
-          flex-1
           flex
+          flex-1
           min-h-0
+          overflow-hidden
           p-0
           m-0
-          overflow-hidden
           ${background.className}
           ${background.text}
         `}
@@ -46,13 +45,14 @@ export default function Page() {
             ${background.className}
           `}
         >
-          
           <PosSidebarCategories />
         </aside>
+
 
         {/* PRODUCTS */}
         <section
           className={`
+            min-w-0
             flex-1
             overflow-y-auto
             mx-0
@@ -64,11 +64,15 @@ export default function Page() {
           <Products />
         </section>
 
+
         {/* RIGHT SIDEBAR */}
         <aside
           className={`
+            hidden
             xl:flex
             w-[440px]
+            shrink-0
+            overflow-y-auto
             border-l
             ${background.border}
             ${background.className}
@@ -77,7 +81,8 @@ export default function Page() {
           <RightSideBar />
         </aside>
 
-      </main>
+      </div>
+
     </div>
   );
 }

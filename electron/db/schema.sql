@@ -268,6 +268,166 @@ ON pos_kot_items(syncedToCloud);
 CREATE INDEX IF NOT EXISTS idx_kot_source
 ON pos_kot_items(source);
 
+
+
+
+
+
+
+
+
+-- =====================================================
+-- KOT HISTORY
+--  
+-- =====================================================
+
+
+
+CREATE TABLE IF NOT EXISTS pos_kot_history (
+
+  id TEXT PRIMARY KEY,
+
+  kotNumber TEXT NOT NULL,
+
+  tableNo TEXT NOT NULL,
+
+  tableName TEXT,
+
+  orderType TEXT NOT NULL,
+
+  source TEXT NOT NULL,
+
+  status TEXT NOT NULL,
+
+  businessDate TEXT NOT NULL,
+
+  createdAt INTEGER NOT NULL,
+
+  completedAt INTEGER,
+
+  deletedAt INTEGER,
+
+  deletedById TEXT,
+
+  deletedByName TEXT,
+
+  deviceId TEXT NOT NULL,
+
+  deviceName TEXT,
+
+  appVersion TEXT,
+
+  syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+
+  lastSyncedAt INTEGER
+
+);
+
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_kotNumber
+ON pos_kot_history(kotNumber);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_tableNo
+ON pos_kot_history(tableNo);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_businessDate
+ON pos_kot_history(businessDate);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_status
+ON pos_kot_history(status);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_createdAt
+ON pos_kot_history(createdAt);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_syncStatus
+ON pos_kot_history(syncStatus);
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS pos_kot_history_items (
+
+  id TEXT PRIMARY KEY,
+
+  kotHistoryId TEXT NOT NULL,
+
+  kotNumber TEXT NOT NULL,
+
+  tableNo TEXT NOT NULL,
+
+  productId TEXT NOT NULL,
+
+  name TEXT NOT NULL,
+
+  categoryId TEXT,
+
+  categoryName TEXT,
+
+  parentId TEXT,
+
+  isVariant INTEGER NOT NULL DEFAULT 0,
+
+  productMode TEXT,
+
+  basePrice REAL NOT NULL DEFAULT 0,
+
+  quantity REAL NOT NULL DEFAULT 0,
+
+  modifierPrice REAL NOT NULL DEFAULT 0,
+
+  modifierSummary TEXT,
+
+  modifiersJson TEXT,
+
+  note TEXT,
+
+  taxRate REAL NOT NULL DEFAULT 0,
+
+  taxType TEXT,
+
+  taxAmountPerItem REAL NOT NULL DEFAULT 0,
+
+  taxTotal REAL NOT NULL DEFAULT 0,
+
+  finalPricePerItem REAL NOT NULL DEFAULT 0,
+
+  finalTotal REAL NOT NULL DEFAULT 0,
+
+  status TEXT NOT NULL,
+
+  source TEXT NOT NULL,
+
+  createdAt INTEGER NOT NULL,
+
+  deletedAt INTEGER,
+
+  syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+
+  lastSyncedAt INTEGER,
+
+  FOREIGN KEY (kotHistoryId)
+    REFERENCES pos_kot_history(id)
+    ON DELETE CASCADE
+);
+
+
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_items_historyId
+ON pos_kot_history_items(kotHistoryId);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_items_kotNumber
+ON pos_kot_history_items(kotNumber);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_items_tableNo
+ON pos_kot_history_items(tableNo);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_items_status
+ON pos_kot_history_items(status);
+
+CREATE INDEX IF NOT EXISTS idx_pos_kot_history_items_productId
+ON pos_kot_history_items(productId);
+
 -- =====================================================
 -- POS BILL
 --  
@@ -861,3 +1021,114 @@ ON order_serial_map(orderId);
 
 CREATE INDEX IF NOT EXISTS idx_order_serial_map_srno
 ON order_serial_map(srno);
+
+
+
+
+
+-- =====================================================
+-- BUSINESS DAY
+-- =====================================================
+
+
+
+  CREATE TABLE IF NOT EXISTS pos_business_day (
+
+    id TEXT PRIMARY KEY,
+
+    businessDate TEXT NOT NULL,
+
+    openedAt INTEGER NOT NULL,
+
+    openedById TEXT NOT NULL,
+
+    openedByName TEXT NOT NULL,
+
+    openingCash REAL NOT NULL DEFAULT 0,
+
+    isClosed INTEGER NOT NULL DEFAULT 0,
+
+    closedAt INTEGER,
+
+    closedById TEXT,
+
+    closedByName TEXT,
+
+    status TEXT NOT NULL DEFAULT 'OPEN',
+
+    updatedAt INTEGER NOT NULL
+
+  );
+
+
+
+
+-- =====================================================
+-- DAY CLOSING HISTORY
+-- =====================================================
+ 
+
+ 
+  CREATE TABLE IF NOT EXISTS pos_day_closing (
+
+    id TEXT PRIMARY KEY,
+
+    businessDate TEXT NOT NULL,
+
+    openedAt INTEGER NOT NULL,
+
+    closedAt INTEGER NOT NULL,
+
+    openedById TEXT NOT NULL,
+
+    openedByName TEXT NOT NULL,
+
+    closedById TEXT NOT NULL,
+
+    closedByName TEXT NOT NULL,
+
+    openingCash REAL NOT NULL,
+
+    expectedCash REAL NOT NULL,
+
+    actualCash REAL NOT NULL,
+
+    cashDifference REAL NOT NULL,
+
+    totalSales REAL NOT NULL,
+
+    totalRefund REAL NOT NULL,
+
+    totalDiscount REAL NOT NULL,
+
+    totalTax REAL NOT NULL,
+
+    cashSales REAL NOT NULL,
+
+    cardSales REAL NOT NULL,
+
+    upiSales REAL NOT NULL,
+
+    walletSales REAL NOT NULL,
+
+    creditSales REAL NOT NULL,
+
+    complimentarySales REAL NOT NULL,
+
+    totalOrders INTEGER NOT NULL,
+
+    syncStatus TEXT NOT NULL,
+
+    createdAt INTEGER NOT NULL
+
+  );
+ 
+-- =====================================================
+-- DAY CLOSING DATE INDEX
+-- =====================================================
+
+ 
+  CREATE INDEX IF NOT EXISTS
+  idx_pos_day_closing_businessDate
+  ON pos_day_closing (businessDate);
+ 

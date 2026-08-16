@@ -1,13 +1,17 @@
- 
+
 const crypto = require('crypto');
 const { db } = require('./sqlite.cjs');
 const { insertOrder } = require('./orderRepo.cjs');
-
+const businessDayRepo =
+  require('./businessDayRepository.cjs');
 const {
   getOrCreateOrderNo,
   attachOrderId,
   clearMapping,
 } = require('../lib/orderSequenceRepository.cjs');
+
+const kotHistoryRepo =
+  require('./kotHistoryRepository.cjs');
 
 // const {
 //   getOrCreateOrderNo,
@@ -65,7 +69,7 @@ async function createBillFromKitchen(input) {
   const {
     tableNo,
     orderType = 'DINE_IN',
-tableName,
+    tableName,
     customerName = 'Customer',
     customerPhone = '',
     customerId = null,
@@ -133,9 +137,7 @@ tableName,
   // business-day repository.
   // ===================================================
 
-  const finalBusinessDate =
-    businessDate ||
-    new Date().toISOString().slice(0, 10);
+
 
 
   // ===================================================
@@ -151,18 +153,18 @@ tableName,
   //
   // ===================================================
 
-// =====================================================
-// ORDER NUMBER
-// Android-compatible order sequence
-// =====================================================
+  // =====================================================
+  // ORDER NUMBER
+  // Android-compatible order sequence
+  // =====================================================
 
-const mapping = getOrCreateOrderNo(
-  db,
-  tableNo,
-  TERMINAL_CODE
-);
+  const mapping = getOrCreateOrderNo(
+    db,
+    tableNo,
+    TERMINAL_CODE
+  );
 
-const srno = mapping.srno;
+  const srno = mapping.srno;
 
 
   // ===================================================
@@ -390,245 +392,269 @@ const srno = mapping.srno;
     }
   }
 
-//  await db.exec(`
-//     ALTER TABLE pos_order_master
-//     ADD COLUMN tableName TEXT;
-//   `);
+  //  await db.exec(`
+  //     ALTER TABLE pos_order_master
+  //     ADD COLUMN tableName TEXT;
+  //   `);
+  // =====================================================
+  // GET CURRENT BUSINESS DATE
+  // =====================================================
+
+  const currentBusinessDay =
+    businessDayRepo.getCurrentBusinessDay();
+
+  if (!currentBusinessDay) {
+    throw new Error(
+      'Current business day not found.'
+    );
+  }
+
+  if (currentBusinessDay.isClosed) {
+    throw new Error(
+      'Business day is closed.'
+    );
+  }
+
+  const finalBusinessDate =
+    currentBusinessDay.businessDate;
   // ===================================================
   // TRANSACTION
   // ===================================================
 
-  const transaction =
-    db.transaction(() => {
+const transaction =
+  db.transaction(() => {
 
-      
+    // ================================================
+    // 1. CREATE ORDER MASTER
+    // ================================================
 
-      // ================================================
-      // 1. CREATE ORDER MASTER
-      // ================================================
+    // your existing order master INSERT
 
+
+    // ================================================
+    // CLEAR SERIAL MAPPING
+    // ================================================
+
+    clearMapping(
+      db,
+      tableNo
+    );
+
+
+    // ================================================
+    // 2. CREATE ORDER ITEMS
+    // ================================================
+
+    const insertItem =
       db.prepare(`
-        INSERT INTO pos_order_master (
+        INSERT INTO pos_order_items (
 
           id,
-          srno,
-          orderType,
-          tableNo,
-          tableName,
 
-          saleType,
-          reason,
+          categoryName,
+          productMode,
+          currentStock,
 
-          customerName,
-          customerPhone,
-          customerId,
+          orderMasterId,
+          productId,
 
           createdById,
           createdByName,
 
-          finalizedById,
-          finalizedByName,
+          name,
+          categoryId,
 
-          dAddressLine1,
-          dAddressLine2,
-          dCity,
-          dState,
-          dZipcode,
-          dLandmark,
+          parentId,
+          isVariant,
 
-          deliveryFee,
-          deliveryTax,
+          basePrice,
+          quantity,
+          itemSubtotal,
 
-          itemTotal,
-          itemTax,
-          taxTotal,
-          discountTotal,
-          grandTotal,
-
-          paymentMode,
+          currency,
           paymentStatus,
 
-          paidAmount,
-          dueAmount,
+          taxRate,
+          taxType,
 
-          orderStatus,
+          taxAmountPerItem,
+          taxTotal,
+
+          note,
+          modifiersJson,
+          modifierPrice,
+          modifierSummary,
+
+          finalPricePerItem,
+          finalTotal,
 
           source,
 
-          deviceId,
-          deviceName,
-          appVersion,
-
-          businessDate,
-
-          createdAt,
-          updatedAt,
-
-          syncStatus,
-          lastSyncedAt,
-
-          notes
+          createdAt
 
         ) VALUES (
 
           @id,
-          @srno,
-          @orderType,
-          @tableNo,
-@tableName,
-          @saleType,
-          @reason,
 
-          @customerName,
-          @customerPhone,
-          @customerId,
+          @categoryName,
+          @productMode,
+          @currentStock,
+
+          @orderMasterId,
+          @productId,
 
           @createdById,
           @createdByName,
 
-          @finalizedById,
-          @finalizedByName,
+          @name,
+          @categoryId,
 
-          @dAddressLine1,
-          @dAddressLine2,
-          @dCity,
-          @dState,
-          @dZipcode,
-          @dLandmark,
+          @parentId,
+          @isVariant,
 
-          @deliveryFee,
-          @deliveryTax,
+          @basePrice,
+          @quantity,
+          @itemSubtotal,
 
-          @itemTotal,
-          @itemTax,
-          @taxTotal,
-          @discountTotal,
-          @grandTotal,
-
-          @paymentMode,
+          @currency,
           @paymentStatus,
 
-          @paidAmount,
-          @dueAmount,
+          @taxRate,
+          @taxType,
 
-          @orderStatus,
+          @taxAmountPerItem,
+          @taxTotal,
+
+          @note,
+          @modifiersJson,
+          @modifierPrice,
+          @modifierSummary,
+
+          @finalPricePerItem,
+          @finalTotal,
 
           @source,
 
-          @deviceId,
-          @deviceName,
-          @appVersion,
+          @createdAt
+        )
+      `);
 
-          @businessDate,
+
+    for (const item of orderItems) {
+
+      insertItem.run(item);
+
+    }
+
+
+    // ================================================
+    // 3. CREATE PAYMENTS
+    // ================================================
+
+    const insertPayment =
+      db.prepare(`
+        INSERT INTO pos_order_payments (
+
+          id,
+          orderId,
+
+          ownerId,
+          outletId,
+
+          amount,
+
+          mode,
+
+          provider,
+          method,
+
+          status,
+
+          deviceId,
+
+          createdAt,
+          businessDate,
+
+          syncStatus,
+          lastSyncedAt,
+
+          isVoided
+
+        ) VALUES (
+
+          @id,
+          @orderId,
+
+          @ownerId,
+          @outletId,
+
+          @amount,
+
+          @mode,
+
+          @provider,
+          @method,
+
+          @status,
+
+          @deviceId,
 
           @createdAt,
-          @updatedAt,
+          @businessDate,
 
           @syncStatus,
           @lastSyncedAt,
 
-          @notes
+          @isVoided
+
         )
-      `).run({
+      `);
 
-        id: orderId,
 
-        srno,
+    for (const payment of finalPayments) {
 
-        orderType,
+      const amount =
+        Number(payment.amount || 0);
 
-        tableNo,
-         tableName: tableName || '',
+      if (amount <= 0) {
+        continue;
+      }
 
-        saleType: '',
+      insertPayment.run({
 
-        reason: '',
+        id:
+          uuid(),
 
-        customerName:
-          customerName || 'Customer',
+        orderId,
 
-        customerPhone:
-          customerPhone || '',
+        ownerId,
 
-        customerId:
-          customerId || null,
+        outletId,
 
-        createdById:
-          '',
+        amount,
 
-        createdByName:
-          '',
+        mode:
+          payment.mode ||
+          paymentMode,
 
-        finalizedById:
-          '',
-
-        finalizedByName:
-          '',
-
-        dAddressLine1:
+        provider:
+          payment.provider ||
           null,
 
-        dAddressLine2:
+        method:
+          payment.method ||
           null,
 
-        dCity:
-          null,
-
-        dState:
-          null,
-
-        dZipcode:
-          null,
-
-        dLandmark:
-          null,
-
-        deliveryFee:
-          safeDeliveryFee,
-
-        deliveryTax:
-          safeDeliveryTax,
-
-        itemTotal,
-
-        itemTax,
-
-        taxTotal,
-
-        discountTotal:
-          safeDiscount,
-
-        grandTotal,
-
-        paymentMode,
-
-        paymentStatus,
-
-        paidAmount:
-          safePaidAmount,
-
-        dueAmount,
-
-        orderStatus:
-          'COMPLETED',
-
-        source:
-          'POS',
+        status:
+          'SUCCESS',
 
         deviceId,
-
-        deviceName,
-
-        appVersion,
-
-        businessDate:
-          finalBusinessDate,
 
         createdAt:
           now,
 
-        updatedAt:
-          now,
+        businessDate:
+          finalBusinessDate,
 
         syncStatus:
           'PENDING',
@@ -636,279 +662,87 @@ const srno = mapping.srno;
         lastSyncedAt:
           null,
 
-        notes:
-          null,
+        isVoided:
+          0,
+
       });
 
-// =====================================================
-// CLEAR SERIAL MAPPING
-// =====================================================
+    }
 
-clearMapping(
-  db,
-  tableNo
-);
-      // ================================================
-      // 2. CREATE ORDER ITEMS
-      // ================================================
 
-      const insertItem =
-        db.prepare(`
-          INSERT INTO pos_order_items (
+    // ================================================
+    // 4. SAVE KOT HISTORY
+    // ================================================
 
-            id,
+    kotHistoryRepo.addKotHistory({
 
-            categoryName,
-            productMode,
-            currentStock,
+      kotItems,
 
-            orderMasterId,
-            productId,
+      tableNo,
 
-            createdById,
-            createdByName,
+      tableName:
+        tableName || '',
 
-            name,
-            categoryId,
+      orderType,
 
-            parentId,
-            isVariant,
+      orderId,
 
-            basePrice,
-            quantity,
-            itemSubtotal,
+      billNo:
+        srno,
 
-            currency,
-            paymentStatus,
+      businessDate:
+        finalBusinessDate,
 
-            taxRate,
-            taxType,
+      createdById:
+        '',
 
-            taxAmountPerItem,
-            taxTotal,
+      createdByName:
+        '',
 
-            note,
-            modifiersJson,
-            modifierPrice,
-            modifierSummary,
+      source:
+        'POS',
 
-            finalPricePerItem,
-            finalTotal,
-
-            source,
-
-            createdAt
-
-          ) VALUES (
-
-            @id,
-
-            @categoryName,
-            @productMode,
-            @currentStock,
-
-            @orderMasterId,
-            @productId,
-
-            @createdById,
-            @createdByName,
-
-            @name,
-            @categoryId,
-
-            @parentId,
-            @isVariant,
-
-            @basePrice,
-            @quantity,
-            @itemSubtotal,
-
-            @currency,
-            @paymentStatus,
-
-            @taxRate,
-            @taxType,
-
-            @taxAmountPerItem,
-            @taxTotal,
-
-            @note,
-            @modifiersJson,
-            @modifierPrice,
-            @modifierSummary,
-
-            @finalPricePerItem,
-            @finalTotal,
-
-            @source,
-
-            @createdAt
-          )
-        `);
-
-
-      for (const item of orderItems) {
-        insertItem.run(item);
-      }
-
-
-      // ================================================
-      // 3. CREATE PAYMENTS
-      // ================================================
-
-      const insertPayment =
-        db.prepare(`
-          INSERT INTO pos_order_payments (
-
-            id,
-            orderId,
-
-            ownerId,
-            outletId,
-
-            amount,
-
-            mode,
-
-            provider,
-            method,
-
-            status,
-
-            deviceId,
-
-            createdAt,
-            businessDate,
-
-            syncStatus,
-            lastSyncedAt,
-
-            isVoided
-
-          ) VALUES (
-
-            @id,
-            @orderId,
-
-            @ownerId,
-            @outletId,
-
-            @amount,
-
-            @mode,
-
-            @provider,
-            @method,
-
-            @status,
-
-            @deviceId,
-
-            @createdAt,
-            @businessDate,
-
-            @syncStatus,
-            @lastSyncedAt,
-
-            @isVoided
-
-          )
-        `);
-
-
-      for (const payment of finalPayments) {
-
-        const amount =
-          Number(payment.amount || 0);
-
-        if (amount <= 0) {
-          continue;
-        }
-
-
-        insertPayment.run({
-
-          id:
-            uuid(),
-
-          orderId,
-
-          ownerId,
-
-          outletId,
-
-          amount,
-
-          mode:
-            payment.mode || paymentMode,
-
-          provider:
-            payment.provider || null,
-
-          method:
-            payment.method || null,
-
-          status:
-            'SUCCESS',
-
-          deviceId,
-
-          createdAt:
-            now,
-
-          businessDate:
-            finalBusinessDate,
-
-          syncStatus:
-            'PENDING',
-
-          lastSyncedAt:
-            null,
-
-          isVoided:
-            0,
-        });
-      }
-
-
-      // ================================================
-      // 4. COMPLETE KOT
-      // ================================================
-      //
-      // First mark them PAID.
-      //
-      // This makes the transition explicit.
-      // ================================================
-
-      db.prepare(`
-        UPDATE pos_kot_items
-        SET status = 'PAID'
-        WHERE tableNo = ?
-          AND status IN ('PENDING', 'DONE')
-      `).run(tableNo);
-
-
-      // ================================================
-      // 5. CLEAR KOT
-      // ================================================
-      //
-      // The order_items table now contains the permanent
-      // snapshot, so local KOT rows can be removed.
-      // ================================================
-
-      db.prepare(`
-        DELETE FROM pos_kot_items
-        WHERE tableNo = ?
-          AND status = 'PAID'
-      `).run(tableNo);
     });
 
 
     // ================================================
-// 6. MARK BILL ITEMS AS BILLED
-// ================================================
+    // 5. COMPLETE KOT
+    // ================================================
 
-db.prepare(`
+    db.prepare(`
+      UPDATE pos_kot_items
+
+      SET
+        status = 'PAID'
+
+      WHERE tableNo = ?
+
+        AND status IN (
+          'PENDING',
+          'DONE'
+        )
+    `).run(tableNo);
+
+
+    // ================================================
+    // 6. DELETE ACTIVE KOT
+    // ================================================
+
+    db.prepare(`
+      DELETE FROM pos_kot_items
+
+      WHERE tableNo = ?
+
+        AND status = 'PAID'
+    `).run(tableNo);
+
+  });
+
+  // ================================================
+  // 6. MARK BILL ITEMS AS BILLED
+  // ================================================
+
+  db.prepare(`
   UPDATE pos_bill_items
   SET billed = 1,
       status = 'BILLED',
@@ -919,12 +753,12 @@ db.prepare(`
 `).run(orderId, srno, tableNo);
 
 
-// ================================================
-// 7. CLEAR BILLED BILL ITEMS
-// ================================================
-// Remove temporary bill rows after successful billing.
+  // ================================================
+  // 7. CLEAR BILLED BILL ITEMS
+  // ================================================
+  // Remove temporary bill rows after successful billing.
 
-db.prepare(`
+  db.prepare(`
   DELETE FROM pos_bill_items
   WHERE tableNo = ?
     AND billed = 1
@@ -938,11 +772,11 @@ db.prepare(`
   transaction();
 
 
-attachOrderId(
-  db,
-  tableNo,
-  orderId
-);
+  attachOrderId(
+    db,
+    tableNo,
+    orderId
+  );
 
 
   // ===================================================

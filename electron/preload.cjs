@@ -149,6 +149,20 @@ contextBridge.exposeInMainWorld('posApi', {
       status
     ),
 
+
+
+    getKotHistory: (options) =>
+  ipcRenderer.invoke(
+    'kot-history:list',
+    options
+  ),
+
+getKotHistoryDetail: (kotHistoryId) =>
+  ipcRenderer.invoke(
+    'kot-history:detail',
+    kotHistoryId
+  ),
+
   // =====================================================
   // BILLING
   // =====================================================
@@ -271,6 +285,59 @@ getOrderItems: (orderId) =>
       'printer-settings:save',
       config
     ),
+
+
+      // =====================================================
+  // BUSINESS DAY
+  // =====================================================
+
+  getCurrentBusinessDay: () =>
+    ipcRenderer.invoke(
+      'businessDay:getCurrent'
+    ),
+
+
+  // =====================================================
+  // DAY CLOSING
+  // =====================================================
+
+  getDayClosingSummary: (
+    businessDate
+  ) =>
+    ipcRenderer.invoke(
+      'dayClosing:getSummary',
+      businessDate
+    ),
+
+
+  getDayClosingHistory: () =>
+    ipcRenderer.invoke(
+      'dayClosing:getHistory'
+    ),
+
+
+  closeBusinessDay: (
+    data
+  ) =>
+    ipcRenderer.invoke(
+      'dayClosing:close',
+      data
+    ),
+
+
+
+  // =====================================================
+  // SALE REPORTS
+  // =====================================================
+
+
+    getSalesReport: (
+  businessDate
+) =>
+  ipcRenderer.invoke(
+    'saleReport:getReport',
+    businessDate
+  ),
 
 
 

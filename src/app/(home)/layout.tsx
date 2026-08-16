@@ -3,7 +3,7 @@ import { Toaster } from "react-hot-toast";
 import type { Metadata } from "next";
 
 import "@/css/style.css";
- 
+
 import { Providers } from "../Providers";
 import SafeSideCart from "./SafeSideCart";
 
@@ -39,36 +39,36 @@ export default function RootLayout({
 }) {
   return (
 
-    <div className="text-[#2B2E4A]  ">
+    <div className="text-[#2B2E4A]">
       <div translate="no">
-     <PosThemeProvider>
-        <PosUiProvider>
-          <PosSessionProvider>
+        <PosThemeProvider>
+          <PosUiProvider>
+            <PosSessionProvider>
+              <Providers>
+                <BargerMenu />
+                <Modal />
 
-            <Providers>
-              <BargerMenu />
-              <Modal />
+                <div className="flex h-screen flex-col">
 
-              <div className="flex flex-col gap-0 my-0">
-                <div className="z-50">
-                  {/* <SafeSideCart /> */}
-                  <SideCart />
+                  <div className="z-50 shrink-0">
+                    <SideCart />
+                  </div>
+
+                  <div className="shrink-0">
+                    <PosTopBar />
+                  </div>
+
+                  <main className="min-h-0 flex-1 overflow-y-auto">
+                    {children}
+                  </main>
+
                 </div>
 
-                {/* NEW TOP BAR */}
-                <PosTopBar />
-
-                {children}
-
-
-
-
-              </div>
-
-            </Providers>
-          </PosSessionProvider>
-        </PosUiProvider>
+              </Providers>
+            </PosSessionProvider>
+          </PosUiProvider>
         </PosThemeProvider>
+
         <Toaster
           position="top-center"
           containerStyle={{ top: "30%" }}

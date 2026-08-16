@@ -199,6 +199,27 @@ savePrinterSetting: (
 }>;
 
 
+
+
+
+getCurrentBusinessDay: () => Promise<any>;
+
+getDayClosingSummary: (
+  businessDate: string
+) => Promise<any>;
+
+getDayClosingHistory: () => Promise<any>;
+
+closeBusinessDay: (
+  data: {
+    actualCash: number;
+    notes?: string;
+    closedById?: string;
+    closedByName?: string;
+  }
+) => Promise<any>;
+
+
       // Modifiers
       getModifierGroups: () => Promise<any[]>;
 

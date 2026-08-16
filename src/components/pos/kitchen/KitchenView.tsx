@@ -131,7 +131,7 @@ export default function KitchenView({
   const dueAmount = Math.max(
     0,
     calculation.grandTotal -
-      Number(paidAmount || 0)
+    Number(paidAmount || 0)
   );
 
   const paymentStatus =
@@ -183,12 +183,12 @@ export default function KitchenView({
           payments:
             paidAmount > 0
               ? [
-                  {
-                    mode: paymentMode,
-                    amount:
-                      Number(paidAmount),
-                  },
-                ]
+                {
+                  mode: paymentMode,
+                  amount:
+                    Number(paidAmount),
+                },
+              ]
               : [],
 
           deviceId: 'POS',
@@ -206,7 +206,7 @@ export default function KitchenView({
       if (!result.success) {
         throw new Error(
           result.error ||
-            'Failed to create bill'
+          'Failed to create bill'
         );
       }
 
@@ -230,13 +230,29 @@ export default function KitchenView({
 
       setError(
         e?.message ||
-          'Payment failed'
+        'Payment failed'
       );
     } finally {
       setProcessing(false);
     }
   }
 
+  const groupedKitchenItems = useMemo(() => {
+  const groups: Record<string, typeof kitchenItems> = {};
+
+  for (const item of kitchenItems) {
+    const kotNumber =
+      item.kotNumber || 'NO KOT';
+
+    if (!groups[kotNumber]) {
+      groups[kotNumber] = [];
+    }
+
+    groups[kotNumber].push(item);
+  }
+
+  return Object.entries(groups);
+}, [kitchenItems]);
   // =====================================================
   // UI
   // =====================================================
@@ -269,49 +285,21 @@ export default function KitchenView({
 
         <div className="flex items-center justify-between">
 
-          <h2
+          <div
             className="
-              text-base
-              font-semibold
-            "
-            style={{
-              color:
-                theme.primaryText,
-            }}
-          >
-            Kitchen Orders
-          </h2>
-
-          <span
-            className="
-              rounded-lg
-              px-2
-              py-1
-              text-xs
-              font-medium
-            "
-            style={{
-              backgroundColor:
-                theme.primaryLight,
-
-              color:
-                theme.primaryText,
-            }}
-          >
-            {kitchenItems.length} items
-          </span>
-
-        </div>
-
-        <p
-          className="
             mt-1
-            text-xs
+            text-sm
             opacity-60
           "
-        >
-          Table: {currentTableName}
-        </p>
+          >
+            {currentTableName}
+          </div>
+          <div>
+            {kitchenItems.length} items
+          </div>
+        </div>
+
+
 
       </div>
 
@@ -367,91 +355,120 @@ export default function KitchenView({
             `}
           >
 
-            {kitchenItems.map((item) => (
+          {groupedKitchenItems.map(
+  ([kotNumber, items]) => {
 
-              <div
-                key={item.id}
+    const firstItem = items[0];
+
+    return (
+      <div
+        key={kotNumber}
+        className="
+          border-b
+          px-3
+          py-3
+        "
+      >
+
+        {/* KOT HEADER */}
+
+        <div
+          className="
+            mb-2
+            flex
+            items-center
+            justify-between
+          "
+        >
+
+          <span
+            className="
+              text-xs
+              font-bold
+            "
+            style={{
+              color:
+                theme.primaryText,
+            }}
+          >
+            {kotNumber}
+          </span>
+
+
+          {/* KOT STATUS */}
+
+          <span
+            className="
+              rounded-lg
+              px-2
+              py-1
+              text-[10px]
+              font-semibold
+            "
+            style={{
+              backgroundColor:
+                theme.primarySelected,
+
+              color:
+                theme.primaryText,
+            }}
+          >
+            {firstItem?.status}
+          </span>
+
+        </div>
+
+
+        {/* KOT ITEMS */}
+
+        <div
+          className="
+            space-y-2
+          "
+        >
+
+          {items.map((item) => (
+
+            <div
+              key={item.id}
+            >
+
+              {/* ITEM NAME */}
+
+              <p
                 className="
-                  px-3
-                  py-3
+                  text-xs
+                  opacity-60
                 "
               >
+                {item.quantity} × {item.name}
+              </p>
 
-                {/* ITEM HEADER */}
 
-                <div
-                  className="
-                    mb-1
-                    flex
-                    items-center
-                    justify-between
-                  "
-                >
+              {/* NOTE */}
 
-                  <span
-                    className="
-                      text-xs
-                      font-semibold
-                    "
-                    style={{
-                      color:
-                        theme.primaryText,
-                    }}
-                  >
-                    {item.kotNumber}
-                  </span>
-
-                  {/* STATUS */}
-
-                  <span
-                    className="
-                      rounded-lg
-                      px-2
-                      py-1
-                      text-[10px]
-                      font-semibold
-                    "
-                    style={{
-                      backgroundColor:
-                        theme.primarySelected,
-
-                      color:
-                        theme.primaryText,
-                    }}
-                  >
-                    {item.status}
-                  </span>
-
-                </div>
-
-                {/* ITEM NAME */}
-
+              {item.note ? (
                 <p
                   className="
-                    text-sm
-                    font-medium
+                    mt-1
+                    text-xs
+                    opacity-60
                   "
                 >
-                  {item.quantity} × {item.name}
+                  {item.note}
                 </p>
+              ) : null}
 
-                {/* NOTE */}
+            </div>
 
-                {item.note ? (
-                  <p
-                    className="
-                      mt-1
-                      text-xs
-                      opacity-60
-                    "
-                  >
-                    {item.note}
-                  </p>
-                ) : null}
+          ))}
 
-              </div>
+        </div>
 
-            ))}
+      </div>
+    );
+  }
+)}
 
           </div>
 
@@ -459,301 +476,11 @@ export default function KitchenView({
 
       </div>
 
-      {/* ================================================= */}
-      {/* BILL BUTTON */}
-      {/* ================================================= */}
 
-      <div
-        className={`
-          shrink-0
-          flex
-          items-center
-          justify-center
-          border-t
-          ${background.border}
-          p-2
-        `}
-        style={{
-          backgroundColor:
-            theme.primaryLight,
-        }}
-      >
 
-        <button
-          type="button"
-          onClick={handleCheckout}
-          disabled={
-            loading ||
-            kitchenItems.length === 0 ||
-            processing
-          }
-          className="
-            h-11
-            w-44
-            rounded-xl
-            text-sm
-            font-semibold
-            text-white
-            transition-all
-            active:scale-[0.98]
-            disabled:cursor-not-allowed
-            disabled:opacity-40
-          "
-          style={{
-            backgroundColor:
-              theme.primary,
-          }}
-          onMouseEnter={(e) => {
-            if (
-              !loading &&
-              kitchenItems.length > 0 &&
-              !processing
-            ) {
-              e.currentTarget.style.backgroundColor =
-                theme.primaryHover;
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor =
-              theme.primary;
-          }}
-        >
-          {processing
-            ? 'PROCESSING...'
-            : 'BILL'}
-        </button>
 
-      </div>
 
-      {/* ================================================= */}
-      {/* CALCULATIONS */}
-      {/* ================================================= */}
 
-      <div
-        className="
-          shrink-0
-          space-y-2
-          px-4
-          py-3
-          text-sm
-        "
-      >
-
-        <div className="flex justify-between opacity-70">
-          <span>Subtotal</span>
-
-          <span>
-            ₹
-            {calculation.itemSubtotal.toFixed(
-              2
-            )}
-          </span>
-        </div>
-
-        <div className="flex justify-between opacity-70">
-          <span>Tax</span>
-
-          <span>
-            ₹
-            {calculation.itemTax.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="flex justify-between opacity-70">
-          <span>Discount</span>
-
-          <span>
-            ₹
-            {calculation.discount.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="flex justify-between opacity-70">
-          <span>Delivery</span>
-
-          <span>
-            ₹
-            {calculation.deliveryFee.toFixed(
-              2
-            )}
-          </span>
-        </div>
-
-        {/* GRAND TOTAL */}
-
-        <div
-          className={`
-            flex
-            justify-between
-            border-t
-            ${background.border}
-            pt-2
-            text-base
-            font-semibold
-          `}
-          style={{
-            color:
-              theme.primaryText,
-          }}
-        >
-          <span>
-            Grand Total
-          </span>
-
-          <span>
-            ₹
-            {calculation.grandTotal.toFixed(
-              2
-            )}
-          </span>
-        </div>
-
-        {/* DUE */}
-
-        <div
-          className="
-            flex
-            justify-between
-            rounded-lg
-            px-2
-            py-1
-            text-sm
-            font-medium
-          "
-          style={{
-            backgroundColor:
-              dueAmount > 0
-                ? theme.primaryLight
-                : 'transparent',
-
-            color:
-              dueAmount > 0
-                ? theme.primaryText
-                : undefined,
-          }}
-        >
-          <span>Due</span>
-
-          <span>
-            ₹{dueAmount.toFixed(2)}
-          </span>
-        </div>
-
-      </div>
-
-      {/* ================================================= */}
-      {/* CUSTOMER PHONE */}
-      {/* ================================================= */}
-
-      <div className="px-4 pb-2">
-
-        <input
-          value={customerPhone}
-          onChange={(e) =>
-            setCustomerPhone(
-              e.target.value
-            )
-          }
-          placeholder="Phone"
-          className={`
-            w-full
-            rounded-xl
-            border
-            ${background.border}
-            px-3
-            py-2
-            text-sm
-            outline-none
-            transition
-          `}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor =
-              theme.primary;
-
-            e.currentTarget.style.boxShadow =
-              `0 0 0 2px ${theme.primaryLight}`;
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor =
-              '';
-
-            e.currentTarget.style.boxShadow =
-              '';
-          }}
-        />
-
-      </div>
-
-      {/* ================================================= */}
-      {/* PAID AMOUNT */}
-      {/* ================================================= */}
-
-      <div className="px-4 pb-3">
-
-        <input
-          type="number"
-          value={paidAmount}
-          onChange={(e) =>
-            setPaidAmount(
-              Number(e.target.value)
-            )
-          }
-          placeholder="Paid amount"
-          className={`
-            w-full
-            rounded-xl
-            border
-            ${background.border}
-            px-3
-            py-2
-            text-sm
-            outline-none
-            transition
-          `}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor =
-              theme.primary;
-
-            e.currentTarget.style.boxShadow =
-              `0 0 0 2px ${theme.primaryLight}`;
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor =
-              '';
-
-            e.currentTarget.style.boxShadow =
-              '';
-          }}
-        />
-
-      </div>
-
-      {/* ================================================= */}
-      {/* ERROR */}
-      {/* ================================================= */}
-
-      {error ? (
-        <div
-          className="
-            mx-4
-            mb-3
-            rounded-xl
-            px-3
-            py-2
-            text-xs
-            font-medium
-          "
-          style={{
-            backgroundColor:
-              theme.primaryLight,
-
-            color:
-              theme.primaryText,
-          }}
-        >
-          {error}
-        </div>
-      ) : null}
 
     </div>
   );
