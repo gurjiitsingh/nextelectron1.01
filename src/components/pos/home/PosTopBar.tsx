@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { usePosUi } from "@/PosUiStore/PosUiContext";
 import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
+import { UseSiteContext } from "@/SiteContext/SiteContext";
 
 export default function PosTopBar() {
 const pathname = usePathname();
@@ -14,7 +15,12 @@ theme,
 background,
 } = usePosTheme();
 
+const {open,
+sideBarToggle,
+} = UseSiteContext();
+
 const handleMenuClick = () => {
+  sideBarToggle(true)
 window.dispatchEvent(
 new CustomEvent("pos-toggle-sidebar")
 );

@@ -39,7 +39,7 @@
     "src/components/Bargermenu/Menu.tsx",
     "src/app/(universal)/admin/orders-old/order-detail/components/productList.js",
     ".next/dev/types/**/*.ts"
-, "src/app/(universal)/action/schedule/saveDaySchedule", "src/app/(universal)/action/schedule/saveDaySchedule", "shared/printer/PrintManager.cjs", "shared/printer/PrinterSettingsRepository.cjs", "shared/printer/formatters/FormatterFactory.cjs", "shared/printer/formatters/IReceiptFormatter.cjs", "shared/printer/transports/LanPrinter.cjs", "shared/printer/formatters/KitchenFormatter80.cjs", "shared/printer/formatters/KitchenFormatter58.cjs", "shared/printer/transports/TransportFactory.cjs", "shared/printer/types.js"  ],
+, "src/app/(universal)/action/schedule/saveDaySchedule", "src/app/(universal)/action/schedule/saveDaySchedule", "shared/printer/PrintManager.cjs", "shared/printer/PrinterSettingsRepository.cjs", "shared/printer/formatters/FormatterFactory.cjs", "shared/printer/formatters/IReceiptFormatter.cjs", "shared/printer/transports/LanPrinter.cjs", "shared/printer/formatters/KitchenFormatter80.cjs", "shared/printer/formatters/KitchenFormatter58.cjs", "shared/printer/transports/TransportFactory.cjs", "shared/printer/types.js", "src/components/MiniCart/SideCart.js"  ],
   "exclude": [
     "node_modules"
   ]

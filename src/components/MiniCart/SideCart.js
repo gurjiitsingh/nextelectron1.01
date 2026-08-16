@@ -1,24 +1,14 @@
- 
-   "use client";
+"use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useClickAway } from "react-use";
 import { IoClose } from "react-icons/io5";
-import { UseSiteContext } from "@/SiteContext/SiteContext";
-import MiniCartContent from "./MiniCartcontent";
-import { MiniCartSubtotal } from "./MiniSubtotal";
-import ProccedWithEmail from "./components/ProccedWithEmail";
-import { useCartContext } from "@/store/CartContext";
-import { useRouter } from "next/navigation";
-import { useLanguage } from "@/store/LanguageContext";
+import { usePathname } from "next/navigation";
 
-const framerSidebarBackground = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0, transition: { delay: 0.2 } },
-  transition: { duration: 0.3 },
-};
+import { UseSiteContext } from "@/SiteContext/SiteContext";
+import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
 
 const framerSidebarPanel = {
   initial: { x: "-100%" },
@@ -28,100 +18,484 @@ const framerSidebarPanel = {
 };
 
 export const SideCart = () => {
-  const { TEXT } = useLanguage();
-  const { open, sideBarToggle } = UseSiteContext();
-  const { openEmailForm, emailFormToggle, customerEmail } = UseSiteContext();
-  const { cartData } = useCartContext();
+  const pathname = usePathname();
+
+  const {
+    open,
+    sideBarToggle,
+  } = UseSiteContext();
+
+  const {
+    theme,
+    background,
+  } = usePosTheme();
+
   const ref = useRef(null);
-  const router = useRouter();
-  useClickAway(ref, () => sideBarToggle());
 
-  function pickUpHandle() {
+  useClickAway(ref, () => {
     sideBarToggle();
-    
-    if (!customerEmail) {
-      emailFormToggle(true);
-    } else {
-      router.push(`/checkout`);
+  });
+
+  // =====================================================
+  // CLOSE SIDEBAR AFTER LINK CLICK
+  // =====================================================
+
+  const handleLinkClick = () => {
+    sideBarToggle();
+  };
+
+  // =====================================================
+  // ACTIVE PATH
+  // =====================================================
+
+  const isActive = (href) => {
+    if (href === "/") {
+      return pathname === "/";
     }
-  }
 
-  function shopMoreHandle() {
-    sideBarToggle();
-    router.push("/");
-  }
+    return (
+      pathname === href ||
+      pathname.startsWith(`${href}/`)
+    );
+  };
+
+  // =====================================================
+  // SIDEBAR LINK
+  // =====================================================
+
+  const sidebarLinkClass = (href) => `
+    block
+    px-4
+    py-2
+    text-sm
+    font-medium
+    transition-colors
+    cursor-pointer
+  `;
+
+  // =====================================================
+  // SECTION TITLE
+  // =====================================================
+
+  const sectionTitleClass = `
+    px-4
+    py-2
+    text-xs
+    font-bold
+    uppercase
+    tracking-wide
+  `;
 
   return (
-    <div translate="no" className="z-50">
-      {typeof window !== "undefined" && !openEmailForm && (
-        <AnimatePresence mode="wait" initial={false}>
-          {open && (
-            <>
-              {/* Background blur */}
-              <motion.div
-                {...framerSidebarBackground}
-                aria-hidden="true"
-                className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-              ></motion.div>
+    <div
+      translate="no"
+      className="z-50"
+    >
+      <AnimatePresence
+        mode="wait"
+        initial={false}
+      >
 
-              {/* Sidebar panel */}
-              <motion.div
-                {...framerSidebarPanel}
-                ref={ref}
-                className="fixed top-0 bottom-0 left-0 z-50 w-full max-w-md h-screen bg-gradient-to-b from-white to-gray-50 shadow-2xl border-r border-gray-200 flex flex-col"
-                aria-label="Sidebar"
+        {open && (
+          <motion.div
+            {...framerSidebarPanel}
+            ref={ref}
+            className={`
+              fixed
+              top-[60px]
+              bottom-0
+              left-0
+              z-50
+              w-full
+              max-w-[250px]
+              h-[calc(100vh-60px)]
+              shadow-2xl
+              border-r
+              flex
+              flex-col
+              overflow-y-auto
+              app-scrollbar
+              pos-sidebar-scroll
+              ${background.className}
+            `}
+            style={{
+              borderColor: theme.primarySelected,
+            }}
+            aria-label="Sidebar"
+          >
+
+            {/* ================================================= */}
+            {/* HEADER */}
+            {/* ================================================= */}
+
+            <div
+              className="
+                shrink-0
+                flex
+                items-center
+                justify-between
+                px-4
+                py-2
+                border-b
+              "
+              style={{
+                borderColor: theme.primarySelected,
+              }}
+            >
+
+              <span
+                className="
+                  text-lg
+                  font-semibold
+                "
+                style={{
+                  color: theme.primaryText,
+                }}
               >
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
-                  <span className="text-lg font-semibold text-gray-800">
-                    {TEXT.cart_sidebar_title}
-                  </span>
-                  <button
-                    onClick={sideBarToggle}
-                    className="p-2 rounded-lg hover:bg-gray-200 transition-colors"
-                    aria-label="close sidebar"
-                  >
-                    <IoClose size={26} />
-                  </button>
-                </div>
+                POS
+              </span>
 
-                {/* Cart content */}
-                <div className="flex-1 overflow-y-auto p-3">
-                  <MiniCartContent />
-                </div>
+              <button
+                onClick={sideBarToggle}
+                className="
+                  p-2
+                  rounded-lg
+                  transition-colors
+                "
+                style={{
+                  color: theme.primaryText,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    theme.primarySelected;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "transparent";
+                }}
+                aria-label="Close sidebar"
+              >
+                <IoClose size={24} />
+              </button>
 
-                {/* Subtotal & Actions */}
-                <div className="p-4 border-t border-gray-100 bg-white">
-                  <MiniCartSubtotal />
+            </div>
 
-                  <div className="flex flex-col items-center justify-center gap-3 mt-4">
-                    {cartData.length ? (
-                      <button
-                        onClick={pickUpHandle}
-                        className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md"
-                      >
-                        {TEXT.checkout_button}
-                      </button>
-                    ) : (
-                      <div className="text-gray-500 font-medium text-center">
-                        {TEXT.empty_cart_message}
-                      </div>
-                    )}
 
-                    <button
-                      onClick={shopMoreHandle}
-                      className="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition-all"
-                    >
-                      {TEXT.shop_more_button}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      )}
-      {openEmailForm && <ProccedWithEmail />}
+            {/* ================================================= */}
+            {/* MAIN */}
+            {/* ================================================= */}
+
+            <div className="py-2">
+
+              <div
+                className={sectionTitleClass}
+                style={{
+                  backgroundColor: theme.primary,
+                  color: "#FFFFFF",
+                }}
+              >
+                Main
+              </div>
+
+              <Link
+                href="/"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/")}
+                style={{
+                  color: isActive("/")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/")
+                    ? 700
+                    : 500,
+                }}
+              >
+                POS
+              </Link>
+
+              <Link
+                href="/tables"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/tables")}
+                style={{
+                  color: isActive("/tables")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/tables")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Tables
+              </Link>
+
+            </div>
+
+
+            {/* ================================================= */}
+            {/* ORDERS */}
+            {/* ================================================= */}
+
+            <div className="py-2">
+
+              <div
+                className={sectionTitleClass}
+                style={{
+                  backgroundColor: theme.primary,
+                  color: "#FFFFFF",
+                }}
+              >
+                Orders
+              </div>
+
+              <Link
+                href="/orders/local"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/orders/local")}
+                style={{
+                  color: isActive("/orders/local")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/orders/local")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Local Orders
+              </Link>
+
+              <Link
+                href="/orders/online"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/orders/online")}
+                style={{
+                  color: isActive("/orders/online")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/orders/online")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Online Orders
+              </Link>
+
+              <Link
+                href="/kot/history"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/kot/history")}
+                style={{
+                  color: isActive("/kot/history")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/kot/history")
+                    ? 700
+                    : 500,
+                }}
+              >
+                KOT History
+              </Link>
+
+            </div>
+
+
+            {/* ================================================= */}
+            {/* REPORTS */}
+            {/* ================================================= */}
+
+            <div className="py-2">
+
+              <div
+                className={sectionTitleClass}
+                style={{
+                  backgroundColor: theme.primary,
+                  color: "#FFFFFF",
+                }}
+              >
+                Reports
+              </div>
+
+              <Link
+                href="/reports/day-close"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/reports/day-close")}
+                style={{
+                  color: isActive("/reports/day-close")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/reports/day-close")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Day Close
+              </Link>
+
+              <Link
+                href="/reports/sales"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/reports/sales")}
+                style={{
+                  color: isActive("/reports/sales")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/reports/sales")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Sales / Z-Reports
+              </Link>
+
+            </div>
+
+
+            {/* ================================================= */}
+            {/* CUSTOMERS */}
+            {/* ================================================= */}
+
+            <div className="py-2">
+
+              <div
+                className={sectionTitleClass}
+                style={{
+                  backgroundColor: theme.primary,
+                  color: "#FFFFFF",
+                }}
+              >
+                Customers
+              </div>
+
+              <Link
+                href="/customers"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/customers")}
+                style={{
+                  color: isActive("/customers")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/customers")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Customer List
+              </Link>
+
+            </div>
+
+
+            {/* ================================================= */}
+            {/* SYSTEM */}
+            {/* ================================================= */}
+
+            <div className="py-2">
+
+              <div
+                className={sectionTitleClass}
+                style={{
+                  backgroundColor: theme.primary,
+                  color: "#FFFFFF",
+                }}
+              >
+                System
+              </div>
+
+              <Link
+                href="/sync"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/sync")}
+                style={{
+                  color: isActive("/sync")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/sync")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Sync
+              </Link>
+
+            </div>
+
+
+            {/* ================================================= */}
+            {/* SETTINGS */}
+            {/* ================================================= */}
+
+            <div className="py-2">
+
+              <div
+                className={sectionTitleClass}
+                style={{
+                  backgroundColor: theme.primary,
+                  color: "#FFFFFF",
+                }}
+              >
+                Settings
+              </div>
+
+              <Link
+                href="/settings/theme"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/settings/theme")}
+                style={{
+                  color: isActive("/settings/theme")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/settings/theme")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Theme Setting
+              </Link>
+
+              <Link
+                href="/settings/printer"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/settings/printer")}
+                style={{
+                  color: isActive("/settings/printer")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/settings/printer")
+                    ? 700
+                    : 500,
+                }}
+              >
+                Printer Setting
+              </Link>
+
+            </div>
+
+          </motion.div>
+        )}
+
+      </AnimatePresence>
     </div>
   );
 };
