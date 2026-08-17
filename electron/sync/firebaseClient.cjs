@@ -63,10 +63,10 @@ const firebaseConfig = {
     process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-console.log(
-  'FIREBASE CONFIG =>',
-  firebaseConfig
-);
+// console.log(
+//   'FIREBASE CONFIG =>',
+//   firebaseConfig
+// );
 
 const app =
   getApps()[0] ||

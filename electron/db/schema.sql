@@ -272,10 +272,56 @@ ON pos_kot_items(source);
 
 
 
+CREATE TABLE IF NOT EXISTS pos_kot_batch (
+  id TEXT PRIMARY KEY,
+
+  kotNumber TEXT NOT NULL UNIQUE,
+
+  sessionId TEXT,
+
+  tableNo TEXT,
+  tableName TEXT,
+
+  orderType TEXT NOT NULL DEFAULT 'DINE_IN',
+
+  deviceId TEXT,
+  deviceName TEXT,
+  appVersion TEXT,
+
+  createdAt INTEGER NOT NULL,
+
+  sentBy TEXT,
+
+  syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+  lastSyncedAt INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_kot_batch_table
+ON pos_kot_batch(tableNo);
+
+CREATE INDEX IF NOT EXISTS idx_kot_batch_created
+ON pos_kot_batch(createdAt);
+
+CREATE INDEX IF NOT EXISTS idx_kot_batch_sync
+ON pos_kot_batch(syncStatus);
+
+CREATE INDEX IF NOT EXISTS idx_kot_batch_session
+ON pos_kot_batch(sessionId);
 
 
+CREATE TABLE IF NOT EXISTS pos_kot_sequence (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  nextNumber INTEGER NOT NULL DEFAULT 1
+);
 
-
+INSERT OR IGNORE INTO pos_kot_sequence (
+  id,
+  nextNumber
+)
+VALUES (
+  1,
+  1
+);
 -- =====================================================
 -- KOT HISTORY
 --  
@@ -287,69 +333,116 @@ CREATE TABLE IF NOT EXISTS pos_kot_history (
 
   id TEXT PRIMARY KEY,
 
+  -- =================================================
+  -- ORIGINAL KOT
+  -- =================================================
+
+  kotBatchId TEXT NOT NULL,
   kotNumber TEXT NOT NULL,
 
-  tableNo TEXT NOT NULL,
+  -- =================================================
+  -- TABLE
+  -- =================================================
 
+  tableNo TEXT NOT NULL,
   tableName TEXT,
 
   orderType TEXT NOT NULL,
 
-  source TEXT NOT NULL,
+  -- =================================================
+  -- BILL / ORDER LINK
+  -- =================================================
 
-  status TEXT NOT NULL,
+  orderId TEXT,
+  billNo TEXT,
+
+  -- =================================================
+  -- STATUS
+  -- =================================================
+
+  status TEXT NOT NULL DEFAULT 'COMPLETED',
+
+  -- =================================================
+  -- BUSINESS DATE
+  -- =================================================
 
   businessDate TEXT NOT NULL,
 
-  createdAt INTEGER NOT NULL,
+  -- =================================================
+  -- TIME
+  -- =================================================
 
+  createdAt INTEGER NOT NULL,
   completedAt INTEGER,
 
+  -- =================================================
+  -- DELETE / VOID
+  -- =================================================
+
   deletedAt INTEGER,
-
   deletedById TEXT,
-
   deletedByName TEXT,
 
+  -- =================================================
+  -- DEVICE
+  -- =================================================
+
   deviceId TEXT NOT NULL,
-
   deviceName TEXT,
-
   appVersion TEXT,
 
+  -- =================================================
+  -- USER
+  -- =================================================
+
+  sentBy TEXT,
+
+  -- =================================================
+  -- SYNC
+  -- =================================================
+
   syncStatus TEXT NOT NULL DEFAULT 'PENDING',
-
   lastSyncedAt INTEGER
-
 );
 
 
-CREATE INDEX IF NOT EXISTS idx_pos_kot_history_kotNumber
+-- =====================================================
+-- INDEXES
+-- =====================================================
+
+CREATE INDEX IF NOT EXISTS idx_kot_history_batch
+ON pos_kot_history(kotBatchId);
+
+
+CREATE INDEX IF NOT EXISTS idx_kot_history_number
 ON pos_kot_history(kotNumber);
 
-CREATE INDEX IF NOT EXISTS idx_pos_kot_history_tableNo
+
+CREATE INDEX IF NOT EXISTS idx_kot_history_table
 ON pos_kot_history(tableNo);
 
-CREATE INDEX IF NOT EXISTS idx_pos_kot_history_businessDate
+
+CREATE INDEX IF NOT EXISTS idx_kot_history_date
 ON pos_kot_history(businessDate);
 
-CREATE INDEX IF NOT EXISTS idx_pos_kot_history_status
+
+CREATE INDEX IF NOT EXISTS idx_kot_history_status
 ON pos_kot_history(status);
 
-CREATE INDEX IF NOT EXISTS idx_pos_kot_history_createdAt
-ON pos_kot_history(createdAt);
 
-CREATE INDEX IF NOT EXISTS idx_pos_kot_history_syncStatus
-ON pos_kot_history(syncStatus);
+CREATE INDEX IF NOT EXISTS idx_kot_history_order
+ON pos_kot_history(orderId);
 
 
+CREATE INDEX IF NOT EXISTS idx_kot_history_bill
+ON pos_kot_history(billNo);
 
 
 
 CREATE TABLE IF NOT EXISTS pos_kot_history_items (
 
   id TEXT PRIMARY KEY,
-
+kotBatchId TEXT NOT NULL,
   kotHistoryId TEXT NOT NULL,
 
   kotNumber TEXT NOT NULL,

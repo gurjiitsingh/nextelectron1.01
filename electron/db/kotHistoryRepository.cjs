@@ -11,11 +11,13 @@ function uuid() {
 // =====================================================
 
 function createKotHistory({
+  kotBatchId,
   kotNumber,
+
   tableNo,
   tableName = '',
+
   orderType = 'DINE_IN',
-  source = 'POS',
 
   businessDate,
 
@@ -23,8 +25,13 @@ function createKotHistory({
   deviceName = 'Electron POS',
   appVersion = '1.0',
 
+  sentBy = null,
+
   items = [],
 }) {
+  if (!kotBatchId) {
+    throw new Error('kotBatchId is required1');
+  }
 
   if (!kotNumber) {
     throw new Error('kotNumber is required');
@@ -44,22 +51,22 @@ function createKotHistory({
 
   const transaction = db.transaction(() => {
 
-    // =================================================
+    // =====================================================
     // 1. HEADER
-    // =================================================
+    // =====================================================
 
     db.prepare(`
       INSERT INTO pos_kot_history (
 
         id,
 
+        kotBatchId,
         kotNumber,
 
         tableNo,
         tableName,
 
         orderType,
-        source,
 
         status,
 
@@ -76,6 +83,8 @@ function createKotHistory({
         deviceName,
         appVersion,
 
+        sentBy,
+
         syncStatus,
         lastSyncedAt
 
@@ -83,13 +92,13 @@ function createKotHistory({
 
         @id,
 
+        @kotBatchId,
         @kotNumber,
 
         @tableNo,
         @tableName,
 
         @orderType,
-        @source,
 
         'OPEN',
 
@@ -106,15 +115,17 @@ function createKotHistory({
         @deviceName,
         @appVersion,
 
+        @sentBy,
+
         'PENDING',
         NULL
 
       )
     `).run({
 
-      id:
-        kotHistoryId,
+      id: kotHistoryId,
 
+      kotBatchId,
       kotNumber,
 
       tableNo,
@@ -124,137 +135,176 @@ function createKotHistory({
 
       orderType,
 
-      source,
-
       businessDate,
 
-      createdAt:
-        now,
+      createdAt: now,
 
       deviceId,
-
       deviceName,
-
       appVersion,
+
+      sentBy,
     });
 
 
-    // =================================================
+    // =====================================================
     // 2. ITEMS
-    // =================================================
+    // =====================================================
 
-    const insertItem =
-      db.prepare(`
-        INSERT INTO pos_kot_history_items (
+    const insertItem = db.prepare(`
+      INSERT INTO pos_kot_history_items (
 
-          id,
+        id,
 
-          kotHistoryId,
-          kotNumber,
+        kotHistoryId,
 
-          tableNo,
+        kotBatchId,
+        kotNumber,
 
-          productId,
+        tableNo,
 
-          name,
+        productId,
+        name,
 
-          categoryId,
-          categoryName,
+        categoryId,
+        categoryName,
 
-          parentId,
-          isVariant,
+        parentId,
+        isVariant,
 
-          productMode,
+        productMode,
 
-          basePrice,
-          quantity,
+        basePrice,
+        quantity,
 
-          modifierPrice,
-          modifierSummary,
-          modifiersJson,
+        modifierPrice,
+        modifierSummary,
+        modifiersJson,
 
-          note,
+        note,
 
-          taxRate,
-          taxType,
+        taxRate,
+        taxType,
 
-          taxAmountPerItem,
-          taxTotal,
+        taxAmountPerItem,
+        taxTotal,
 
-          finalPricePerItem,
-          finalTotal,
+        finalPricePerItem,
+        finalTotal,
 
-          status,
+        status,
 
-          source,
+        source,
 
-          createdAt,
-          deletedAt,
+        createdAt,
+        deletedAt,
 
-          syncStatus,
-          lastSyncedAt
+        syncStatus,
+        lastSyncedAt
 
-        ) VALUES (
+      ) VALUES (
 
-          @id,
+        @id,
 
-          @kotHistoryId,
-          @kotNumber,
+        @kotHistoryId,
 
-          @tableNo,
+        @kotBatchId,
+        @kotNumber,
 
-          @productId,
+        @tableNo,
 
-          @name,
+        @productId,
+        @name,
 
-          @categoryId,
-          @categoryName,
+        @categoryId,
+        @categoryName,
 
-          @parentId,
-          @isVariant,
+        @parentId,
+        @isVariant,
 
-          @productMode,
+        @productMode,
 
-          @basePrice,
-          @quantity,
+        @basePrice,
+        @quantity,
 
-          @modifierPrice,
-          @modifierSummary,
-          @modifiersJson,
+        @modifierPrice,
+        @modifierSummary,
+        @modifiersJson,
 
-          @note,
+        @note,
 
-          @taxRate,
-          @taxType,
+        @taxRate,
+        @taxType,
 
-          @taxAmountPerItem,
-          @taxTotal,
+        @taxAmountPerItem,
+        @taxTotal,
 
-          @finalPricePerItem,
-          @finalTotal,
+        @finalPricePerItem,
+        @finalTotal,
 
-          'ACTIVE',
+        'ACTIVE',
 
-          @source,
+        @source,
 
-          @createdAt,
-          NULL,
+        @createdAt,
+        NULL,
 
-          'PENDING',
-          NULL
+        'PENDING',
+        NULL
 
-        )
-      `);
+      )
+    `);
 
 
     for (const item of items) {
 
+      const quantity =
+        Number(item.quantity || 0);
+
+      const basePrice =
+        Number(item.basePrice || 0);
+
+      const modifierPrice =
+        Number(
+          item.modifierTotal ??
+          item.modifierPrice ??
+          0
+        );
+
+      const finalPricePerItem =
+        Number(
+          item.finalPrice ??
+          item.finalPricePerItem ??
+          (basePrice + modifierPrice)
+        );
+
+      const finalTotal =
+        Number(
+          item.finalTotal ??
+          (finalPricePerItem * quantity)
+        );
+
+      const taxRate =
+        Number(item.taxRate || 0);
+
+      const taxTotal =
+        Number(item.taxTotal || 0);
+
+      const taxAmountPerItem =
+        Number(
+          item.taxAmountPerItem ||
+          (quantity > 0
+            ? taxTotal / quantity
+            : 0)
+        );
+
       insertItem.run({
 
-        id:
-          uuid(),
+        id: uuid(),
 
         kotHistoryId,
+
+        kotBatchId,
 
         kotNumber,
 
@@ -281,14 +331,11 @@ function createKotHistory({
         productMode:
           item.productMode || 'raw_stock',
 
-        basePrice:
-          Number(item.basePrice || 0),
+        basePrice,
 
-        quantity:
-          Number(item.quantity || 0),
+        quantity,
 
-        modifierPrice:
-          Number(item.modifierPrice || 0),
+        modifierPrice,
 
         modifierSummary:
           item.modifierSummary || '',
@@ -299,32 +346,26 @@ function createKotHistory({
         note:
           item.note || '',
 
-        taxRate:
-          Number(item.taxRate || 0),
+        taxRate,
 
         taxType:
           item.taxType || 'exclusive',
 
-        taxAmountPerItem:
-          Number(item.taxAmountPerItem || 0),
+        taxAmountPerItem,
 
-        taxTotal:
-          Number(item.taxTotal || 0),
+        taxTotal,
 
-        finalPricePerItem:
-          Number(item.finalPricePerItem || 0),
+        finalPricePerItem,
 
-        finalTotal:
-          Number(item.finalTotal || 0),
+        finalTotal,
 
         source:
-          item.source || source,
+          item.source || 'POS',
 
         createdAt:
           now,
       });
     }
-
   });
 
   transaction();
@@ -332,10 +373,10 @@ function createKotHistory({
   return {
     success: true,
     id: kotHistoryId,
+    kotBatchId,
     kotNumber,
   };
 }
-
 
 // =====================================================
 // GET KOT HISTORY
@@ -362,7 +403,6 @@ function getKotHistory({
     ORDER BY createdAt DESC
   `).all();
 }
-
 
 // =====================================================
 // GET KOT HISTORY DETAIL
@@ -564,13 +604,60 @@ function markKotHistoryPaid(
   };
 }
 
+function debugKotHistoryItems() {
 
+  const rows = db.prepare(`
+    SELECT
+      id,
+      kotHistoryId,
+      kotBatchId,
+      kotNumber,
+      productId,
+      name
+    FROM pos_kot_history_items
+    ORDER BY createdAt DESC
+    LIMIT 20
+  `).all();
+
+  console.log(
+    '========== KOT HISTORY ITEMS =========='
+  );
+
+  console.table(rows);
+
+  return rows;
+}
+
+
+// =====================================================
+// DEBUG: GET RECENT KOT HISTORY ITEMS
+// =====================================================
+
+function getRecentKotHistoryItems(limit = 20) {
+
+  return db.prepare(`
+    SELECT
+      id,
+      kotHistoryId,
+      kotBatchId,
+      kotNumber,
+      productId,
+      name,
+      quantity,
+      status,
+      createdAt
+    FROM pos_kot_history_items
+    ORDER BY createdAt DESC
+    LIMIT ?
+  `).all(Number(limit) || 20);
+}
 // =====================================================
 // EXPORT
 // =====================================================
 
 module.exports = {
-
+  getRecentKotHistoryItems,
+debugKotHistoryItems,
   createKotHistory,
 
   getKotHistory,

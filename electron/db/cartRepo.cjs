@@ -6,12 +6,12 @@ const { db } = require('./sqlite.cjs');
 // Location: electron/db/cartRepo.cjs
 // Run once when Electron starts
 // =====================================================
-console.log(
-  'SQLITE TABLES =>',
-  db.prepare(
-    "SELECT name FROM sqlite_master WHERE type='table'"
-  ).all()
-);
+// console.log(
+//   'SQLITE TABLES =>',
+//   db.prepare(
+//     "SELECT name FROM sqlite_master WHERE type='table'"
+//   ).all()
+// );
 
 initDb();
 
@@ -119,7 +119,7 @@ async function getCartItems(tableNo) {
     )
     .all(tableNo);
 
-  console.log('SQLITE CART ROWS =>', rows);
+ 
 
   return rows;
 }

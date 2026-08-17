@@ -144,11 +144,11 @@ export function PosThemeProvider({
   // DEBUG
   // =====================================================
 
-  console.log(
-    'ACTIVE POS BACKGROUND:',
-    backgroundName,
-    background
-  );
+  // console.log(
+  //   'ACTIVE POS BACKGROUND:',
+  //   backgroundName,
+  //   background
+  // );
 
 
   // =====================================================

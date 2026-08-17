@@ -266,7 +266,7 @@ async function handleCheckout(
       'CHECKOUT AMOUNT:',
       totalAmount
     );
-console.log("tableName--------------", currentTableName)
+
     const result =
       await window.posApi.createBill({
 

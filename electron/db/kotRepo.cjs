@@ -77,7 +77,128 @@ async function updateKotStatus(id, status) {
   `).run(status, id);
 }
 
+
+function generateNextKotNumber() {
+  const transaction = db.transaction(() => {
+
+    const row = db.prepare(`
+      SELECT nextNumber
+      FROM pos_kot_sequence
+      WHERE id = 1
+    `).get();
+
+    if (!row) {
+      throw new Error(
+        'KOT sequence is not initialized'
+      );
+    }
+
+    const number = Number(row.nextNumber);
+
+    if (!Number.isInteger(number) || number < 1) {
+      throw new Error(
+        `Invalid KOT sequence number: ${row.nextNumber}`
+      );
+    }
+
+    db.prepare(`
+      UPDATE pos_kot_sequence
+      SET nextNumber = ?
+      WHERE id = 1
+    `).run(number + 1);
+
+    return `K${number}`;
+  });
+
+  return transaction();
+}
+
+function insertKotBatch(batch) {
+
+  const stmt = db.prepare(`
+    INSERT INTO pos_kot_batch (
+      id,
+      kotNumber,
+      sessionId,
+      tableNo,
+      tableName,
+      orderType,
+      deviceId,
+      deviceName,
+      appVersion,
+      createdAt,
+      sentBy,
+      syncStatus,
+      lastSyncedAt
+    )
+    VALUES (
+      @id,
+      @kotNumber,
+      @sessionId,
+      @tableNo,
+      @tableName,
+      @orderType,
+      @deviceId,
+      @deviceName,
+      @appVersion,
+      @createdAt,
+      @sentBy,
+      @syncStatus,
+      @lastSyncedAt
+    )
+  `);
+
+  stmt.run({
+    id:
+      batch.id,
+
+    kotNumber:
+      batch.kotNumber,
+
+    sessionId:
+      batch.sessionId ?? null,
+
+    tableNo:
+      batch.tableNo ?? null,
+
+    tableName:
+      batch.tableName ?? null,
+
+    orderType:
+      batch.orderType ?? 'DINE_IN',
+
+    deviceId:
+      batch.deviceId ?? null,
+
+    deviceName:
+      batch.deviceName ?? null,
+
+    appVersion:
+      batch.appVersion ?? null,
+
+    createdAt:
+      batch.createdAt ?? Date.now(),
+
+    sentBy:
+      batch.sentBy ?? null,
+
+    syncStatus:
+      batch.syncStatus ?? 'PENDING',
+
+    lastSyncedAt:
+      batch.lastSyncedAt ?? null,
+  });
+
+  return {
+    success: true,
+    id: batch.id,
+    kotNumber: batch.kotNumber,
+  };
+}
+
 module.exports = {
+  generateNextKotNumber,
+  insertKotBatch,
   insertKotItems,
   getPendingKotByTable,
   getKotByBatch,

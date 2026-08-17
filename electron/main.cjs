@@ -349,11 +349,129 @@ const {
 // =====================================================
 
 ipcMain.handle(
+  'pos:kot:insertBatch',
+  async (_, batch) => {
+    return kotRepo.insertKotBatch(batch);
+  }
+)
+
+ipcMain.handle(
   'kot:insert',
   async (_e, items) => {
     await kotRepo.insertKotItems(items);
 
     return { success: true };
+  }
+);
+
+ipcMain.handle(
+  'kot-history:create',
+  async (_event, data) => {
+
+    return kotHistoryRepo.createKotHistory(data);
+
+  }
+);
+
+ipcMain.handle(
+  'pos:getKotHistory',
+  async (_event, args = {}) => {
+
+    try {
+
+      return {
+        success: true,
+        data: kotHistoryRepo.getKotHistory(args),
+      };
+
+    } catch (error) {
+
+      console.error(
+        'GET KOT HISTORY FAILED',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to load KOT history',
+      };
+    }
+  }
+);
+
+
+ipcMain.handle(
+  'pos:getKotHistoryDetail',
+  async (_event, kotHistoryId) => {
+
+    try {
+
+      return {
+        success: true,
+        data:
+          kotHistoryRepo.getKotHistoryDetail(
+            kotHistoryId
+          ),
+      };
+
+    } catch (error) {
+
+      console.error(
+        'GET KOT HISTORY DETAIL FAILED',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to load KOT history detail',
+      };
+    }
+  }
+);
+
+
+
+ipcMain.handle(
+  'pos:getRecentKotHistoryItems',
+  async (_event, limit = 20) => {
+
+    try {
+
+      return {
+        success: true,
+
+        data:
+          kotHistoryRepo.getRecentKotHistoryItems(
+            limit
+          ),
+      };
+
+    } catch (error) {
+
+      console.error(
+        'GET RECENT KOT HISTORY ITEMS FAILED',
+        error
+      );
+
+      return {
+        success: false,
+
+        error:
+          error?.message ||
+          'Failed to load KOT history items',
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  'pos:kot:generateNumber',
+  async () => {
+    return kotRepo.generateNextKotNumber();
   }
 );
 
@@ -654,10 +772,10 @@ app.whenReady().then(() => {
   ipcMain.handle(
     'cart:list',
     async (_e, tableNo) => {
-      console.log(
-        'IPC cart:list',
-        tableNo
-      );
+      // console.log(
+      //   'IPC cart:list',
+      //   tableNo
+      // );
 
       return cartRepo.getCartItems(
         tableNo
@@ -668,10 +786,10 @@ app.whenReady().then(() => {
   ipcMain.handle(
     'cart:add',
     async (_e, item, tableNo) => {
-      console.log(
-        'IPC cart:add',
-        item
-      );
+      // console.log(
+      //   'IPC cart:add',
+      //   item
+      // );
 
       return cartRepo.addCartItem(
         item,

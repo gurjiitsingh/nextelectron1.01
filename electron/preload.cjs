@@ -117,6 +117,47 @@ contextBridge.exposeInMainWorld('posApi', {
   // =====================================================
   // KOT
   // =====================================================
+generateNextKotNumber: () =>
+  ipcRenderer.invoke(
+    'pos:kot:generateNumber'
+  ),
+
+  insertKotBatch: (batch) =>
+  ipcRenderer.invoke(
+    'pos:kot:insertBatch',
+    batch
+  ),
+
+  createKotHistory: (data) =>
+  ipcRenderer.invoke(
+    'kot-history:create',
+    data
+  ),
+  
+
+getRecentKotHistoryItems: (
+  limit = 20
+) =>
+  ipcRenderer.invoke(
+    'pos:getRecentKotHistoryItems',
+    limit
+  ),
+
+  getKotHistory: (
+  args = {}
+) =>
+  ipcRenderer.invoke(
+    'pos:getKotHistory',
+    args
+  ),
+
+getKotHistoryDetail: (
+  kotHistoryId
+) =>
+  ipcRenderer.invoke(
+    'pos:getKotHistoryDetail',
+    kotHistoryId
+  ),
 
   insertKotItems: (items) =>
     ipcRenderer.invoke(
