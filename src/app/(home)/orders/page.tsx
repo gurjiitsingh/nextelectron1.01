@@ -68,7 +68,7 @@ const [detailsLoading, setDetailsLoading] =
   async function loadOrders(
     date = selectedDate
   ) {
-
+  console.log('🔥 OrdersPage RENDERED');
     try {
 
       setLoading(true);

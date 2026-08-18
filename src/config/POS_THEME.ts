@@ -103,7 +103,7 @@ export const POS_BACKGROUNDS: Record<
   softSlate: {
     name: 'Soft Slate',
 
-    className: 'bg-slate-200',
+    className: 'bg-zinc-300',
 
     // Main text
     text: 'text-slate-800',
@@ -111,13 +111,13 @@ export const POS_BACKGROUNDS: Record<
 
     // Secondary text
     mutedText: 'text-slate-500',
-    mutedTextColor: '#64748B',
+    mutedTextColor: '#464b53',
 
     // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
     // Normal UI border
-    border: 'border-slate-300',
+    border: 'border-slate-200/60',
 
     // Softer item/card border
     itemBorder: 'border-slate-300/60',
@@ -240,7 +240,7 @@ export const POS_BACKGROUNDS: Record<
     name: 'Blue',
 
     // Main background
-    className: 'bg-[#406093]',
+    className: 'bg-[#5C6A83]',
 
     // Main text
     text: 'text-white',
@@ -254,7 +254,7 @@ export const POS_BACKGROUNDS: Record<
     surfaceText: 'text-slate-800',
 
     // Normal UI border
-    border: 'border-[#6F8FBE]',
+    border: 'border-[#555]',
 
     // Softer item/card border
     itemBorder: 'border-[#5878AA]',
@@ -263,7 +263,7 @@ export const POS_BACKGROUNDS: Record<
     divide: 'divide-[#6F8FBE]',
 
     // Clearly visible CSS line
-    line: '#9DB9DE',
+    line: '#828e9f',
   },
 };
 
@@ -329,7 +329,7 @@ export const POS_THEMES: Record<
 
     inactive: '#6f86bd',
   },
-// #5C6A83
+// 
 
   // ===================================================
   // ORANGE

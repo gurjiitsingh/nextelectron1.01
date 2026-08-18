@@ -75,7 +75,7 @@ const sidebarButtonClass = `rounded-lg
 
 return (
 <header
-className={`         h-[60px]
+className={`         h-[55px]
         shrink-0
         flex
         items-center
@@ -85,6 +85,8 @@ className={`         h-[60px]
         ${background.className}
         ${background.text}
         border-b
+        border-slate-100
+       
       `}
 style={{
 borderColor: theme.primaryLight,

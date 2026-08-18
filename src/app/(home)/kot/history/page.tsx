@@ -198,7 +198,8 @@ export default function KotHistoryPage() {
           'Failed to load KOT'
         );
       }
-
+     
+console.log("result.data----------", result.data)
       setSelectedKot(
         result.data || null
       );
@@ -374,73 +375,146 @@ const filteredHistory =
   // RENDER
   // =====================================================
 
-  return (
+return (
+  <div className="flex h-full min-h-0 flex-col bg-slate-50 text-slate-900">
 
-    <div className="flex h-full min-h-0 flex-col">
+    {/* =========================================================
+        HEADER
+    ========================================================= */}
+    <div className="shrink-0 border-b border-slate-200 bg-white">
 
-      {/* =================================================
-          HEADER
-      ================================================= */}
+      <div className="px-4 py-4 md:px-6 md:py-5">
 
-      <div className="shrink-0 border-b px-5 py-4">
+        <div className="flex items-center justify-between gap-4">
 
-        <div className="flex items-center justify-between">
+          <div className="min-w-0">
 
-          <div>
+            <div className="flex items-center gap-2">
 
-            <h1 className="text-lg font-semibold">
-              KOT History
-            </h1>
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-slate-900
+                  text-white
+                "
+              >
+                <span className="text-sm font-bold">
+                  K
+                </span>
+              </div>
 
-            <p className="mt-1 text-xs opacity-60">
-              Previously sent kitchen orders
-            </p>
+              <div>
+
+                <h1 className="text-base font-semibold tracking-tight md:text-lg">
+                  KOT History
+                </h1>
+
+                <p className="text-xs text-slate-500">
+                  Previously sent kitchen orders
+                </p>
+
+              </div>
+
+            </div>
 
           </div>
 
+
+          {/* REFRESH */}
           <button
             type="button"
             onClick={loadHistory}
             disabled={loading}
             className="
+              flex
+              shrink-0
+              items-center
+              gap-2
               rounded-lg
               border
-              px-4
+              border-slate-200
+              bg-white
+              px-3
               py-2
               text-xs
               font-medium
-              hover:bg-gray-50
+              text-slate-700
+              shadow-sm
+              transition
+              hover:bg-slate-50
+              hover:border-slate-300
+              disabled:cursor-not-allowed
               disabled:opacity-50
             "
           >
+
+            <span
+              className={
+                loading
+                  ? 'animate-spin'
+                  : ''
+              }
+            >
+              ↻
+            </span>
+
             {loading
-              ? 'Loading...'
+              ? 'Loading'
               : 'Refresh'}
+
           </button>
 
         </div>
 
-        {/* SEARCH */}
 
-        <div className="mt-4">
+        {/* =====================================================
+            SEARCH
+        ===================================================== */}
+        <div className="relative mt-5">
+
+          <span
+            className="
+              pointer-events-none
+              absolute
+              left-3
+              top-1/2
+              -translate-y-1/2
+              text-slate-400
+            "
+          >
+            ⌕
+          </span>
 
           <input
             value={search}
             onChange={(e) =>
               setSearch(e.target.value)
             }
-            placeholder="
-              Search KOT, table, bill or order...
-            "
+            placeholder="Search KOT, table, bill or order..."
             className="
+              h-10
               w-full
-              rounded-lg
+              rounded-xl
               border
-              px-3
-              py-2
+              border-slate-200
+              bg-slate-50
+              pl-9
+              pr-3
               text-sm
+              text-slate-800
               outline-none
+              placeholder:text-slate-400
+              transition
+              focus:border-slate-400
+              focus:bg-white
               focus:ring-2
+              focus:ring-slate-100
             "
           />
 
@@ -449,589 +523,1208 @@ const filteredHistory =
       </div>
 
 
-
-<div className="flex shrink-0 gap-2 overflow-x-auto border-b px-3 py-2">
-
-  {(
-    [
-      ['ALL', 'All'],
-      ['OPEN', 'Open'],
-      ['PARTIAL', 'Partial'],
-      ['DELETED', 'Deleted'],
-      ['PAID', 'Paid'],
-    ] as const
-  ).map(([key, label]) => {
-
-    const isActive =
-      activeFilter === key;
-
-    return (
-      <button
-        key={key}
-        type="button"
-        onClick={() =>
-          setActiveFilter(key)
-        }
-        className={`
-          shrink-0
-          rounded-lg
-          border
+      {/* =========================================================
+          FILTER BAR
+      ========================================================= */}
+      <div
+        className="
+          flex
+          gap-1.5
+          overflow-x-auto
+          border-t
+          border-slate-100
           px-4
-          py-2
-          text-xs
-          font-semibold
-          transition-all
-
-          ${
-            isActive
-              ? 'bg-black text-white border-black'
-              : 'bg-transparent opacity-70 hover:opacity-100'
-          }
-        `}
+          py-2.5
+          md:px-6
+        "
       >
-        {label}
 
-        <span
-          className={`
-            ml-1
-            ${
-              isActive
-                ? 'opacity-80'
-                : 'opacity-60'
-            }
-          `}
-        >
-          {statusCounts[key]}
-        </span>
-      </button>
-    );
-  })}
+        {(
+          [
+            ['ALL', 'All'],
+            ['OPEN', 'Open'],
+            ['PARTIAL', 'Partial'],
+            ['DELETED', 'Deleted'],
+            ['PAID', 'Paid'],
+          ] as const
+        ).map(([key, label]) => {
 
-</div>
-      {/* =================================================
-          CONTENT
-      ================================================= */}
+          const isActive =
+            activeFilter === key;
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() =>
+                setActiveFilter(key)
+              }
+              className={`
+                flex
+                shrink-0
+                items-center
+                gap-1.5
+                rounded-lg
+                px-3
+                py-1.5
+                text-xs
+                font-medium
+                transition
 
-        {/* ERROR */}
+                ${
+                  isActive
+                    ? `
+                      bg-slate-900
+                      text-white
+                      shadow-sm
+                    `
+                    : `
+                      text-slate-500
+                      hover:bg-slate-100
+                      hover:text-slate-800
+                    `
+                }
+              `}
+            >
 
-        {error && (
+              <span>
+                {label}
+              </span>
 
-          <div className="
+              <span
+                className={`
+                  rounded-md
+                  px-1.5
+                  py-0.5
+                  text-[10px]
+
+                  ${
+                    isActive
+                      ? 'bg-white/15 text-white'
+                      : 'bg-slate-100 text-slate-500'
+                  }
+                `}
+              >
+                {statusCounts[key]}
+              </span>
+
+            </button>
+          );
+
+        })}
+
+      </div>
+
+    </div>
+
+
+    {/* =========================================================
+        CONTENT
+    ========================================================= */}
+    <div
+      className="
+        min-h-0
+        flex-1
+        overflow-y-auto
+        px-3
+        py-4
+        md:px-6
+        md:py-5
+      "
+    >
+
+      {/* ERROR */}
+      {error && (
+
+        <div
+          className="
             mb-4
-            rounded-lg
+            flex
+            items-start
+            gap-3
+            rounded-xl
             border
-            border-red-200
+            border-red-100
             bg-red-50
             px-4
             py-3
             text-sm
             text-red-700
-          ">
+          "
+        >
 
+          <span className="font-semibold">
+            !
+          </span>
+
+          <span>
             {error}
+          </span>
 
-          </div>
+        </div>
 
-        )}
+      )}
 
 
-        {/* LOADING */}
+      {/* LOADING */}
+      {loading && (
 
-        {loading && (
-
-          <div className="
+        <div
+          className="
             flex
-            h-40
+            h-56
+            flex-col
             items-center
             justify-center
+            gap-3
             text-sm
-            opacity-60
-          ">
+            text-slate-400
+          "
+        >
 
-            Loading KOT history...
+          <div
+            className="
+              h-7
+              w-7
+              animate-spin
+              rounded-full
+              border-2
+              border-slate-200
+              border-t-slate-700
+            "
+          />
+
+          Loading KOT history...
+
+        </div>
+
+      )}
+
+
+      {/* EMPTY */}
+      {!loading &&
+        filteredHistory.length === 0 && (
+
+          <div
+            className="
+              flex
+              min-h-[360px]
+              flex-col
+              items-center
+              justify-center
+              rounded-2xl
+              border
+              border-slate-200
+              bg-white
+              text-center
+            "
+          >
+
+            <div
+              className="
+                mb-3
+                flex
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-2xl
+                bg-slate-100
+                text-lg
+                text-slate-400
+              "
+            >
+              K
+            </div>
+
+            <p className="text-sm font-medium text-slate-700">
+              No KOT history found
+            </p>
+
+            <p className="mt-1 text-xs text-slate-400">
+              {search
+                ? 'Try changing your search or filter.'
+                : 'Previously sent kitchen orders will appear here.'}
+            </p>
 
           </div>
 
         )}
 
 
-        {/* EMPTY */}
+      {/* =========================================================
+          HISTORY
+      ========================================================= */}
+      {!loading &&
+        filteredHistory.length > 0 && (
 
-        {!loading &&
-          filteredHistory.length === 0 && (
+          <div
+            className="
+              overflow-hidden
+              rounded-2xl
+              border
+              border-slate-200
+              bg-white
+              shadow-sm
+            "
+          >
 
-            <div className="
-              flex
-              h-60
-              items-center
-              justify-center
-              text-sm
-              opacity-50
-            ">
+            {/* =====================================================
+                DESKTOP HEADER
+            ===================================================== */}
+            <div
+              className="
+                hidden
+                grid-cols-[110px_minmax(180px,1fr)_150px_130px_110px]
+                items-center
+                border-b
+                border-slate-100
+                bg-slate-50/70
+                px-5
+                py-3
+                text-[10px]
+                font-semibold
+                uppercase
+                tracking-wider
+                text-slate-400
+                md:grid
+              "
+            >
 
-              No KOT history found.
+              <span>KOT</span>
+
+              <span>Table</span>
+
+              <span>Created</span>
+
+              <span>Bill</span>
+
+              <span>Status</span>
 
             </div>
 
-          )}
 
+            {/* =====================================================
+                ROWS
+            ===================================================== */}
+            {filteredHistory.map(
+              (kot) => (
 
-        {/* HISTORY LIST */}
+                <button
+                  key={kot.id}
+                  type="button"
+                  onClick={() =>
+                    openKot(kot.id)
+                  }
+                  className="
+                    group
+                    grid
+                    w-full
+                    grid-cols-1
+                    gap-3
+                    border-b
+                    border-slate-100
+                    px-4
+                    py-4
+                    text-left
+                    transition
+                    last:border-b-0
+                    hover:bg-slate-50/70
+                    md:grid-cols-[110px_minmax(180px,1fr)_150px_130px_110px]
+                    md:items-center
+                    md:gap-0
+                    md:px-5
+                  "
+                >
 
-        {!loading &&
-          filteredHistory.length > 0 && (
+                  {/* =================================================
+                      KOT
+                  ================================================= */}
+                  <div>
 
-            <div className="
-              overflow-hidden
-              rounded-xl
-              border
-            ">
+                    <p
+                      className="
+                        mb-1
+                        text-[10px]
+                        font-medium
+                        uppercase
+                        tracking-wide
+                        text-slate-400
+                        md:hidden
+                      "
+                    >
+                      KOT
+                    </p>
 
-              <div className="
-                grid
-                grid-cols-[100px_1fr_120px_130px_100px]
-                border-b
-                bg-gray-50
-                px-4
-                py-3
-                text-xs
-                font-semibold
-              ">
+                    <div className="flex items-center gap-2">
 
-                <span>KOT</span>
-
-                <span>TABLE</span>
-
-                <span>DATE</span>
-
-                <span>BILL</span>
-
-                <span>STATUS</span>
-
-              </div>
-
-
-              {filteredHistory.map(
-                (kot) => (
-
-                  <button
-                    key={kot.id}
-                    type="button"
-                    onClick={() =>
-                      openKot(kot.id)
-                    }
-                    className="
-                      grid
-                      w-full
-                      grid-cols-[100px_1fr_120px_130px_100px]
-                      items-center
-                      border-b
-                      px-4
-                      py-3
-                      text-left
-                      transition
-                      last:border-b-0
-                      hover:bg-gray-50
-                    "
-                  >
-
-                    {/* KOT NUMBER */}
-
-                    <div>
-
-                      <p className="
-                        text-sm
-                        font-bold
-                      ">
+                      <span
+                        className="
+                          text-sm
+                          font-bold
+                          tracking-tight
+                          text-slate-800
+                        "
+                      >
                         {kot.kotNumber}
-                      </p>
+                      </span>
+
+                      <span
+                        className="
+                          text-slate-300
+                          opacity-0
+                          transition
+                          group-hover:opacity-100
+                        "
+                      >
+                        →
+                      </span>
 
                     </div>
 
+                  </div>
 
-                    {/* TABLE */}
 
-                    <div>
+                  {/* =================================================
+                      TABLE
+                  ================================================= */}
+                  <div className="min-w-0">
 
-                      <p className="text-sm">
+                    <p
+                      className="
+                        mb-1
+                        text-[10px]
+                        font-medium
+                        uppercase
+                        tracking-wide
+                        text-slate-400
+                        md:hidden
+                      "
+                    >
+                      Table
+                    </p>
 
-                        {kot.tableName ||
-                          kot.tableNo}
+                    <p
+                      className="
+                        truncate
+                        text-sm
+                        font-medium
+                        text-slate-700
+                      "
+                    >
+                      {kot.tableName ||
+                        kot.tableNo ||
+                        '-'}
+                    </p>
 
+                    {kot.tableName && (
+                      <p className="mt-0.5 text-[10px] text-slate-400">
+                        {kot.tableNo}
                       </p>
+                    )}
 
-                      {kot.tableName && (
-                        <p className="
-                          text-[10px]
-                          opacity-50
-                        ">
-                          {kot.tableNo}
-                        </p>
-                      )}
-
-                    </div>
+                  </div>
 
 
-                    {/* DATE */}
+                  {/* =================================================
+                      DATE
+                  ================================================= */}
+                  <div>
 
-                    <span className="
-                      text-xs
-                      opacity-70
-                    ">
+                    <p
+                      className="
+                        mb-1
+                        text-[10px]
+                        font-medium
+                        uppercase
+                        tracking-wide
+                        text-slate-400
+                        md:hidden
+                      "
+                    >
+                      Created
+                    </p>
+
+                    <span className="text-xs text-slate-500">
                       {formatDate(
                         kot.createdAt
                       )}
                     </span>
 
+                  </div>
 
-                    {/* BILL */}
 
-                    <span className="
-                      text-xs
-                      opacity-70
-                    ">
-                      {kot.billNo ||
-                        '-'}
+                  {/* =================================================
+                      BILL
+                  ================================================= */}
+                  <div>
+
+                    <p
+                      className="
+                        mb-1
+                        text-[10px]
+                        font-medium
+                        uppercase
+                        tracking-wide
+                        text-slate-400
+                        md:hidden
+                      "
+                    >
+                      Bill
+                    </p>
+
+                    <span
+                      className="
+                        text-xs
+                        font-medium
+                        text-slate-600
+                      "
+                    >
+                      {kot.billNo || '-'}
                     </span>
 
+                  </div>
 
-                    {/* STATUS */}
 
-                    <span className={`
-                      inline-flex
-                      w-fit
-                      rounded-full
-                      px-2
-                      py-1
-                      text-[10px]
-                      font-semibold
-                      ${statusClass(
-                        kot.status
-                      )}
-                    `}>
+                  {/* =================================================
+                      STATUS
+                  ================================================= */}
+                  <div>
 
+                    <p
+                      className="
+                        mb-1
+                        text-[10px]
+                        font-medium
+                        uppercase
+                        tracking-wide
+                        text-slate-400
+                        md:hidden
+                      "
+                    >
+                      Status
+                    </p>
+
+                    <span
+                      className={`
+                        inline-flex
+                        rounded-full
+                        px-2.5
+                        py-1
+                        text-[10px]
+                        font-semibold
+                        ${statusClass(
+                          kot.status
+                        )}
+                      `}
+                    >
                       {kot.status}
-
                     </span>
 
-                  </button>
+                  </div>
 
-                )
-              )}
+                </button>
+
+              )
+            )}
+
+          </div>
+
+        )}
+
+    </div>
+
+
+    {/* =========================================================
+        DETAIL MODAL
+    ========================================================= */}
+ {selectedKot && (
+
+  <div
+    className="
+      fixed
+      inset-0
+      z-50
+      flex
+      top-16
+      items-center
+      justify-center
+      bg-slate-950/40
+      p-3
+      backdrop-blur-[2px]
+      md:p-5
+    "
+  >
+
+    <div
+      className="
+        flex
+        max-h-[93vh]
+        w-full
+        max-w-4xl
+        flex-col
+        overflow-hidden
+        rounded-2xl
+        border
+        border-slate-200
+        bg-white
+        shadow-2xl
+      "
+    >
+
+      {/* =====================================================
+          MODAL HEADER
+      ===================================================== */}
+
+      <div
+        className="
+          flex
+          shrink-0
+          items-start
+          justify-between
+          gap-4
+          border-b
+          border-slate-100
+          bg-white
+          px-5
+          py-4
+        "
+      >
+
+        <div className="min-w-0">
+
+          <div className="flex flex-wrap items-center gap-3">
+
+            <div>
+
+              <p
+                className="
+                  text-[10px]
+                  font-semibold
+                  uppercase
+                  tracking-wider
+                  text-slate-400
+                "
+              >
+                Kitchen Order
+              </p>
+
+              <h2
+                className="
+                  mt-0.5
+                  text-xl
+                  font-bold
+                  tracking-tight
+                  text-slate-900
+                "
+              >
+                {selectedKot.kotNumber}
+              </h2>
+
+            </div>
+
+
+            {/* KOT STATUS */}
+
+            <span
+              className={`
+                inline-flex
+                items-center
+                rounded-full
+                px-3
+                py-1.5
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-wide
+                ${statusClass(
+                  selectedKot.status
+                )}
+              `}
+            >
+              {selectedKot.status}
+            </span>
+
+          </div>
+
+
+          <div
+            className="
+              mt-2
+              flex
+              flex-wrap
+              items-center
+              gap-x-4
+              gap-y-1
+              text-xs
+              text-slate-500
+            "
+          >
+
+            <span>
+              Table:
+              <span className="ml-1 font-medium text-slate-700">
+                {selectedKot.tableName ||
+                  selectedKot.tableNo ||
+                  '-'}
+              </span>
+            </span>
+
+            <span>
+              Bill:
+              <span className="ml-1 font-medium text-slate-700">
+                {selectedKot.billNo || '-'}
+              </span>
+            </span>
+
+            <span>
+              Date:
+              <span className="ml-1 font-medium text-slate-700">
+                {formatDate(
+                  selectedKot.createdAt
+                )}
+              </span>
+            </span>
+
+          </div>
+
+        </div>
+
+
+        {/* CLOSE */}
+
+        <button
+          type="button"
+          onClick={() =>
+            setSelectedKot(null)
+          }
+          className="
+            flex
+            h-9
+            w-9
+            shrink-0
+            items-center
+            justify-center
+            rounded-lg
+            text-slate-400
+            transition
+            hover:bg-slate-100
+            hover:text-slate-700
+          "
+        >
+          ✕
+        </button>
+
+      </div>
+
+
+      {/* =====================================================
+          KOT SUMMARY
+      ===================================================== */}
+
+      <div
+        className="
+          grid
+          shrink-0
+          grid-cols-2
+          gap-px
+          border-b
+          border-slate-100
+          bg-slate-100
+          md:grid-cols-4
+        "
+      >
+
+        {/* KOT */}
+
+        <div className="bg-white px-5 py-3">
+
+          <p
+            className="
+              text-[10px]
+              font-medium
+              uppercase
+              tracking-wide
+              text-slate-400
+            "
+          >
+            KOT
+          </p>
+
+          <p
+            className="
+              mt-1
+              text-sm
+              font-semibold
+              text-slate-800
+            "
+          >
+            {selectedKot.kotNumber}
+          </p>
+
+        </div>
+
+
+        {/* TABLE */}
+
+        <div className="bg-white px-5 py-3">
+
+          <p
+            className="
+              text-[10px]
+              font-medium
+              uppercase
+              tracking-wide
+              text-slate-400
+            "
+          >
+            Table
+          </p>
+
+          <p
+            className="
+              mt-1
+              truncate
+              text-sm
+              font-semibold
+              text-slate-800
+            "
+          >
+            {selectedKot.tableName ||
+              selectedKot.tableNo ||
+              '-'}
+          </p>
+
+        </div>
+
+
+        {/* BILL */}
+
+        <div className="bg-white px-5 py-3">
+
+          <p
+            className="
+              text-[10px]
+              font-medium
+              uppercase
+              tracking-wide
+              text-slate-400
+            "
+          >
+            Bill
+          </p>
+
+          <p
+            className="
+              mt-1
+              text-sm
+              font-semibold
+              text-slate-800
+            "
+          >
+            {selectedKot.billNo || '-'}
+          </p>
+
+        </div>
+
+
+        {/* CREATED */}
+
+        <div className="bg-white px-5 py-3">
+
+          <p
+            className="
+              text-[10px]
+              font-medium
+              uppercase
+              tracking-wide
+              text-slate-400
+            "
+          >
+            Created
+          </p>
+
+          <p
+            className="
+              mt-1
+              text-sm
+              font-semibold
+              text-slate-800
+            "
+          >
+            {formatDate(
+              selectedKot.createdAt
+            )}
+          </p>
+
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          KOT LIFECYCLE INFO
+      ===================================================== */}
+
+      <div
+        className="
+          shrink-0
+          border-b
+          border-slate-100
+          bg-slate-50/70
+          px-5
+          py-3
+        "
+      >
+
+        <div
+          className="
+            flex
+            flex-wrap
+            items-center
+            gap-x-6
+            gap-y-2
+            text-xs
+          "
+        >
+
+          {/* STATUS */}
+
+          <div>
+
+            <span className="text-slate-400">
+              Status
+            </span>
+
+            <span
+              className="
+                ml-2
+                font-semibold
+                text-slate-700
+              "
+            >
+              {selectedKot.status || '-'}
+            </span>
+
+          </div>
+
+
+          {/* BUSINESS DATE */}
+
+          <div>
+
+            <span className="text-slate-400">
+              Business Date
+            </span>
+
+            <span
+              className="
+                ml-2
+                font-medium
+                text-slate-700
+              "
+            >
+              {selectedKot.businessDate || '-'}
+            </span>
+
+          </div>
+
+
+          {/* DEVICE */}
+
+          <div>
+
+            <span className="text-slate-400">
+              Device
+            </span>
+
+            <span
+              className="
+                ml-2
+                font-medium
+                text-slate-700
+              "
+            >
+              {selectedKot.deviceName ||
+                selectedKot.deviceId ||
+                '-'}
+            </span>
+
+          </div>
+
+
+          {/* APP */}
+
+          <div>
+
+            <span className="text-slate-400">
+              App
+            </span>
+
+            <span
+              className="
+                ml-2
+                font-medium
+                text-slate-700
+              "
+            >
+              {selectedKot.appVersion || '-'}
+            </span>
+
+          </div>
+
+
+          {/* COMPLETED */}
+
+          {selectedKot.completedAt && (
+
+            <div>
+
+              <span className="text-slate-400">
+                Completed
+              </span>
+
+              <span
+                className="
+                  ml-2
+                  font-medium
+                  text-slate-700
+                "
+              >
+                {formatDate(
+                  selectedKot.completedAt
+                )}
+              </span>
 
             </div>
 
           )}
 
+
+          {/* DELETED */}
+
+          {selectedKot.deletedAt && (
+
+            <div>
+
+              <span className="text-slate-400">
+                Deleted
+              </span>
+
+              <span
+                className="
+                  ml-2
+                  font-medium
+                  text-red-600
+                "
+              >
+                {formatDate(
+                  selectedKot.deletedAt
+                )}
+              </span>
+
+            </div>
+
+          )}
+
+        </div>
+
       </div>
 
 
-      {/* =================================================
-          DETAIL MODAL
-      ================================================= */}
+      {/* =====================================================
+          ITEMS
+      ===================================================== */}
 
-      {selectedKot && (
+      <div
+        className="
+          min-h-0
+          flex-1
+          overflow-y-auto
+          bg-slate-50/60
+          px-4
+          py-4
+          md:px-5
+        "
+      >
 
-        <div className="
-          fixed
-          inset-0
-          z-50
-          flex
-          items-center
-          justify-center
-          bg-black/40
-          p-4
-        ">
+        {loadingDetail ? (
 
-          <div className="
-            flex
-            max-h-[90vh]
-            w-full
-            max-w-3xl
-            flex-col
-            overflow-hidden
-            rounded-xl
-            bg-white
-            shadow-xl
-          ">
-
-            {/* DETAIL HEADER */}
-
-            <div className="
+          <div
+            className="
               flex
-              shrink-0
+              h-40
               items-center
-              justify-between
-              border-b
-              px-5
-              py-4
-            ">
+              justify-center
+              text-sm
+              text-slate-400
+            "
+          >
+            Loading items...
+          </div>
 
-              <div>
+        ) : (
 
-                <div className="
-                  flex
-                  items-center
-                  gap-3
-                ">
+          <div className="space-y-3">
 
-                  <h2 className="
-                    text-lg
-                    font-bold
-                  ">
-                    {selectedKot.kotNumber}
-                  </h2>
+            {selectedKot.items.length === 0 ? (
 
-                  <span className={`
-                    rounded-full
-                    px-2
-                    py-1
-                    text-[10px]
-                    font-semibold
-                    ${statusClass(
-                      selectedKot.status
-                    )}
-                  `}>
-
-                    {selectedKot.status}
-
-                  </span>
-
-                </div>
-
-                <p className="
-                  mt-1
-                  text-xs
-                  opacity-60
-                ">
-
-                  {selectedKot.tableName ||
-                    selectedKot.tableNo}
-
-                </p>
-
-              </div>
-
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedKot(null)
-                }
+              <div
                 className="
-                  rounded-lg
-                  px-3
-                  py-2
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white
+                  px-4
+                  py-12
+                  text-center
                   text-sm
-                  hover:bg-gray-100
+                  text-slate-400
                 "
               >
-                ✕
-              </button>
-
-            </div>
-
-
-            {/* DETAIL INFO */}
-
-            <div className="
-              grid
-              shrink-0
-              grid-cols-4
-              gap-3
-              border-b
-              px-5
-              py-4
-            ">
-
-              <div>
-
-                <p className="
-                  text-[10px]
-                  opacity-50
-                ">
-                  KOT
-                </p>
-
-                <p className="text-sm font-semibold">
-                  {selectedKot.kotNumber}
-                </p>
-
+                No items found.
               </div>
 
+            ) : (
 
-              <div>
+              selectedKot.items.map(
+                (item, index) => (
 
-                <p className="
-                  text-[10px]
-                  opacity-50
-                ">
-                  TABLE
-                </p>
+                  <div
+                    key={item.id}
+                    className="
+                      overflow-hidden
+                      rounded-xl
+                      border
+                      border-slate-200
+                      bg-white
+                      shadow-sm
+                    "
+                  >
 
-                <p className="text-sm font-semibold">
-                  {selectedKot.tableName ||
-                    selectedKot.tableNo}
-                </p>
+                    {/* =================================================
+                        ITEM HEADER
+                    ================================================= */}
 
-              </div>
+                    <div
+                      className="
+                        flex
+                        items-start
+                        justify-between
+                        gap-4
+                        border-b
+                        border-slate-100
+                        px-4
+                        py-3
+                      "
+                    >
 
+                      <div className="flex min-w-0 items-start gap-3">
 
-              <div>
+                        {/* ITEM NUMBER */}
 
-                <p className="
-                  text-[10px]
-                  opacity-50
-                ">
-                  BILL
-                </p>
-
-                <p className="text-sm font-semibold">
-                  {selectedKot.billNo ||
-                    '-'}
-                </p>
-
-              </div>
-
-
-              <div>
-
-                <p className="
-                  text-[10px]
-                  opacity-50
-                ">
-                  CREATED
-                </p>
-
-                <p className="text-sm font-semibold">
-                  {formatDate(
-                    selectedKot.createdAt
-                  )}
-                </p>
-
-              </div>
-
-            </div>
+                        <div
+                          className="
+                            flex
+                            h-8
+                            w-8
+                           bottom-0
+                           top-26
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-lg
+                            bg-slate-100
+                            text-xs
+                            pt-10
+                            font-bold
+                            text-slate-600
+                          "
+                        >
+                          {index + 1}
+                        </div>
 
 
-            {/* ITEMS */}
+                        <div className="min-w-0">
 
-            <div className="
-              min-h-0
-              flex-1
-              overflow-y-auto
-              px-5
-              py-4
-            ">
+                          <div
+                            className="
+                              flex
+                              flex-wrap
+                              items-center
+                              gap-2
+                            "
+                          >
 
-              {loadingDetail ? (
+                            <h3
+                              className="
+                                text-sm
+                                font-bold
+                                text-slate-900
+                              "
+                            >
+                              {item.name || '-'}
+                            </h3>
 
-                <div className="
-                  flex
-                  h-40
-                  items-center
-                  justify-center
-                  text-sm
-                  opacity-60
-                ">
 
-                  Loading items...
+                            {/* ITEM STATUS */}
 
-                </div>
+                            {item.status && (
 
-              ) : (
-
-                <div className="
-                  overflow-hidden
-                  rounded-lg
-                  border
-                ">
-
-                  {selectedKot.items.map(
-                    (item) => (
-
-                      <div
-                        key={item.id}
-                        className="
-                          border-b
-                          px-4
-                          py-3
-                          last:border-b-0
-                        "
-                      >
-
-                        <div className="
-                          flex
-                          items-start
-                          justify-between
-                          gap-4
-                        ">
-
-                          <div className="min-w-0">
-
-                            <p className="
-                              text-sm
-                              font-semibold
-                            ">
-
-                              {item.name}
-
-                            </p>
-
-                            {item.modifierSummary && (
-
-                              <p className="
-                                mt-1
-                                text-xs
-                                opacity-60
-                              ">
-                                {item.modifierSummary}
-                              </p>
-
-                            )}
-
-                            {item.note && (
-
-                              <p className="
-                                mt-1
-                                text-xs
-                                opacity-60
-                              ">
-                                Note: {item.note}
-                              </p>
+                              <span
+                                className={`
+                                  rounded-full
+                                  px-2
+                                  py-0.5
+                                  text-[9px]
+                                  font-bold
+                                  uppercase
+                                  tracking-wide
+                                  ${statusClass(
+                                    item.status
+                                  )}
+                                `}
+                              >
+                                {item.status}
+                              </span>
 
                             )}
 
                           </div>
 
 
-                          <div className="
-                            shrink-0
-                            text-right
-                          ">
+                          <div
+                            className="
+                              mt-1
+                              flex
+                              flex-wrap
+                              gap-x-3
+                              gap-y-1
+                              text-[10px]
+                              text-slate-400
+                            "
+                          >
 
-                            <p className="
-                              text-sm
-                              font-semibold
-                            ">
+                            <span>
+                              Qty:
+                              <span className="ml-1 font-semibold text-slate-600">
+                                {item.quantity}
+                              </span>
+                            </span>
 
-                              × {item.quantity}
+                            <span>
+                              Category:
+                              <span className="ml-1 text-slate-600">
+                                {item.categoryName || '-'}
+                              </span>
+                            </span>
 
-                            </p>
-
-                            <p className="
-                              text-xs
-                              opacity-60
-                            ">
-
-                              ₹
-                              {Number(
-                                item.finalTotal || 0
-                              ).toFixed(2)}
-
-                            </p>
+                            <span>
+                              Mode:
+                              <span className="ml-1 text-slate-600">
+                                {item.productMode || '-'}
+                              </span>
+                            </span>
 
                           </div>
 
@@ -1039,59 +1732,452 @@ const filteredHistory =
 
                       </div>
 
-                    )
-                  )}
 
-                </div>
+                      {/* FINAL TOTAL */}
 
-              )}
+                      <div className="shrink-0 text-right">
 
-            </div>
+                        <p
+                          className="
+                            text-base
+                            font-bold
+                            text-slate-900
+                          "
+                        >
+                          ₹
+                          {Number(
+                            item.finalTotal || 0
+                          ).toFixed(2)}
+                        </p>
+
+                        <p
+                          className="
+                            mt-0.5
+                            text-[10px]
+                            text-slate-400
+                          "
+                        >
+                          Final total
+                        </p>
+
+                      </div>
+
+                    </div>
 
 
-            {/* DETAIL FOOTER */}
+                    {/* =================================================
+                        ITEM PRICING
+                    ================================================= */}
 
-            <div className="
-              flex
-              shrink-0
-              items-center
-              justify-between
-              border-t
-              px-5
-              py-4
-            ">
+                    <div
+                      className="
+                        grid
+                        grid-cols-2
+                        gap-px
+                        bg-slate-100
+                        sm:grid-cols-4
+                      "
+                    >
 
-              <div className="text-xs opacity-50">
+                      {/* BASE PRICE */}
 
-                Batch: {selectedKot.kotBatchId}
+                      <div className="bg-white px-4 py-3">
 
-              </div>
+                        <p
+                          className="
+                            text-[9px]
+                            uppercase
+                            tracking-wide
+                            text-slate-400
+                          "
+                        >
+                          Base Price
+                        </p>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedKot(null)
-                }
-                className="
-                  rounded-lg
-                  border
-                  px-4
-                  py-2
-                  text-xs
-                  font-semibold
-                "
-              >
-                Close
-              </button>
+                        <p
+                          className="
+                            mt-1
+                            text-xs
+                            font-semibold
+                            text-slate-700
+                          "
+                        >
+                          ₹
+                          {Number(
+                            item.basePrice || 0
+                          ).toFixed(2)}
+                        </p>
 
-            </div>
+                      </div>
+
+
+                      {/* MODIFIER */}
+
+                      <div className="bg-white px-4 py-3">
+
+                        <p
+                          className="
+                            text-[9px]
+                            uppercase
+                            tracking-wide
+                            text-slate-400
+                          "
+                        >
+                          Modifier
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-xs
+                            font-semibold
+                            text-slate-700
+                          "
+                        >
+                          ₹
+                          {Number(
+                            item.modifierPrice || 0
+                          ).toFixed(2)}
+                        </p>
+
+                      </div>
+
+
+                      {/* PRICE PER ITEM */}
+
+                      <div className="bg-white px-4 py-3">
+
+                        <p
+                          className="
+                            text-[9px]
+                            uppercase
+                            tracking-wide
+                            text-slate-400
+                          "
+                        >
+                          Price / Item
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-xs
+                            font-semibold
+                            text-slate-700
+                          "
+                        >
+                          ₹
+                          {Number(
+                            item.finalPricePerItem || 0
+                          ).toFixed(2)}
+                        </p>
+
+                      </div>
+
+
+                      {/* SUBTOTAL */}
+
+                      <div className="bg-white px-4 py-3">
+
+                        <p
+                          className="
+                            text-[9px]
+                            uppercase
+                            tracking-wide
+                            text-slate-400
+                          "
+                        >
+                          Subtotal
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-xs
+                            font-semibold
+                            text-slate-700
+                          "
+                        >
+                          ₹
+                          {Number(
+                            item.itemSubtotal ||
+                            0
+                          ).toFixed(2)}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* =================================================
+                        TAX INFORMATION
+                    ================================================= */}
+
+                    <div
+                      className="
+                        flex
+                        flex-wrap
+                        items-center
+                        gap-x-5
+                        gap-y-2
+                        border-t
+                        border-slate-100
+                        px-4
+                        py-3
+                      "
+                    >
+
+                      <div>
+
+                        <p className="text-[9px] uppercase tracking-wide text-slate-400">
+                          Tax
+                        </p>
+
+                        <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                          {Number(
+                            item.taxRate || 0
+                          ).toFixed(2)}
+                          %
+                        </p>
+
+                      </div>
+
+
+                      <div>
+
+                        <p className="text-[9px] uppercase tracking-wide text-slate-400">
+                          Tax Type
+                        </p>
+
+                        <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                          {item.taxType || '-'}
+                        </p>
+
+                      </div>
+
+
+                      <div>
+
+                        <p className="text-[9px] uppercase tracking-wide text-slate-400">
+                          Tax Amount
+                        </p>
+
+                        <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                          ₹
+                          {Number(
+                            item.taxTotal || 0
+                          ).toFixed(2)}
+                        </p>
+
+                      </div>
+
+
+                      <div>
+
+                        <p className="text-[9px] uppercase tracking-wide text-slate-400">
+                          Currency
+                        </p>
+
+                        <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                          {item.currency || '₹'}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* =================================================
+                        MODIFIERS / NOTE
+                    ================================================= */}
+
+                    {(item.modifierSummary ||
+                      item.modifiersJson ||
+                      item.note) && (
+
+                      <div
+                        className="
+                          border-t
+                          border-slate-100
+                          bg-slate-50/70
+                          px-4
+                          py-3
+                        "
+                      >
+
+                        {item.modifierSummary && (
+
+                          <div className="mb-2">
+
+                            <p
+                              className="
+                                text-[9px]
+                                font-semibold
+                                uppercase
+                                tracking-wide
+                                text-slate-400
+                              "
+                            >
+                              Modifiers
+                            </p>
+
+                            <p
+                              className="
+                                mt-1
+                                text-xs
+                                text-slate-600
+                              "
+                            >
+                              {item.modifierSummary}
+                            </p>
+
+                          </div>
+
+                        )}
+
+
+                        {item.note && (
+
+                          <div>
+
+                            <p
+                              className="
+                                text-[9px]
+                                font-semibold
+                                uppercase
+                                tracking-wide
+                                text-amber-500
+                              "
+                            >
+                              Note
+                            </p>
+
+                            <p
+                              className="
+                                mt-1
+                                text-xs
+                                text-amber-700
+                              "
+                            >
+                              {item.note}
+                            </p>
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+                    )}
+
+
+                    {/* =================================================
+                        ITEM METADATA
+                    ================================================= */}
+
+                    <div
+                      className="
+                        flex
+                        flex-wrap
+                        gap-x-5
+                        gap-y-1
+                        border-t
+                        border-slate-100
+                        px-4
+                        py-2.5
+                        text-[9px]
+                        text-slate-400
+                      "
+                    >
+
+                      <span>
+                        Product ID:
+                        <span className="ml-1 text-slate-500">
+                          {item.productId || '-'}
+                        </span>
+                      </span>
+
+                      <span>
+                        Category ID:
+                        <span className="ml-1 text-slate-500">
+                          {item.categoryId || '-'}
+                        </span>
+                      </span>
+
+                      <span>
+                        Source:
+                        <span className="ml-1 text-slate-500">
+                          {item.source || '-'}
+                        </span>
+                      </span>
+
+                      {item.isVariant ? (
+
+                        <span className="font-medium text-slate-500">
+                          Variant
+                        </span>
+
+                      ) : null}
+
+                    </div>
+
+
+                    {/* =================================================
+                        DELETED INFORMATION
+                    ================================================= */}
+
+                    {item.deletedAt && (
+
+                      <div
+                        className="
+                          border-t
+                          border-red-100
+                          bg-red-50
+                          px-4
+                          py-2.5
+                          text-[10px]
+                          text-red-600
+                        "
+                      >
+
+                        Deleted:
+                        <span className="ml-1 font-medium">
+                          {formatDate(
+                            item.deletedAt
+                          )}
+                        </span>
+
+                      </div>
+
+                    )}
+
+                  </div>
+
+                )
+
+              )
+
+            )}
 
           </div>
 
-        </div>
+        )}
 
-      )}
+      </div>
+
+
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
+
+  
 
     </div>
-  );
+
+  </div>
+
+)}
+  </div>
+);
 }

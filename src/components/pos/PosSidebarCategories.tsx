@@ -102,82 +102,81 @@ export default function PosSidebarCategories() {
   // UI
   // =====================================================
 
-  return (
-    <aside
-      className={`
-        h-full
-        w-full
-        ${background.className}
-        ${background.text}
-        flex
-        flex-col
-      `}
+ return (
+  <aside
+    className={`
+      h-full
+      w-full
+      bg-zinc-500
+      ${background.text}
+      flex
+      flex-col
+    `}
+  >
+    <div
+      className="
+        pos-sidebar-scroll
+        flex-1
+        overflow-y-auto
+        app-scrollbar
+        py-2
+      "
     >
-      <div
-        className="
-          pos-sidebar-scroll
-          flex-1
-          overflow-y-auto
-          app-scrollbar
-          px-2
-          py-2
-          space-y-1
-        "
-      >
-        {categoryData.map((cat) => {
-          const active =
-            displayCategory === cat.id;
+      {categoryData.map((cat) => {
+        const active =
+          displayCategory === cat.id;
 
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() =>
-                setProductCategoryIdG(cat.id)
-              }
-              className={`
-                w-full
-                h-11
-                px-3
-                flex
-                items-center
-                text-left
-                text-sm
-                border
-                transition-all
-                duration-100
-                ${background.border}
+        return (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() =>
+              setProductCategoryIdG(cat.id)
+            }
+            className={`
+              w-full
+              h-11
+              px-3
+              flex
+              items-center
+              text-left
+              text-sm
+              border-b
+              border-zinc-600
+              transition-all
+              duration-100
+              outline-none
 
-                ${
-                  active
-                    ? "text-white"
-                    : `${background.text} hover:opacity-80`
-                }
-              `}
-              style={
+              ${
                 active
-                  ? {
-                      backgroundColor:
-                        theme.primary,
-                      borderColor:
-                        theme.primary,
-                    }
-                  : undefined
+                  ? "text-white"
+                  : `${background.text} opacity-60 hover:bg-black/10`
               }
+            `}
+            style={
+              active
+                ? {
+                    backgroundColor:
+                      theme.primary,
+                    borderColor:
+                      theme.primary,
+                  }
+                : undefined
+            }
+          >
+            <span
+              className="
+                text-[12px]
+                font-medium
+                truncate
+              "
             >
-              <span
-                className="
-                  text-[12px]
-                  font-medium
-                  truncate
-                "
-              >
-                {cat.name}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </aside>
-  );
+              {cat.name}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </aside>
+);
 }
