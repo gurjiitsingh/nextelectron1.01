@@ -1,29 +1,31 @@
 import "@/app/globals.css";
- 
-import { Lato } from "next/font/google";
 
-const lato = Lato({
+import { Inter } from "next/font/google";
+
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
 });
- 
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
-
-
- 
   return (
-      <html lang="en" translate="no" className="overflow-hidden ">
-      <head>
-     
-      </head>
+    <html
+      lang="en"
+      translate="no"
+      className="overflow-hidden"
+    >
+      <head />
 
-      <body className={`${lato.className} bg-white text-[#2b2b2b]`} suppressHydrationWarning>
-      {children}</body>
+      <body
+        className={`${inter.className} bg-white text-[#2b2b2b]`}
+        suppressHydrationWarning
+      >
+        {children}
+      </body>
     </html>
   );
 }

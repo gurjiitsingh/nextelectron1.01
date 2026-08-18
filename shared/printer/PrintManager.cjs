@@ -89,28 +89,28 @@ class PrintManager {
 
 
   async handleJob(job) {
-  console.log(
-    '\n========== PRINT JOB =========='
-  );
+  // console.log(
+  //   '\n========== PRINT JOB =========='
+  // );
 
-  console.log(
-    '[PRINT] Processing:',
-    job.role,
-    job.id
-  );
+  // console.log(
+  //   '[PRINT] Processing:',
+  //   job.role,
+  //   job.id
+  // );
 
-  console.log(
-    '[PRINT] DATA:',
-    JSON.stringify(job.data, null, 2)
-  );
+  // console.log(
+  //   '[PRINT] DATA:',
+  //   JSON.stringify(job.data, null, 2)
+  // );
 
   const config =
     this.settingsRepo.getConfig(job.role);
 
-  console.log(
-    '[PRINT] CONFIG:',
-    JSON.stringify(config, null, 2)
-  );
+  // console.log(
+  //   '[PRINT] CONFIG:',
+  //   JSON.stringify(config, null, 2)
+  // );
 
   if (!config) {
     throw new Error(

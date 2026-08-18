@@ -102,8 +102,15 @@ export default function KotHistoryPage() {
   const [loadingDetail, setLoadingDetail] =
     useState(false);
 
+  const [activeFilter, setActiveFilter] = useState<
+  'ALL' | 'OPEN' | 'PARTIAL' | 'DELETED' | 'PAID'
+>('ALL');  
+
   const [search, setSearch] =
     useState('');
+
+
+    
 
   // =====================================================
   // LOAD HISTORY
@@ -163,21 +170,21 @@ export default function KotHistoryPage() {
       setLoadingDetail(true);
 
 
-      const result1 =
-  await window.posApi.getRecentKotHistoryItems(20);
+//       const result1 =
+//   await window.posApi.getRecentKotHistoryItems(20);
 
-console.log(
-  'RECENT KOT HISTORY ITEMS:',
-  result1
-);
+// console.log(
+//   'RECENT KOT HISTORY ITEMS:',
+//   result1
+// );
 
-const history =
-  await window.posApi.getKotHistory();
+// const history =
+//   await window.posApi.getKotHistory();
 
-console.log(
-  'KOT HISTORY:',
-  history
-);
+// console.log(
+//   'KOT HISTORY:',
+//   history
+// );
 
       const result =
         await window.posApi.getKotHistoryDetail(
@@ -229,41 +236,56 @@ console.log(
   // SEARCH
   // =====================================================
 
-  const filteredHistory =
-    history.filter((kot) => {
+const filteredHistory =
+  history.filter((kot) => {
 
-      const value =
-        search
-          .trim()
-          .toLowerCase();
+    // =================================================
+    // STATUS FILTER
+    // =================================================
 
-      if (!value) {
-        return true;
-      }
+    if (
+      activeFilter !== 'ALL' &&
+      kot.status?.toUpperCase() !== activeFilter
+    ) {
+      return false;
+    }
 
-      return (
-        kot.kotNumber
-          ?.toLowerCase()
-          .includes(value) ||
+    // =================================================
+    // SEARCH FILTER
+    // =================================================
 
-        kot.tableNo
-          ?.toLowerCase()
-          .includes(value) ||
+    const value =
+      search
+        .trim()
+        .toLowerCase();
 
-        kot.tableName
-          ?.toLowerCase()
-          .includes(value) ||
+    if (!value) {
+      return true;
+    }
 
-        kot.billNo
-          ?.toLowerCase()
-          .includes(value) ||
+    return (
+      kot.kotNumber
+        ?.toLowerCase()
+        .includes(value) ||
 
-        kot.orderId
-          ?.toLowerCase()
-          .includes(value)
-      );
+      kot.tableNo
+        ?.toLowerCase()
+        .includes(value) ||
 
-    });
+      kot.tableName
+        ?.toLowerCase()
+        .includes(value) ||
+
+      kot.billNo
+        ?.toLowerCase()
+        .includes(value) ||
+
+      kot.orderId
+        ?.toLowerCase()
+        .includes(value)
+    );
+
+  });
 
   // =====================================================
   // FORMAT DATE
@@ -323,6 +345,30 @@ console.log(
         `;
     }
   }
+
+  const statusCounts = {
+  ALL: history.length,
+
+  OPEN: history.filter(
+    (kot) =>
+      kot.status?.toUpperCase() === 'OPEN'
+  ).length,
+
+  PARTIAL: history.filter(
+    (kot) =>
+      kot.status?.toUpperCase() === 'PARTIAL'
+  ).length,
+
+  DELETED: history.filter(
+    (kot) =>
+      kot.status?.toUpperCase() === 'DELETED'
+  ).length,
+
+  PAID: history.filter(
+    (kot) =>
+      kot.status?.toUpperCase() === 'PAID'
+  ).length,
+};
 
   // =====================================================
   // RENDER
@@ -403,6 +449,65 @@ console.log(
       </div>
 
 
+
+<div className="flex shrink-0 gap-2 overflow-x-auto border-b px-3 py-2">
+
+  {(
+    [
+      ['ALL', 'All'],
+      ['OPEN', 'Open'],
+      ['PARTIAL', 'Partial'],
+      ['DELETED', 'Deleted'],
+      ['PAID', 'Paid'],
+    ] as const
+  ).map(([key, label]) => {
+
+    const isActive =
+      activeFilter === key;
+
+    return (
+      <button
+        key={key}
+        type="button"
+        onClick={() =>
+          setActiveFilter(key)
+        }
+        className={`
+          shrink-0
+          rounded-lg
+          border
+          px-4
+          py-2
+          text-xs
+          font-semibold
+          transition-all
+
+          ${
+            isActive
+              ? 'bg-black text-white border-black'
+              : 'bg-transparent opacity-70 hover:opacity-100'
+          }
+        `}
+      >
+        {label}
+
+        <span
+          className={`
+            ml-1
+            ${
+              isActive
+                ? 'opacity-80'
+                : 'opacity-60'
+            }
+          `}
+        >
+          {statusCounts[key]}
+        </span>
+      </button>
+    );
+  })}
+
+</div>
       {/* =================================================
           CONTENT
       ================================================= */}

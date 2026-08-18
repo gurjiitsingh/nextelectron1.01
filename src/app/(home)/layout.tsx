@@ -30,7 +30,7 @@ import { SideCart } from "@/components/MiniCart/SideCart";
 
 
 // ✅ ADD THIS LINE (VERY IMPORTANT)
-export const revalidate = 3600; // 1 hour cache
+ 
 
 export default function RootLayout({
   children,

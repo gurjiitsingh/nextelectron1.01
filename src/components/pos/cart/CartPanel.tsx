@@ -37,249 +37,395 @@ export default function CartPanel() {
   // =====================================================
   // SEND TO KITCHEN
   // =====================================================
+async function sendToKitchenHandle() {
 
-  async function sendToKitchenHandle() {
+  // ---------------------------------------------------
+  // VALIDATE CART
+  // ---------------------------------------------------
 
-    // ---------------------------------------------------
-    // VALIDATE CART
-    // ---------------------------------------------------
+  if (cartData.length === 0) {
+    return;
+  }
 
-    if (cartData.length === 0) {
-      return;
-    }
 
+  // ---------------------------------------------------
+  // VALIDATE TABLE
+  // ---------------------------------------------------
 
-    // ---------------------------------------------------
-    // VALIDATE TABLE
-    // ---------------------------------------------------
+  if (!activeTable?.tableId) {
 
-    if (!activeTable?.tableId) {
+    alert(
+      'Please select a table first.'
+    );
 
-      alert(
-        'Please select a table first.'
-      );
+    return;
+  }
 
-      return;
-    }
 
+  try {
 
-    try {
+    // =================================================
+    // BASIC KOT INFORMATION
+    // =================================================
 
-      // =================================================
-      // BASIC KOT INFORMATION
-      // =================================================
+    const kotBatchId =
+      crypto.randomUUID();
 
-      const kotBatchId =
-        crypto.randomUUID();
 
+    const kotNumber =
+      await window.posApi.generateNextKotNumber();
 
-      // Human readable KOT number
-      //
-      // K1
-      // K2
-      // K3
-      // ...
-      //
-      const kotNumber =
-        await window.posApi.generateNextKotNumber();
 
+    const currentTableId =
+      activeTable.tableId;
 
-      const currentTableId =
-        activeTable.tableId;
 
+    const currentTableName =
+      activeTable.tableName || '';
 
-      const currentTableName =
-        activeTable.tableName || '';
 
+    const now =
+      Date.now();
 
-      const now =
-        Date.now();
 
+    // =================================================
+    // BUSINESS DATE
+    // =================================================
+    //
+    // IMPORTANT:
+    // KOT history requires businessDate.
+    //
+    // Use your existing business-date logic here if
+    // you already have one.
+    //
+    // This fallback uses local calendar date.
+    // =================================================
 
-      // =================================================
-      // COMMON ITEM DATA
-      // =================================================
-      //
-      // This is the common source used to create:
-      //
-      // 1. pos_kot_items
-      // 2. pos_order_items / bill items
-      //
-      // =================================================
+    const businessDate =
+      new Date().toISOString().slice(0, 10);
 
-      const commonItems =
-        cartData.map((item) => ({
 
-          // ------------------------------------------------
-          // PRODUCT
-          // ------------------------------------------------
+    // =================================================
+    // COMMON ITEM DATA
+    // =================================================
 
-          categoryName:
-            item.categoryName || '',
+    const commonItems =
+      cartData.map((item) => ({
 
-          productMode:
-            item.productMode || 'raw_stock',
+        // ------------------------------------------------
+        // PRODUCT
+        // ------------------------------------------------
 
-          currentStock:
-            Number(item.currentStock ?? 0),
+        categoryName:
+          item.categoryName || '',
 
-          productId:
-            item.productId,
+        productMode:
+          item.productMode || 'raw_stock',
 
-          name:
-            item.name || '',
+        currentStock:
+          Number(item.currentStock ?? 0),
 
-          categoryId:
-            item.categoryId || '',
+        productId:
+          item.productId,
 
+        name:
+          item.name || '',
 
-          // ------------------------------------------------
-          // SESSION
-          // ------------------------------------------------
+        categoryId:
+          item.categoryId || '',
 
-          sessionId:
-            item.sessionId ?? null,
 
+        // ------------------------------------------------
+        // SESSION
+        // ------------------------------------------------
+        sessionId:
+          item.sessionId ?? null,
+        // ------------------------------------------------
+        // TABLE
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // TABLE
-          // ------------------------------------------------
+        tableNo:
+          currentTableId,
 
-          tableNo:
-            currentTableId,
+        tableName:
+          currentTableName,
 
-          tableName:
-            currentTableName,
 
+        // ------------------------------------------------
+        // USER
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // USER
-          // ------------------------------------------------
+        createdById:
+          item.createdById ?? '',
 
-          createdById:
-            item.createdById ?? '',
+        createdByName:
+          item.createdByName ?? '',
 
-          createdByName:
-            item.createdByName ?? '',
 
+        // ------------------------------------------------
+        // VARIANT
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // VARIANT
-          // ------------------------------------------------
+        parentId:
+          item.parentId ?? null,
 
-          parentId:
-            item.parentId ?? null,
+        isVariant:
+          item.isVariant ?? false,
 
-          isVariant:
-            item.isVariant ?? false,
 
+        // ------------------------------------------------
+        // PRICE
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // PRICE
-          // ------------------------------------------------
+        basePrice:
+          Number(item.basePrice ?? 0),
 
-          basePrice:
-            Number(item.basePrice ?? 0),
+        finalPrice:
+          Number(item.finalPrice ?? 0),
 
-          finalPrice:
-            Number(item.finalPrice ?? 0),
+        modifierTotal:
+          Number(item.modifierTotal ?? 0),
 
-          modifierTotal:
-            Number(item.modifierTotal ?? 0),
 
+        // ------------------------------------------------
+        // QUANTITY
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // QUANTITY
-          // ------------------------------------------------
+        quantity:
+          Number(item.quantity ?? 0),
 
-          quantity:
-            Number(item.quantity ?? 0),
 
+        // ------------------------------------------------
+        // TAX
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // TAX
-          // ------------------------------------------------
+        taxRate:
+          Number(item.taxRate ?? 0),
 
-          taxRate:
-            Number(item.taxRate ?? 0),
+        taxType:
+          item.taxType || 'exclusive',
 
-          taxType:
-            item.taxType || 'exclusive',
 
+        // ------------------------------------------------
+        // NOTE
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // NOTE
-          // ------------------------------------------------
+        note:
+          item.note ?? '',
 
-          note:
-            item.note ?? '',
 
+        // ------------------------------------------------
+        // MODIFIERS
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // MODIFIERS
-          // ------------------------------------------------
+        modifiersJson:
+          item.modifiersJson ??
+          JSON.stringify(
+            item.modifiers ?? []
+          ),
 
-          modifiersJson:
-            item.modifiersJson ??
-            JSON.stringify(
-              item.modifiers ?? []
-            ),
 
+        // ------------------------------------------------
+        // TIMESTAMP
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // TIMESTAMP
-          // ------------------------------------------------
+        createdAt:
+          now,
 
-          createdAt:
-            now,
 
+        // ------------------------------------------------
+        // SOURCE
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // SOURCE
-          // ------------------------------------------------
+        source:
+          'POS',
 
-          source:
-            'POS',
 
+        // ------------------------------------------------
+        // SYNC
+        // ------------------------------------------------
 
-          // ------------------------------------------------
-          // SYNC
-          // ------------------------------------------------
+        syncedToCloud:
+          false,
 
-          syncedToCloud:
-            false,
+        syncedFromCloud:
+          false,
 
-          syncedFromCloud:
-            false,
+      }));
 
-        }));
 
+    // =================================================
+    // CREATE KOT BATCH
+    // =================================================
 
-      // =================================================
-      // 1. CREATE KOT BATCH
-      // =================================================
-      //
-      // One Send-to-Kitchen operation = one batch.
-      //
-      // Example:
-      //
-      // K42
-      //   ├── Burger
-      //   ├── Pizza
-      //   └── Coke
-      //
-      // =================================================
+    const kotBatch = {
 
-      const kotBatch = {
+      id:
+        kotBatchId,
+
+      kotNumber:
+        kotNumber,
+
+      sessionId:
+        cartData[0]?.sessionId ?? '',
+
+      tableNo:
+        currentTableId,
+
+      tableName:
+        currentTableName,
+
+      orderType:
+        'DINE_IN',
+
+      businessDate,
+
+      deviceId:
+        'POS',
+
+      deviceName:
+        'Electron POS',
+
+      appVersion:
+        '1.0',
+
+      createdAt:
+        now,
+
+      sentBy:
+        null,
+
+      syncStatus:
+        'PENDING',
+
+      lastSyncedAt:
+        null,
+
+    };
+
+
+    // =================================================
+    // CREATE KOT ITEMS
+    // =================================================
+
+    const kotItems =
+      commonItems.map((item) => ({
 
         id:
-          kotBatchId,
+          crypto.randomUUID(),
 
         kotNumber:
           kotNumber,
 
-        sessionId:
-          cartData[0]?.sessionId ?? '',
+        kotBatchId:
+          kotBatchId,
+
+        status:
+          'PENDING',
+
+        kitchenPrintReq:
+          true,
+
+        kitchenPrinted:
+          false,
+
+        ...item,
+
+      }));
+
+
+    // =================================================
+    // CREATE KOT
+    // =================================================
+    //
+    // IMPORTANT:
+    //
+    // This now creates:
+    //
+    // 1. pos_kot_batch
+    // 2. pos_kot_items
+    // 3. pos_kot_history
+    // 4. pos_kot_history_items
+    //
+    // in ONE SQLite transaction.
+    //
+    // Do NOT separately call:
+    //
+    // insertKotBatch()
+    // insertKotItems()
+    //
+    // =================================================
+
+    const kotResult =
+      await window.posApi.createKot(
+        kotBatch,
+        kotItems
+      );
+
+
+    if (!kotResult?.success) {
+
+      throw new Error(
+        kotResult?.error ||
+        'Failed to create KOT'
+      );
+    }
+
+
+    // =================================================
+    // CREATE BILL ITEMS
+    // =================================================
+    //
+    // These remain OPEN until the actual bill is created.
+    //
+    // KOT ≠ BILL
+    // =================================================
+
+    const billItems =
+      commonItems.map((item) => ({
+        id:
+          crypto.randomUUID(),
+        billItemGroupKey: [
+          item.productId,
+          item.basePrice,
+          item.taxRate,
+          item.taxType,
+          item.note,
+          item.modifiersJson,
+        ].join('|'),
+
+        status:
+          'OPEN',
+
+        billed:
+          false,
+
+        billNo:
+          '',
+
+        billId:
+          '',
+        ...item,
+
+      }));
+
+
+    // =================================================
+    // PRINT KOT
+    // =================================================
+
+    await window.posApi.print({
+
+      role:
+        'KITCHEN',
+
+      source:
+        'POS',
+
+      data: {
+
+        kotNumber:
+          kotNumber,
 
         tableNo:
           currentTableId,
@@ -290,256 +436,92 @@ export default function CartPanel() {
         orderType:
           'DINE_IN',
 
-        deviceId:
-          'POS',
-
-        deviceName:
-          'Electron POS',
-
-        appVersion:
-          '1.0',
-
         createdAt:
           now,
 
-        sentBy:
-          null,
+        items:
+          cartData.map((item) => ({
 
-        syncStatus:
-          'PENDING',
+            name:
+              item.name,
 
-        lastSyncedAt:
-          null,
+            quantity:
+              item.quantity,
 
-      };
+            note:
+              item.note ?? '',
 
+          })),
 
-      // Save KOT batch first
-      await window.posApi.insertKotBatch(
-        kotBatch
-      );
+      },
 
+    });
 
-      // =================================================
-      // 2. CREATE KOT ITEMS
-      // =================================================
 
-      const kotItems =
-        commonItems.map((item) => ({
+    // =================================================
+    // SAVE BILL ITEMS
+    // =================================================
 
-          id:
-            crypto.randomUUID(),
+    await window.posApi.insertBillItems(
+      billItems
+    );
 
-          kotNumber:
-            kotNumber,
 
-          kotBatchId:
-            kotBatchId,
+    // =================================================
+    // CLEAR CART
+    // =================================================
 
-          status:
-            'PENDING',
+    await window.posApi.clearCart(
+      currentTableId
+    );
 
-          kitchenPrintReq:
-            true,
 
-          kitchenPrinted:
-            false,
+    // =================================================
+    // CLEAR LOCAL CART STATE
+    // =================================================
 
-          ...item,
+    setCartData([]);
 
-        }));
 
+    // =================================================
+    // RELOAD TABLE CART
+    // =================================================
 
-      // Save KOT items
-      await window.posApi.insertKotItems(
-        kotItems
-      );
+    await reloadCart(
+      currentTableId
+    );
 
 
-      // =================================================
-      // 3. CREATE BILL ITEMS
-      // =================================================
-      //
-      // These remain OPEN until the actual bill is created.
-      //
-      // KOT ≠ BILL
-      //
-      // KOT is already sent to kitchen.
-      //
-      // Bill will be created later.
-      //
-      // =================================================
+    // =================================================
+    // OPEN BILL PANEL
+    // =================================================
 
-      const billItems =
-        commonItems.map((item) => ({
+    setRightSidebarView(
+      'bill'
+    );
 
-          id:
-            crypto.randomUUID(),
 
+  } catch (e) {
 
-          billItemGroupKey: [
+    console.error(
+      'KOT/BILL SAVE FAILED',
+      e
+    );
 
-            item.productId,
 
-            item.basePrice,
+    const message =
+      e instanceof Error
+        ? e.message
+        : String(e);
 
-            item.taxRate,
 
-            item.taxType,
-
-            item.note,
-
-            item.modifiersJson,
-
-          ].join('|'),
-
-
-          status:
-            'OPEN',
-
-
-          billed:
-            false,
-
-
-          billNo:
-            '',
-
-
-          billId:
-            '',
-
-
-          ...item,
-
-        }));
-
-
-      // =================================================
-      // 4. PRINT KOT
-      // =================================================
-      //
-      // IMPORTANT:
-      //
-      // Print the SAME kotNumber that was stored in
-      // pos_kot_batch and pos_kot_items.
-      //
-      // =================================================
-
-      await window.posApi.print({
-
-        role:
-          'KITCHEN',
-
-        source:
-          'POS',
-
-        data: {
-
-          kotNumber:
-            kotNumber,
-
-          tableNo:
-            currentTableId,
-
-          tableName:
-            currentTableName,
-
-          orderType:
-            'DINE_IN',
-
-          createdAt:
-            now,
-
-          items:
-            cartData.map((item) => ({
-
-              name:
-                item.name,
-
-              quantity:
-                item.quantity,
-
-              note:
-                item.note ?? '',
-
-            })),
-
-        },
-
-      });
-
-
-      // =================================================
-      // 5. SAVE BILL ITEMS
-      // =================================================
-
-      await window.posApi.insertBillItems(
-        billItems
-      );
-
-
-      // =================================================
-      // 6. CLEAR CART
-      // =================================================
-
-      await window.posApi.clearCart(
-        currentTableId
-      );
-
-
-      // =================================================
-      // 7. CLEAR LOCAL CART STATE
-      // =================================================
-
-      setCartData([]);
-
-
-      // =================================================
-      // 8. RELOAD TABLE CART
-      // =================================================
-
-      await reloadCart(
-        currentTableId
-      );
-
-
-      // =================================================
-      // 9. OPEN BILL PANEL
-      // =================================================
-
-      setRightSidebarView(
-        'bill'
-      );
-
-
-    } catch (e) {
-
-      console.error(
-        'KOT/BILL SAVE FAILED',
-        e
-      );
-
-
-      const message =
-        e instanceof Error
-          ? e.message
-          : String(e);
-
-
-      console.error(
-        'KOT ERROR:',
-        message
-      );
-
-
-      alert(
-        `Failed to send items to kitchen.\n\n${message}`
-      );
-
-    }
+    alert(
+      `Failed to send items to kitchen.\n\n${message}`
+    );
 
   }
+
+}
 
 
   // =====================================================

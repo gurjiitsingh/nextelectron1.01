@@ -54,20 +54,12 @@ export default function Bill({
     try {
       setLoading(true);
 
-      console.log(
-        'LOAD BILL ITEMS',
-        currentTableId
-      );
-
       const rows =
         await window.posApi.getBillItems(
           currentTableId
         );
 
-      console.log(
-        'BILL ROWS',
-        rows
-      );
+      console.log("bill items----------------------", rows)
 
       setBillRows(rows);
     } catch (e) {
@@ -235,17 +227,19 @@ export default function Bill({
         ? 'PARTIAL'
         : 'PAID';
 
-  // =====================================================
-  // FINALIZE BILL
-  // =====================================================
 
-async function handleCheckout(
-  selectedPaymentMode: 'CASH' | 'CARD' | 'UPI'
+
+
+
+   // =====================================================
+// UPDATE BILL ITEM QUANTITY
+// =====================================================
+
+async function updateBillItemQuantity(
+  item: any,
+  newQuantity: number
 ) {
-  if (processing) return;
-
-  if (billItems.length === 0) {
-    setError('No items in bill');
+  if (!item?.productId) {
     return;
   }
 
@@ -253,160 +247,105 @@ async function handleCheckout(
     setProcessing(true);
     setError(null);
 
-    const totalAmount = Number(
-      calculation.grandTotal
-    ) || 0;
-
     console.log(
-      'CHECKOUT PAYMENT MODE:',
-      selectedPaymentMode
-    );
-
-    console.log(
-      'CHECKOUT AMOUNT:',
-      totalAmount
-    );
-
-    const result =
-      await window.posApi.createBill({
-
-        tableNo:
-          currentTableId,
-           tableName:
-          currentTableName,
-
-        orderType:
-          'DINE_IN',
-
-        customerName:
-          customerName.trim() ||
-          'Customer',
-
-        customerPhone:
-          customerPhone.trim(),
-
-        discountTotal:
-          calculation.discount,
-
-        deliveryFee:
-          calculation.deliveryFee,
-
-        deliveryTax:
-          calculation.deliveryTax,
-
-        // =============================================
-        // PAYMENT
-        // =============================================
-
-        paymentMode:
-          selectedPaymentMode,
-
-        paymentStatus:
-          'PAID',
-
-        paidAmount:
-          totalAmount,
-
-        payments: [
-          {
-            mode:
-              selectedPaymentMode,
-
-            amount:
-              totalAmount,
-          },
-        ],
-
-        // =============================================
-        // DEVICE
-        // =============================================
-
-        deviceId:
-          'POS',
-
-        deviceName:
-          'Electron POS',
-
-        appVersion:
-          '1.0',
-
-        businessDate:
-          new Date()
-            .toISOString()
-            .slice(0, 10),
-
-        currency:
-          '₹',
-      });
-
-    if (!result.success) {
-      throw new Error(
-        result.error ||
-        'Failed to create bill'
-      );
-    }
-
-    // ===============================================
-    // RESET BILL DRAFT
-    // ===============================================
-
-    setBillDraft({
-
-      customerName:
-        'Customer',
-
-      customerPhone:
-        '',
-
-      discount:
-        0,
-
-      discountPercent:
-        0,
-
-      deliveryFee:
-        0,
-
-      paymentMode:
-        'CASH',
-
-      paidAmount:
-        0,
-    });
-
-    console.log(
-      'BILL CREATED SUCCESSFULLY',
+      'UPDATE BILL ITEM:',
       {
-        paymentMode:
-          selectedPaymentMode,
-
-        paidAmount:
-          totalAmount,
-
-        result,
+        productId: item.productId,
+        quantity: newQuantity,
+        tableNo: currentTableId,
       }
     );
 
-    // ===============================================
-    // CLEAR BILL
-    // ===============================================
+    // Quantity cannot go below zero
+    const quantity = Math.max(
+      0,
+      Number(newQuantity)
+    );
 
-    setBillRows([]);
+    // =============================================
+    // DELETE ITEM
+    // =============================================
+
+    if (quantity <= 0) {
+
+      const result =
+        await window.posApi.deleteBillItem({
+          tableNo:
+            currentTableId,
+
+          productId:
+            item.productId,
+
+          // Important when modifiers/variants
+          // are present
+          modifiersJson:
+            item.modifiersJson || '',
+
+          note:
+            item.note || '',
+        });
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error ||
+          'Failed to remove item'
+        );
+      }
+
+    }
+
+    // =============================================
+    // UPDATE QUANTITY
+    // =============================================
+
+    else {
+
+      const result =
+        await window.posApi.updateBillItemQuantity({
+          tableNo:
+            currentTableId,
+
+          productId:
+            item.productId,
+
+          modifiersJson:
+            item.modifiersJson || '',
+
+          note:
+            item.note || '',
+
+          quantity,
+        });
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error ||
+          'Failed to update item quantity'
+        );
+      }
+    }
+
+    // =============================================
+    // RELOAD
+    // =============================================
 
     await loadBillItems();
 
-    onSuccess?.();
-
-  } catch (e: any) {
+  } catch (e) {
 
     console.error(
-      'BILL FAILED',
+      'FAILED TO UPDATE BILL ITEM:',
       e
     );
 
+    const message =
+      e instanceof Error
+        ? e.message
+        : String(e);
+
     setError(
-      e?.message ||
-      'Payment failed'
+      message ||
+      'Failed to update item'
     );
 
   } finally {
@@ -414,6 +353,386 @@ async function handleCheckout(
     setProcessing(false);
   }
 }
+
+
+// =====================================================
+// DECREASE
+// =====================================================
+
+async function decreaseBillItem(item: any) {
+  const currentQuantity =
+    Number(item.quantity || 0);
+
+  const newQuantity =
+    currentQuantity - 1;
+
+  await updateBillItemQuantity(
+    item,
+    newQuantity
+  );
+}
+
+
+// =====================================================
+// INCREASE
+// =====================================================
+
+async function increaseBillItem(item: any) {
+  const currentQuantity =
+    Number(item.quantity || 0);
+
+  const newQuantity =
+    currentQuantity + 1;
+
+  await updateBillItemQuantity(
+    item,
+    newQuantity
+  );
+}  
+
+
+async function updateBillItemQuantity(
+  item: any,
+  quantity: number
+) {
+  try {
+    const result =
+      await window.posApi.updateBillItemQuantity({
+        tableNo: currentTableId,
+
+        billItemGroupKey:
+          item.billItemGroupKey,
+
+        quantity,
+      });
+
+    if (!result.success) {
+      throw new Error(
+        result.error ||
+        'Failed to update bill item'
+      );
+    }
+
+    // Reload bill rows so:
+    // quantity
+    // subtotal
+    // tax
+    // grand total
+    // all update immediately
+
+    await loadBillItems();
+
+  } catch (e) {
+    console.error(
+      'UPDATE BILL ITEM FAILED:',
+      e
+    );
+
+    setError(
+      e instanceof Error
+        ? e.message
+        : 'Failed to update bill item'
+    );
+  }
+}
+  // =====================================================
+  // FINALIZE BILL
+  // =====================================================
+
+  async function handleCheckout(
+    selectedPaymentMode:
+      'CASH'
+      | 'CARD'
+      | 'UPI'
+  ) {
+
+    if (processing) {
+      return;
+    }
+
+
+    if (billItems.length === 0) {
+
+      setError(
+        'No items in bill'
+      );
+
+      return;
+    }
+
+
+    if (!currentTableId) {
+
+      setError(
+        'No table selected'
+      );
+
+      return;
+    }
+
+
+    try {
+
+      setProcessing(true);
+
+      setError(null);
+
+
+      // =================================================
+      // 1. CALCULATE FINAL TOTAL
+      // =================================================
+
+      const totalAmount =
+        Number(
+          calculation.grandTotal
+        ) || 0;
+
+
+      console.log(
+        'CHECKOUT PAYMENT MODE:',
+        selectedPaymentMode
+      );
+
+
+      console.log(
+        'CHECKOUT AMOUNT:',
+        totalAmount
+      );
+
+
+      console.log(
+        'CHECKOUT TABLE:',
+        currentTableId
+      );
+
+
+      console.log(
+        'FINAL BILL ITEMS:',
+        billItems
+      );
+
+
+      // =================================================
+      // 2. CREATE BILL
+      // =================================================
+
+      const result =
+        await window.posApi.createBill({
+
+          tableNo:
+            currentTableId,
+
+          tableName:
+            currentTableName,
+
+          orderType:
+            'DINE_IN',
+
+          customerName:
+            customerName.trim() ||
+            'Customer',
+
+          customerPhone:
+            customerPhone.trim(),
+
+          discountTotal:
+            calculation.discount,
+
+          deliveryFee:
+            calculation.deliveryFee,
+
+          deliveryTax:
+            calculation.deliveryTax,
+
+
+          // =============================================
+          // PAYMENT
+          // =============================================
+
+          paymentMode:
+            selectedPaymentMode,
+
+          paymentStatus:
+            'PAID',
+
+          paidAmount:
+            totalAmount,
+
+          payments: [
+
+            {
+              mode:
+                selectedPaymentMode,
+
+              amount:
+                totalAmount,
+            },
+
+          ],
+
+
+          // =============================================
+          // DEVICE
+          // =============================================
+
+          deviceId:
+            'POS',
+
+          deviceName:
+            'Electron POS',
+
+          appVersion:
+            '1.0',
+
+
+          // =============================================
+          // DATE
+          // =============================================
+
+          businessDate:
+            new Date()
+              .toISOString()
+              .slice(0, 10),
+
+
+          currency:
+            '₹',
+        });
+
+
+      // =================================================
+      // 3. CHECK BILL RESULT
+      // =================================================
+
+      if (!result.success) {
+
+        throw new Error(
+          result.error ||
+          'Failed to create bill'
+        );
+      }
+
+
+      console.log(
+        'BILL CREATED:',
+        result
+      );
+
+
+      // =================================================
+      // 4. MARK KOT HISTORY
+      //
+      // IMPORTANT:
+      //
+      // We do NOT provide kotHistoryId.
+      //
+      // Repository finds all KOT histories
+      // belonging to currentTableId.
+      //
+      // ================================================
+
+      const kotResult =
+        await window.posApi.markTableHistoryPaid({
+
+          tableNo:
+            currentTableId,
+
+          billItems:
+            billItems,
+
+          orderId:
+            result.srno || "",
+
+
+        });
+
+
+
+
+      if (!kotResult.success) {
+
+        throw new Error(
+          kotResult.error ||
+          'Failed to update KOT history'
+        );
+      }
+
+
+      // =================================================
+      // 5. RESET BILL DRAFT
+      // =================================================
+
+      setBillDraft({
+
+        customerName:
+          'Customer',
+
+        customerPhone:
+          '',
+
+        discount:
+          0,
+
+        discountPercent:
+          0,
+
+        deliveryFee:
+          0,
+
+        paymentMode:
+          'CASH',
+
+        paidAmount:
+          0,
+      });
+
+
+      // =================================================
+      // 6. CLEAR BILL UI
+      // =================================================
+
+      setBillRows([]);
+
+
+      // =================================================
+      // 7. RELOAD BILL ITEMS
+      // =================================================
+
+      await loadBillItems();
+
+
+      // =================================================
+      // 8. SUCCESS CALLBACK
+      // =================================================
+
+      onSuccess?.();
+
+
+    } catch (e) {
+
+      console.error(
+        'BILL FAILED',
+        e
+      );
+
+
+      const message =
+        e instanceof Error
+          ? e.message
+          : String(e);
+
+
+      setError(
+        message ||
+        'Payment failed'
+      );
+
+
+    } finally {
+
+      setProcessing(false);
+    }
+  }
 
   // =====================================================
   // PREVIEW BILL IMAGE
@@ -429,10 +748,6 @@ async function handleCheckout(
 
       return;
     }
-
-    console.log(
-      'PREVIEW BILL IMAGE CLICKED'
-    );
 
     try {
 
@@ -855,124 +1170,213 @@ async function handleCheckout(
             `}
           >
 
-            {billItems.map((item) => (
+         {billItems.map((item) => (
 
-              <div
-                key={item.name}
-                className="
-                  px-3
-                  py-3
-                "
-              >
+  <div
+    key={item.name}
+    className="
+      px-3
+      py-2
+    "
+  >
 
-                <div className="flex items-center justify-between">
+    <div className="flex items-center">
 
-                  {/* ITEM NAME */}
+      {/* ========================================= */}
+      {/* ITEM NAME */}
+      {/* ========================================= */}
 
-                  <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1">
 
-                    <p
-                      className="
-                        truncate
-                        text-sm
-                        font-medium
-                        opacity-80
-                      "
-                    >
-                      {item.name}
-                    </p>
+        <p
+          className="
+            truncate
+            text-[11px]
+            font-medium
+            leading-tight
+            opacity-80
+          "
+        >
+          {item.name}
+        </p>
 
-                    {item.note ? (
+        {item.note ? (
 
-                      <p
-                        className="
-                          truncate
-                          text-xs
-                          opacity-45
-                        "
-                      >
-                        {item.note}
-                      </p>
+          <p
+            className="
+              mt-0.5
+              truncate
+              text-[10px]
+              leading-tight
+              opacity-40
+            "
+          >
+            {item.note}
+          </p>
 
-                    ) : null}
+        ) : null}
 
-                  </div>
-
-
-                  {/* QTY */}
-
-                  <div
-                    className="
-                      ml-3
-                      min-w-[24px]
-                      text-right
-                      text-sm
-                      opacity-55
-                    "
-                  >
-                    {item.quantity}
-                  </div>
+      </div>
 
 
-                  {/* UNIT PRICE */}
+      {/* ========================================= */}
+      {/* QTY CONTROLS */}
+      {/* ========================================= */}
 
-                  <div
-                    className="
-                      ml-3
-                      min-w-[65px]
-                      text-right
-                    "
-                  >
+      <div
+        className="
+          ml-2
+          flex
+          shrink-0
+          items-center
+          gap-0.5
+        "
+      >
 
-                    <p className="text-xs opacity-50">
+        {/* DECREASE */}
 
-                      ₹
-                      {(
-                        item.basePrice +
-                        (
-                          item.modifierTotal ||
-                          0
-                        )
-                      ).toFixed(2)}
+{/* DECREASE */}
 
-                    </p>
+<button
+  type="button"
+  disabled={processing}
+  className="
+    flex
+    h-5
+    w-5
+    items-center
+    justify-center
+    rounded
+    border
+    text-[12px]
+    font-medium
+    opacity-65
+    transition
+    hover:opacity-100
+    active:scale-95
+    disabled:cursor-not-allowed
+    disabled:opacity-30
+  "
+  onClick={() =>
+    decreaseBillItem(item)
+  }
+>
+  −
+</button>
 
-                  </div>
+
+{/* QUANTITY */}
+
+<div
+  className="
+    flex
+    min-w-[22px]
+    justify-center
+    text-[11px]
+    font-medium
+  "
+>
+  {item.quantity}
+</div>
 
 
-                  {/* TOTAL */}
+{/* INCREASE */}
 
-                  <div
-                    className="
-                      ml-3
-                      min-w-[75px]
-                      text-right
-                    "
-                  >
+<button
+  type="button"
+  disabled={processing}
+  className="
+    flex
+    h-5
+    w-5
+    items-center
+    justify-center
+    rounded
+    border
+    text-[12px]
+    font-medium
+    opacity-65
+    transition
+    hover:opacity-100
+    active:scale-95
+    disabled:cursor-not-allowed
+    disabled:opacity-30
+  "
+  onClick={() =>
+    increaseBillItem(item)
+  }
+>
+  +
+</button>
 
-                    <p className="text-xs opacity-80">
+      </div>
 
-                      ₹
-                      {(
-                        (
-                          item.basePrice +
-                          (
-                            item.modifierTotal ||
-                            0
-                          )
-                        ) *
-                        item.quantity
-                      ).toFixed(2)}
 
-                    </p>
+      {/* ========================================= */}
+      {/* PRICE / TOTAL */}
+      {/* ========================================= */}
 
-                  </div>
+      <div
+        className="
+          ml-3
+          min-w-[70px]
+          shrink-0
+          text-right
+        "
+      >
 
-                </div>
+        {/* TOTAL */}
 
-              </div>
+        <p
+          className="
+            text-[12px]
+            font-semibold
+            leading-tight
+            tabular-nums
+            opacity-80
+          "
+        >
+          ₹
+          {(
+            (
+              item.basePrice +
+              (
+                item.modifierTotal || 0
+              )
+            ) *
+            item.quantity
+          ).toFixed(2)}
+        </p>
 
-            ))}
+
+        {/* UNIT PRICE */}
+
+        <p
+          className="
+            mt-0.5
+            text-[9px]
+            leading-tight
+            tabular-nums
+            opacity-60
+          "
+        >
+          ₹
+          {(
+            item.basePrice +
+            (
+              item.modifierTotal || 0
+            )
+          ).toFixed(2)}
+          {" / item"}
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+))}
 
           </div>
 
@@ -985,18 +1389,18 @@ async function handleCheckout(
           BILL BUTTONS
       ================================================= */}
 
-     <div className="shrink-0 px-2 pt-2">
+      <div className="shrink-0 px-2  bg-zinc-800 py-1">
 
-  <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
 
-    {/* =============================================
+          {/* =============================================
         PRINT
     ============================================= */}
 
-    <button
-      type="button"
-      onClick={printBill}
-      className={`
+          <button
+            type="button"
+            onClick={printBill}
+            className={`
         h-8
         w-fit
         px-3
@@ -1005,25 +1409,25 @@ async function handleCheckout(
         font-semibold
         ${POS_THEME.BillButton}
       `}
-    >
-      PRINT
-    </button>
+          >
+            PRINT
+          </button>
 
 
-    {/* =============================================
+          {/* =============================================
         CASH
     ============================================= */}
 
-    <button
-      type="button"
-      onClick={() =>
-        handleCheckout('CASH')
-      }
-      disabled={
-        processing ||
-        billItems.length === 0
-      }
-      className="
+          <button
+            type="button"
+            onClick={() =>
+              handleCheckout('CASH')
+            }
+            disabled={
+              processing ||
+              billItems.length === 0
+            }
+            className="
         h-8
         w-fit
         px-3
@@ -1037,27 +1441,27 @@ async function handleCheckout(
         disabled:opacity-50
         disabled:cursor-not-allowed
       "
-    >
-      {processing
-        ? 'PROCESSING...'
-        : 'CASH'}
-    </button>
+          >
+            {processing
+              ? 'PROCESSING...'
+              : 'CASH'}
+          </button>
 
 
-    {/* =============================================
+          {/* =============================================
         CARD
     ============================================= */}
 
-    <button
-      type="button"
-      onClick={() =>
-        handleCheckout('CARD')
-      }
-      disabled={
-        processing ||
-        billItems.length === 0
-      }
-      className="
+          <button
+            type="button"
+            onClick={() =>
+              handleCheckout('CARD')
+            }
+            disabled={
+              processing ||
+              billItems.length === 0
+            }
+            className="
         h-8
         w-fit
         px-3
@@ -1071,25 +1475,25 @@ async function handleCheckout(
         disabled:opacity-50
         disabled:cursor-not-allowed
       "
-    >
-      CARD
-    </button>
+          >
+            CARD
+          </button>
 
 
-    {/* =============================================
+          {/* =============================================
         UPI
     ============================================= */}
 
-    <button
-      type="button"
-      onClick={() =>
-        handleCheckout('UPI')
-      }
-      disabled={
-        processing ||
-        billItems.length === 0
-      }
-      className="
+          <button
+            type="button"
+            onClick={() =>
+              handleCheckout('UPI')
+            }
+            disabled={
+              processing ||
+              billItems.length === 0
+            }
+            className="
         h-8
         w-fit
         px-3
@@ -1103,13 +1507,13 @@ async function handleCheckout(
         disabled:opacity-50
         disabled:cursor-not-allowed
       "
-    >
-      UPI
-    </button>
+          >
+            UPI
+          </button>
 
-  </div>
+        </div>
 
-</div>
+      </div>
 
 
       {/* =================================================
@@ -1117,327 +1521,395 @@ async function handleCheckout(
           ${background.border}
       ================================================= */}
 
+  <div
+  className={`
+    space-y-1
+    px-3
+    py-2
+    text-[12px]
+  `}
+>
+  {/* =====================================================
+      SUBTOTAL
+  ===================================================== */}
+
+  <div
+    className="
+      flex
+      items-center
+      justify-between
+      py-0.5
+    "
+  >
+    <span className="opacity-55">
+      Subtotal
+    </span>
+
+    <span className="font-medium opacity-75">
+      ₹{calculation.itemSubtotal.toFixed(2)}
+    </span>
+  </div>
+
+
+  {/* =====================================================
+      TAX
+  ===================================================== */}
+
+  <div
+    className="
+      flex
+      items-center
+      justify-between
+      py-0.5
+    "
+  >
+    <span className="opacity-55">
+      Tax
+    </span>
+
+    <span className="font-medium opacity-70">
+      ₹{calculation.itemTax.toFixed(2)}
+    </span>
+  </div>
+
+
+  {/* =====================================================
+      DISCOUNT
+  ===================================================== */}
+
+  <div
+    className="
+      flex
+      items-center
+      justify-between
+      gap-2
+      py-1
+    "
+  >
+
+    {/* LEFT */}
+
+    <div
+      className="
+        flex
+        min-w-0
+        items-center
+        gap-2
+      "
+    >
+
+      <span className="shrink-0 opacity-55">
+        Discount
+      </span>
+
+
+      {/* FLAT */}
+
       <div
         className={`
-          space-y-2
-        
-          p-3
-          text-sm
+          flex
+          h-7
+          w-[68px]
+          items-center
+          rounded
+          border
+          ${background.border}
+          bg-black/[0.025]
         `}
       >
 
-        {/* SUBTOTAL */}
+        <span className="pl-2 text-[10px] opacity-35">
+          ₹
+        </span>
 
-        <div
-          className="
-            flex
-            justify-between
-            opacity-70
-          "
-        >
-          <span>
-            Subtotal
-          </span>
+    <input
+  type="number"
+  min="0"
+  step="0.01"
+  value={discount === 0 ? '' : discount}
+  onChange={(e) => {
 
-          <span>
-            ₹
-            {calculation.itemSubtotal.toFixed(2)}
-          </span>
-        </div>
+    const value =
+      e.target.value === ''
+        ? 0
+        : Number(e.target.value);
 
+    setBillDraft({
 
-        {/* TAX */}
+      ...billDraft,
 
-        <div
-          className="
-            flex
-            justify-between
-            opacity-65
-          "
-        >
-          <span>
-            Tax
-          </span>
+      discount: value,
 
-          <span>
-            ₹
-            {calculation.itemTax.toFixed(2)}
-          </span>
-        </div>
+      discountPercent:
+        value > 0
+          ? 0
+          : billDraft.discountPercent,
 
+    });
 
-        {/* DISCOUNT */}
+  }}
+  placeholder="0"
+  className={`
+    h-full
+    w-full
+    bg-transparent
+    px-1
+    text-right
+    text-[11px]
+    ${background.text}
+    outline-none
 
-        <div
-          className="
-            flex
-            items-center
-            justify-between
-            gap-2
-          "
-        >
-
-          <div
-            className="
-              flex
-              items-center
-              gap-2
-            "
-          >
-
-            <span className="opacity-60">
-              Discount
-            </span>
-
-
-            {/* FLAT DISCOUNT */}
-
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={discount}
-              onChange={(e) => {
-
-                const value =
-                  Number(
-                    e.target.value
-                  ) || 0;
-
-                setBillDraft({
-
-                  ...billDraft,
-
-                  discount:
-                    value,
-
-                  discountPercent:
-                    value > 0
-                      ? 0
-                      : billDraft.discountPercent,
-                });
-
-              }}
-              placeholder="₹"
-              className={`
-                h-8
-                w-16
-                rounded
-                border
-                ${background.border}
-                ${background.text}
-                px-2
-                text-right
-                text-sm
-                opacity-80
-                outline-none
-                focus:opacity-100
-              `}
-            />
-
-
-            {/* PERCENT DISCOUNT */}
-
-            <div
-              className={`
-                flex
-                items-center
-                rounded
-                border
-                ${background.border}
-              `}
-            >
-
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={discountPercent}
-                onChange={(e) => {
-
-                  const value =
-                    Number(
-                      e.target.value
-                    ) || 0;
-
-                  setBillDraft({
-
-                    ...billDraft,
-
-                    discountPercent:
-                      value,
-
-                    discount:
-                      value > 0
-                        ? 0
-                        : billDraft.discount,
-                  });
-
-                }}
-                placeholder="%"
-                className={`
-                  h-8
-                  w-14
-                  bg-transparent
-                  px-2
-                  text-right
-                  text-sm
-                  opacity-80
-                  outline-none
-                `}
-              />
-
-              <span
-                className="
-                  pr-2
-                  text-xs
-                  opacity-50
-                "
-              >
-                %
-              </span>
-
-            </div>
-
-          </div>
-
-
-          <span
-            className="
-              font-medium
-              opacity-75
-            "
-          >
-            ₹
-            {calculation.discount.toFixed(2)}
-          </span>
-
-        </div>
-
-
-        {/* DELIVERY */}
-
-        <div
-          className="
-            flex
-            items-center
-            justify-between
-            gap-2
-          "
-        >
-
-          <div
-            className="
-              flex
-              items-center
-              gap-2
-            "
-          >
-
-            <span className="opacity-60">
-              Delivery
-            </span>
-
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={deliveryFee}
-              onChange={(e) =>
-                setBillDraft({
-
-                  ...billDraft,
-
-                  deliveryFee:
-                    Number(
-                      e.target.value
-                    ) || 0,
-                })
-              }
-              placeholder="₹"
-              className={`
-                h-8
-                w-20
-                rounded
-                border
-                ${background.border}
-                ${background.text}
-                px-2
-                text-right
-                text-sm
-                opacity-80
-                outline-none
-                focus:opacity-100
-              `}
-            />
-
-          </div>
-
-          <span
-            className="
-              font-medium
-              opacity-75
-            "
-          >
-            ₹
-            {calculation.deliveryFee.toFixed(2)}
-          </span>
-
-        </div>
-
-
-        {/* GRAND TOTAL */}
-
-        <div
-          className={`
-            flex
-            justify-between
-            border-t
-            ${background.border}
-            pt-2
-            text-base
-            font-semibold
-          `}
-        >
-
-          <span className="opacity-85">
-            Grand Total
-          </span>
-
-          <span className="opacity-90">
-            ₹
-            {calculation.grandTotal.toFixed(2)}
-          </span>
-
-        </div>
-
-
-        {/* DUE */}
-
-        {/* <div
-          className="
-            flex
-            justify-between
-            text-sm
-            text-red-500
-            opacity-80
-          "
-        >
-
-          <span>
-            Due
-          </span>
-
-          <span>
-            ₹
-            {dueAmount.toFixed(2)}
-          </span>
-
-        </div> */}
+    [appearance:textfield]
+    [&::-webkit-inner-spin-button]:appearance-none
+    [&::-webkit-outer-spin-button]:appearance-none
+  `}
+/>
 
       </div>
 
+
+      {/* OR */}
+
+      <span className="text-[9px] opacity-25">
+        OR
+      </span>
+
+
+      {/* PERCENT */}
+
+      <div
+        className={`
+          flex
+          h-7
+          w-[62px]
+          items-center
+          rounded
+          border
+          ${background.border}
+          bg-black/[0.025]
+        `}
+      >
+
+      <input
+  type="number"
+  min="0"
+  max="100"
+  step="0.01"
+  value={
+    discountPercent === 0
+      ? ''
+      : discountPercent
+  }
+  onChange={(e) => {
+
+    const value =
+      e.target.value === ''
+        ? 0
+        : Number(e.target.value);
+
+    setBillDraft({
+
+      ...billDraft,
+
+      discountPercent: value,
+
+      discount:
+        value > 0
+          ? 0
+          : billDraft.discount,
+
+    });
+
+  }}
+  placeholder="0"
+  className={`
+    h-full
+    w-full
+    bg-transparent
+    px-1
+    text-right
+    text-[11px]
+    ${background.text}
+    outline-none
+
+    [appearance:textfield]
+    [&::-webkit-inner-spin-button]:appearance-none
+    [&::-webkit-outer-spin-button]:appearance-none
+  `}
+/>
+
+        <span className="pr-2 text-[10px] opacity-40">
+          %
+        </span>
+
+      </div>
+
+    </div>
+
+
+    {/* CALCULATED DISCOUNT */}
+
+    <span
+      className="
+        shrink-0
+        font-medium
+        opacity-70
+      "
+    >
+      − ₹{calculation.discount.toFixed(2)}
+    </span>
+
+  </div>
+
+
+  {/* =====================================================
+      DELIVERY
+  ===================================================== */}
+
+  <div
+    className="
+      flex
+      items-center
+      justify-between
+      gap-2
+      py-1
+    "
+  >
+
+    {/* LEFT */}
+
+    <div
+      className="
+        flex
+        items-center
+        gap-2
+      "
+    >
+
+      <span className="opacity-55">
+        Delivery
+      </span>
+
+
+      <div
+        className={`
+          flex
+          h-7
+          w-[72px]
+          items-center
+          rounded
+          border
+          ${background.border}
+          bg-black/[0.025]
+        `}
+      >
+
+        <span className="pl-2 text-[10px] opacity-35">
+          ₹
+        </span>
+
+    <input
+  type="number"
+  min="0"
+  step="0.01"
+  value={
+    deliveryFee === 0
+      ? ''
+      : deliveryFee
+  }
+  onChange={(e) => {
+
+    const value =
+      e.target.value === ''
+        ? 0
+        : Number(e.target.value);
+
+    setBillDraft({
+
+      ...billDraft,
+
+      deliveryFee:
+        value,
+
+    });
+
+  }}
+  placeholder="0"
+  className={`
+    h-full
+    w-full
+    bg-transparent
+    px-1
+    text-right
+    text-[11px]
+    ${background.text}
+    outline-none
+
+    [appearance:textfield]
+    [&::-webkit-inner-spin-button]:appearance-none
+    [&::-webkit-outer-spin-button]:appearance-none
+  `}
+/>
+
+      </div>
+
+    </div>
+
+
+    {/* DELIVERY TOTAL */}
+
+    <span
+      className="
+        shrink-0
+        font-medium
+        opacity-70
+      "
+    >
+      ₹{calculation.deliveryFee.toFixed(2)}
+    </span>
+
+  </div>
+
+
+  {/* =====================================================
+      GRAND TOTAL
+  ===================================================== */}
+
+  <div
+    className={`
+      mt-1
+      flex
+      items-center
+      justify-between
+      border-t
+      ${background.border}
+      pt-2
+    `}
+  >
+
+    <span
+      className="
+        text-[13px]
+        font-semibold
+        opacity-85
+      "
+    >
+      Grand Total
+    </span>
+
+    <span
+      className="
+        text-[15px]
+        font-bold
+        opacity-95
+      "
+    >
+      ₹{calculation.grandTotal.toFixed(2)}
+    </span>
+
+  </div>
+
+</div>
 
       {/* =================================================
           ERROR

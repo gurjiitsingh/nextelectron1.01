@@ -122,10 +122,31 @@ generateNextKotNumber: () =>
     'pos:kot:generateNumber'
   ),
 
-  insertKotBatch: (batch) =>
+  // insertKotBatch: (batch) =>
+  // ipcRenderer.invoke(
+  //   'pos:kot:insertBatch',
+  //   batch
+  // ),
+
+    // insertKotItems: (items) =>
+    // ipcRenderer.invoke(
+    //   'kot:insert',
+    //   items
+    // ),
+
+markKotHistoryPaid: (kotHistoryId) =>
   ipcRenderer.invoke(
-    'pos:kot:insertBatch',
-    batch
+    'kot-history:mark-paid',
+    kotHistoryId
+  ),    
+
+createKot: (batch, items) =>
+  ipcRenderer.invoke(
+    'kot:create',
+    {
+      batch,
+      items,
+    }
   ),
 
   createKotHistory: (data) =>
@@ -159,11 +180,7 @@ getKotHistoryDetail: (
     kotHistoryId
   ),
 
-  insertKotItems: (items) =>
-    ipcRenderer.invoke(
-      'kot:insert',
-      items
-    ),
+
 
   getPendingKotByTable: (tableNo) =>
     ipcRenderer.invoke(
@@ -202,6 +219,12 @@ getKotHistoryDetail: (kotHistoryId) =>
   ipcRenderer.invoke(
     'kot-history:detail',
     kotHistoryId
+  ),
+
+  markTableHistoryPaid: (args) =>
+  ipcRenderer.invoke(
+    'kotHistory:markTablePaid',
+    args
   ),
 
   // =====================================================
@@ -249,6 +272,20 @@ getKotHistoryDetail: (kotHistoryId) =>
       'clear-kot-by-table',
       tableNo
     ),
+
+
+
+    updateBillItemQuantity: (args) =>
+  ipcRenderer.invoke(
+    'bill:update-item-quantity',
+    args
+  ),
+
+deleteBillItem: (args) =>
+  ipcRenderer.invoke(
+    'bill:delete-item',
+    args
+  ),
 
   // =====================================================
 // ORDERS

@@ -68,7 +68,7 @@ export default function Page() {
         {/* RIGHT SIDEBAR */}
         <aside
           className={`
-            hidden
+           
             xl:flex
             w-[440px]
             shrink-0

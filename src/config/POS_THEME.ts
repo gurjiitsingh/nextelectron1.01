@@ -329,7 +329,7 @@ export const POS_THEMES: Record<
 
     inactive: '#6f86bd',
   },
-
+// #5C6A83
 
   // ===================================================
   // ORANGE

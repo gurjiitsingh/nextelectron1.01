@@ -210,6 +210,18 @@ getDayClosingSummary: (
 
 getDayClosingHistory: () => Promise<any>;
 
+markTableHistoryPaid: (data: {
+  tableNo: string;
+  orderId: string;
+  billItems: KitchenItem[];
+}) => Promise<{
+  success: boolean;
+  error?: string;
+  paidItems?: number;
+  deletedItems?: number;
+  paidHistory?: number;
+}>;
+
 closeBusinessDay: (
   data: {
     actualCash: number;

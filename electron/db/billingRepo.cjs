@@ -49,15 +49,17 @@ function uuid() {
 
 function getBillableKotItems(tableNo) {
 
+
   if (!tableNo) {
     return [];
   }
 
-  const items = db.prepare(`
+  return db.prepare(`
     SELECT *
-    FROM pos_kot_items
+    FROM pos_bill_items
     WHERE tableNo = ?
-    
+      AND billed = 0
+      AND status = 'OPEN'
     ORDER BY createdAt ASC
   `).all(tableNo);
 
@@ -131,33 +133,6 @@ async function createBillFromKitchen(input) {
   const now = Date.now();
 
   const orderId = uuid();
-
-
-  // ===================================================
-  // BUSINESS DATE
-  // ===================================================
-  //
-  // For now caller can provide businessDate.
-  //
-  // Later we will connect this to your Electron
-  // business-day repository.
-  // ===================================================
-
-
-
-
-  // ===================================================
-  // ORDER NUMBER
-  // ===================================================
-  //
-  // Temporary safe number.
-  //
-  // Later we should replace this with your daily
-  // POS sequence repository, equivalent to:
-  //
-  // orderSequenceRepository.getOrCreateOrderNo()
-  //
-  // ===================================================
 
   // =====================================================
   // ORDER NUMBER
@@ -315,43 +290,7 @@ async function createBillFromKitchen(input) {
 
 
 
-  // ===================================================
-// GROUP KOT ITEMS BY KOT BATCH
-// ===================================================
 
-const kotBatches = new Map();
-
-for (const item of kotItems) {
-
-  const batchId = item.kotBatchId;
-
-  if (!batchId) {
-    throw new Error(
-      `KOT batch ID missing for item ${item.id}`
-    );
-  }
-
-  if (!item.kotNumber) {
-    throw new Error(
-      `KOT number missing for item ${item.id}`
-    );
-  }
-
-  if (!kotBatches.has(batchId)) {
-
-    kotBatches.set(batchId, {
-      kotBatchId: batchId,
-      kotNumber: item.kotNumber,
-      items: [],
-    });
-
-  }
-
-  kotBatches
-    .get(batchId)
-    .items
-    .push(item);
-}
   // ===================================================
   // FINAL TOTALS
   // ===================================================
@@ -714,83 +653,6 @@ const transaction =
     }
 
 
-// ================================================
-// 4. SAVE KOT HISTORY
-// ================================================
-
-// ================================================
-// 4. SAVE KOT HISTORY
-// ================================================
-
-// Group the billable KOT items by their original
-// KOT batch. One bill may contain multiple KOTs.
-
-const kotBatches = new Map();
-
-for (const kotItem of kotItems) {
-
-  if (!kotItem.kotBatchId) {
-    throw new Error(
-      `kotBatchId missing for KOT item: ${kotItem.id}`
-    );
-  }
-
-  if (!kotItem.kotNumber) {
-    throw new Error(
-      `kotNumber missing for KOT item: ${kotItem.id}`
-    );
-  }
-
-  if (!kotBatches.has(kotItem.kotBatchId)) {
-
-    kotBatches.set(
-      kotItem.kotBatchId,
-      {
-        kotBatchId:
-          kotItem.kotBatchId,
-
-        kotNumber:
-          kotItem.kotNumber,
-
-        items: [],
-      }
-    );
-  }
-
-  kotBatches
-    .get(kotItem.kotBatchId)
-    .items
-    .push(kotItem);
-}
-
-
-// ================================================
-// CREATE ONE HISTORY RECORD PER KOT BATCH
-// ================================================
-
-for (const batch of kotBatches.values()) {
-
- kotHistoryRepo.createKotHistory({
-  kotBatchId: kotItems[0]?.kotBatchId,
-  kotNumber: kotItems[0]?.kotNumber,
-
-  tableNo,
-  tableName: tableName || '',
-
-  orderType,
-
-  businessDate: finalBusinessDate,
-
-  deviceId,
-  deviceName,
-  appVersion,
-
-  sentBy: null,
-
-  items: kotItems,
-});
-
-}
 
     // ================================================
     // 5. COMPLETE KOT

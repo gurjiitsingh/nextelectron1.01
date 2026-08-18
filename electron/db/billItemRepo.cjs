@@ -136,7 +136,88 @@ function markBillItemsBilled(tableNo, billId, billNo) {
   `).run(billId, billNo, tableNo);
 }
 
+
+
+// =====================================================
+// UPDATE BILL ITEM QUANTITY
+// =====================================================
+
+function updateBillItemQuantity({
+  tableNo,
+  billItemGroupKey,
+  quantity,
+}) {
+
+  if (!tableNo) {
+    throw new Error('tableNo is required');
+  }
+
+  const newQuantity =
+    Number(quantity);
+
+  if (!Number.isFinite(newQuantity)) {
+    throw new Error('Invalid quantity');
+  }
+
+
+  // ---------------------------------------------------
+  // ZERO = DELETE ITEM FROM BILL
+  // ---------------------------------------------------
+
+  if (newQuantity <= 0) {
+
+    db.prepare(`
+      DELETE FROM pos_bill_items
+
+      WHERE tableNo = ?
+        AND billItemGroupKey = ?
+        AND billed = 0
+        AND status = 'OPEN'
+    `).run(
+      tableNo,
+      billItemGroupKey
+    );
+
+    return {
+      success: true,
+      quantity: 0,
+      deleted: true,
+    };
+  }
+
+
+  // ---------------------------------------------------
+  // UPDATE QUANTITY
+  // ---------------------------------------------------
+
+  const result =
+    db.prepare(`
+      UPDATE pos_bill_items
+
+      SET quantity = ?
+
+      WHERE tableNo = ?
+        AND billItemGroupKey = ?
+        AND billed = 0
+        AND status = 'OPEN'
+    `).run(
+      newQuantity,
+      tableNo,
+      billItemGroupKey
+    );
+
+
+  return {
+    success: true,
+    quantity: newQuantity,
+    changed: result.changes,
+  };
+}
+
+
+
 module.exports = {
+   updateBillItemQuantity,
   insertBillItems,
   getOpenBillItems,
   markBillItemsBilled,

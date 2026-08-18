@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { syncAll } = require('./sync/syncAll.cjs');
-
+const billRepo = require('./db/billItemRepo.cjs');
 // Import BOTH db and getDebugCounts from the same file
 const { db, getDebugCounts } = require('./db/sqlite.cjs');
 const tableRepo = require('./db/tableRepo.cjs');
@@ -348,21 +348,41 @@ const {
 // KOT IPC
 // =====================================================
 
-ipcMain.handle(
-  'pos:kot:insertBatch',
-  async (_, batch) => {
-    return kotRepo.insertKotBatch(batch);
-  }
-)
+// ipcMain.handle(
+//   'pos:kot:insertBatch',
+//   async (_, batch) => {
+//     return kotRepo.insertKotBatch(batch);
+//   }
+// )
+
+// ipcMain.handle(
+//   'kot:insert',
+//   async (_e, items) => {
+//     await kotRepo.insertKotItems(items);
+
+//     return { success: true };
+//   }
+// );
 
 ipcMain.handle(
-  'kot:insert',
-  async (_e, items) => {
-    await kotRepo.insertKotItems(items);
+  'kot:create',
+  async (_e, { batch, items }) => {
 
-    return { success: true };
+    const result =
+      await kotRepo.createKot({
+        batch,
+        items,
+      });
+
+    return result;
   }
 );
+
+// =====================================================
+// KOT HISTORY 
+// =====================================================
+
+
 
 ipcMain.handle(
   'kot-history:create',
@@ -463,6 +483,94 @@ ipcMain.handle(
         error:
           error?.message ||
           'Failed to load KOT history items',
+      };
+    }
+  }
+);
+
+
+ipcMain.handle(
+  'kotHistory:markTablePaid',
+  async (_event, args) => {
+
+    try {
+
+      console.log(
+        'IPC kotHistory:markTablePaid',
+        args
+      );
+
+
+      const result =
+        kotHistoryRepo.markTableHistoryPaid(
+          args
+        );
+
+
+      console.log(
+        'IPC kotHistory:markTablePaid RESULT:',
+        result
+      );
+
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        'IPC KOT HISTORY PAID FAILED:',
+        error
+      );
+
+
+      return {
+        success: false,
+
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
+
+// =====================================================
+// MARK KOT HISTORY PAID
+// =====================================================
+
+ipcMain.handle(
+  'kot-history:mark-paid',
+  async (_e, kotHistoryId) => {
+console.log("call------------------------")
+    try {
+
+      if (!kotHistoryId) {
+        throw new Error(
+          'KOT history ID is required'
+        );
+      }
+
+      const result =
+        kotHistoryRepo.markKotHistoryPaid(
+          kotHistoryId
+        );
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        'MARK KOT HISTORY PAID FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
       };
     }
   }
@@ -822,9 +930,66 @@ app.whenReady().then(() => {
       );
     }
   );
+  // -------------------------------
+  // ADD REMOVE ITEM FROM BILL
+  // -------------------------------
+
+ipcMain.handle(
+  'bill:update-item-quantity',
+  async (_event, args) => {
+
+    try {
+
+      return await billRepo.updateBillItemQuantity(
+        args
+      );
+
+    } catch (error) {
+
+      console.error(
+        'BILL UPDATE ITEM QUANTITY FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
 
 
+ipcMain.handle(
+  'bill:delete-item',
+  async (_event, args) => {
 
+    try {
+
+      return await billRepo.deleteBillItem(
+        args
+      );
+
+    } catch (error) {
+
+      console.error(
+        'BILL DELETE ITEM FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
 
   // -------------------------------
   // SYNC
