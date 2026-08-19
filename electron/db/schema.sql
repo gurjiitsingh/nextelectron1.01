@@ -706,6 +706,7 @@ CREATE TABLE IF NOT EXISTS pos_order_master (
   -- =====================================================
 
   businessDate TEXT NOT NULL,
+  realDate TEXT NOT NULL,
 
   createdAt INTEGER NOT NULL,
 

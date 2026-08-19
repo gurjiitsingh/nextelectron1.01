@@ -1020,6 +1020,20 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  'orders:bussiness',
+  async (_e, date) => {
+    return orderRepo.getOrdersByBusinessDate(date);
+  }
+);
+
+ipcMain.handle(
+  'orders:realDate',
+  async (_e, date) => {
+    return orderRepo.getOrdersByRealDate(date);
+  }
+);
+
+ipcMain.handle(
   'orders:get',
   async (_e, orderId) => {
     return orderRepo.getOrderById(orderId);

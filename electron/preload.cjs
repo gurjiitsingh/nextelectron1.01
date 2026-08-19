@@ -310,6 +310,18 @@ getOrders: (date) =>
     date
   ),
 
+  getOrdersByBusinessDate: (date) =>
+  ipcRenderer.invoke(
+    'orders:bussiness',
+    date
+  ),
+
+  getOrdersByRealDate: (date) =>
+  ipcRenderer.invoke(
+    'orders:realDate',
+    date
+  ),
+
 getOrderById: (orderId) =>
   ipcRenderer.invoke(
     'orders:get',

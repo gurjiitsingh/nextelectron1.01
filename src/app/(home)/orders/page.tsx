@@ -79,7 +79,7 @@ const [detailsLoading, setDetailsLoading] =
       );
 
       const rows =
-        await window.posApi.getOrders(
+        await window.posApi.getOrdersByRealDate(
           date
         );
 

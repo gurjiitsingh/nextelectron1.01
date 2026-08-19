@@ -63,7 +63,7 @@ function getBillableKotItems(tableNo) {
     ORDER BY createdAt ASC
   `).all(tableNo);
 
-  
+
   return items;
 }
 
@@ -210,6 +210,10 @@ async function createBillFromKitchen(input) {
 
   const now =
     Date.now();
+
+  const realDate =
+    new Date(now)
+      .toLocaleDateString('en-CA');
 
   const orderId =
     uuid();
@@ -725,6 +729,7 @@ async function createBillFromKitchen(input) {
             appVersion,
 
             businessDate,
+            realDate,
             createdAt,
             updatedAt,
 
@@ -787,6 +792,7 @@ async function createBillFromKitchen(input) {
             @appVersion,
 
             @businessDate,
+            @realDate,
             @createdAt,
             @updatedAt,
 
@@ -979,6 +985,10 @@ async function createBillFromKitchen(input) {
 
         businessDate:
           finalBusinessDate,
+
+        realDate:
+          realDate,
+
 
         createdAt:
           now,

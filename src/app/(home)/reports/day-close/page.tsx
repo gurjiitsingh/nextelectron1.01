@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
+import { useRouter } from 'next/navigation';
 
 export default function DayClosingPage() {
-
+const router = useRouter();
   const {
     background,
     theme,
@@ -521,6 +522,7 @@ export default function DayClosingPage() {
           >
             Business Day Closing
           </h1>
+          
 
           <p
             className="
@@ -590,6 +592,28 @@ export default function DayClosingPage() {
           >
             ↻ Refresh
           </button>
+
+          <button
+  type="button"
+  onClick={() => router.push('/orders/byBusinessDate')}
+  disabled={loading}
+  className="
+    h-10
+    rounded-xl
+    px-4
+    text-xs
+    font-semibold
+    text-white
+    transition
+    hover:opacity-90
+    disabled:opacity-50
+  "
+  style={{
+    backgroundColor: theme.primary,
+  }}
+>
+  Order by Business Date
+</button>
 
         </div>
 

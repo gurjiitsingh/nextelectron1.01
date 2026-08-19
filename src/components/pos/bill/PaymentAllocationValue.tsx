@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export type PaymentAllocationValue = {
   cash: number;
@@ -11,33 +11,69 @@ export type PaymentAllocationValue = {
 
 type PaymentAllocationProps = {
   totalAmount: number;
-  initialPayment?: PaymentAllocationValue;
+
+  value: PaymentAllocationValue;
+
   onChange?: (
     payment: PaymentAllocationValue
   ) => void;
+
+  onPay?: (
+    payment: PaymentAllocationValue
+  ) => void;
+
+  onCancel?: () => void;
 };
 
 export default function PaymentAllocation({
   totalAmount,
-  initialPayment,
+  value,
   onChange,
+  onPay,
+  onCancel,
 }: PaymentAllocationProps) {
 
   const [cash, setCash] = useState(
-    initialPayment?.cash || 0
+    Number(value?.cash || 0)
   );
 
   const [card, setCard] = useState(
-    initialPayment?.card || 0
+    Number(value?.card || 0)
   );
 
   const [upi, setUpi] = useState(
-    initialPayment?.upi || 0
+    Number(value?.upi || 0)
   );
 
   const [credit, setCredit] = useState(
-    initialPayment?.credit || 0
+    Number(value?.credit || 0)
   );
+
+  // =====================================================
+  // SYNC FROM PARENT
+  // =====================================================
+
+  useEffect(() => {
+    setCash(
+      Number(value?.cash || 0)
+    );
+
+    setCard(
+      Number(value?.card || 0)
+    );
+
+    setUpi(
+      Number(value?.upi || 0)
+    );
+
+    setCredit(
+      Number(value?.credit || 0)
+    );
+  }, [value]);
+
+  // =====================================================
+  // TOTAL ALLOCATED
+  // =====================================================
 
   const totalAllocated =
     cash +
@@ -45,11 +81,19 @@ export default function PaymentAllocation({
     upi +
     credit;
 
+  // =====================================================
+  // REMAINING
+  // =====================================================
+
   const remaining =
     Math.max(
       0,
       totalAmount - totalAllocated
     );
+
+  // =====================================================
+  // OVER PAYMENT
+  // =====================================================
 
   const overAmount =
     Math.max(
@@ -57,22 +101,35 @@ export default function PaymentAllocation({
       totalAllocated - totalAmount
     );
 
+  // =====================================================
+  // PAYMENT STATUS
+  // =====================================================
+
+  const isComplete =
+    Math.abs(
+      totalAllocated - totalAmount
+    ) < 0.01;
+
+  // =====================================================
+  // UPDATE PAYMENT
+  // =====================================================
+
   const updatePayment = (
     field:
       | 'cash'
       | 'card'
       | 'upi'
       | 'credit',
-    value: number
+    valueAmount: number
   ) => {
 
     const amount =
       Math.max(
         0,
-        Number(value) || 0
+        Number(valueAmount) || 0
       );
 
-    let next = {
+    const next: PaymentAllocationValue = {
       cash,
       card,
       upi,
@@ -89,6 +146,10 @@ export default function PaymentAllocation({
     onChange?.(next);
   };
 
+  // =====================================================
+  // FILL REMAINING
+  // =====================================================
+
   const fillRemaining = (
     field:
       | 'cash'
@@ -97,17 +158,18 @@ export default function PaymentAllocation({
       | 'credit'
   ) => {
 
+    const currentValue =
+      field === 'cash'
+        ? cash
+        : field === 'card'
+          ? card
+          : field === 'upi'
+            ? upi
+            : credit;
+
     const otherTotal =
       totalAllocated -
-      (
-        field === 'cash'
-          ? cash
-          : field === 'card'
-            ? card
-            : field === 'upi'
-              ? upi
-              : credit
-      );
+      currentValue;
 
     const amount =
       Math.max(
@@ -121,6 +183,21 @@ export default function PaymentAllocation({
     );
   };
 
+  // =====================================================
+  // PAYMENT VALUE
+  // =====================================================
+
+  const paymentValue: PaymentAllocationValue = {
+    cash,
+    card,
+    upi,
+    credit,
+  };
+
+  // =====================================================
+  // RENDER
+  // =====================================================
+
   return (
     <div
       className="
@@ -129,49 +206,65 @@ export default function PaymentAllocation({
         border
         border-zinc-700
         bg-zinc-900
-        p-3
+        px-3
+        py-3
         space-y-3
+        shadow-2xl
       "
     >
 
-      {/* =========================================
+      {/* =================================================
           HEADER
-      ========================================= */}
+      ================================================= */}
 
-      <div className="flex items-center justify-between">
+      <div
+        className="
+          flex
+          items-center
+          justify-between
+          border-b
+          border-zinc-700
+          pb-2
+        "
+      >
 
-        <span
+        <div
           className="
             text-xs
-            font-semibold
+            font-bold
+            uppercase
+            tracking-wide
             text-zinc-300
           "
         >
-          PAYMENT
-        </span>
+          Payment
+        </div>
 
-        <span
+        <div
           className="
-            text-sm
+            text-base
             font-bold
             text-white
           "
         >
           ₹{totalAmount.toFixed(2)}
-        </span>
+        </div>
 
       </div>
 
 
-      {/* =========================================
+      {/* =================================================
           CASH
-      ========================================= */}
+      ================================================= */}
 
       <PaymentRow
         label="Cash"
         value={cash}
-        onChange={(value) =>
-          updatePayment('cash', value)
+        onChange={(amount) =>
+          updatePayment(
+            'cash',
+            amount
+          )
         }
         onFill={() =>
           fillRemaining('cash')
@@ -179,15 +272,18 @@ export default function PaymentAllocation({
       />
 
 
-      {/* =========================================
+      {/* =================================================
           CARD
-      ========================================= */}
+      ================================================= */}
 
       <PaymentRow
         label="Card"
         value={card}
-        onChange={(value) =>
-          updatePayment('card', value)
+        onChange={(amount) =>
+          updatePayment(
+            'card',
+            amount
+          )
         }
         onFill={() =>
           fillRemaining('card')
@@ -195,15 +291,18 @@ export default function PaymentAllocation({
       />
 
 
-      {/* =========================================
+      {/* =================================================
           UPI
-      ========================================= */}
+      ================================================= */}
 
       <PaymentRow
         label="UPI"
         value={upi}
-        onChange={(value) =>
-          updatePayment('upi', value)
+        onChange={(amount) =>
+          updatePayment(
+            'upi',
+            amount
+          )
         }
         onFill={() =>
           fillRemaining('upi')
@@ -211,15 +310,18 @@ export default function PaymentAllocation({
       />
 
 
-      {/* =========================================
+      {/* =================================================
           CREDIT
-      ========================================= */}
+      ================================================= */}
 
       <PaymentRow
         label="Credit"
         value={credit}
-        onChange={(value) =>
-          updatePayment('credit', value)
+        onChange={(amount) =>
+          updatePayment(
+            'credit',
+            amount
+          )
         }
         onFill={() =>
           fillRemaining('credit')
@@ -227,16 +329,16 @@ export default function PaymentAllocation({
       />
 
 
-      {/* =========================================
+      {/* =================================================
           SUMMARY
-      ========================================= */}
+      ================================================= */}
 
       <div
         className="
           border-t
           border-zinc-700
           pt-2
-          space-y-1
+          space-y-1.5
         "
       >
 
@@ -265,6 +367,71 @@ export default function PaymentAllocation({
 
       </div>
 
+
+      {/* =================================================
+          ACTIONS
+      ================================================= */}
+
+      <div
+        className="
+          flex
+          items-center
+          gap-2
+          pt-1
+        "
+      >
+
+        {/* CANCEL */}
+
+        <button
+          type="button"
+          onClick={onCancel}
+          className="
+            h-9
+            flex-1
+            rounded-md
+            border
+            border-zinc-700
+            bg-zinc-800
+            text-xs
+            font-semibold
+            text-zinc-300
+            hover:bg-zinc-700
+            hover:text-white
+            transition-colors
+          "
+        >
+          CANCEL
+        </button>
+
+
+        {/* PAY */}
+
+        <button
+          type="button"
+          disabled={!isComplete}
+          onClick={() =>
+            onPay?.(paymentValue)
+          }
+          className="
+            h-9
+            flex-[2]
+            rounded-md
+            bg-green-600
+            text-xs
+            font-bold
+            text-white
+            hover:bg-green-700
+            transition-colors
+            disabled:cursor-not-allowed
+            disabled:opacity-40
+          "
+        >
+          PAY ₹{totalAmount.toFixed(2)}
+        </button>
+
+      </div>
+
     </div>
   );
 }
@@ -289,17 +456,30 @@ function PaymentRow({
 }: PaymentRowProps) {
 
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="
+        flex
+        items-center
+        gap-2
+      "
+    >
+
+      {/* LABEL */}
 
       <div
         className="
           w-16
+          shrink-0
           text-xs
+          font-medium
           text-zinc-300
         "
       >
         {label}
       </div>
+
+
+      {/* INPUT */}
 
       <input
         type="number"
@@ -310,13 +490,23 @@ function PaymentRow({
             ? ''
             : value
         }
-        onChange={(e) =>
+        onChange={(e) => {
+
+          const raw =
+            e.target.value;
+
+          if (raw === '') {
+            onChange(0);
+            return;
+          }
+
           onChange(
-            Number(e.target.value) || 0
-          )
-        }
+            Number(raw) || 0
+          );
+        }}
         className="
-          h-8
+          h-9
+          min-w-0
           flex-1
           rounded-md
           border
@@ -325,25 +515,35 @@ function PaymentRow({
           px-2
           text-right
           text-sm
+          font-medium
           text-white
           outline-none
           focus:border-zinc-500
+
+          [appearance:textfield]
+          [&::-webkit-outer-spin-button]:appearance-none
+          [&::-webkit-inner-spin-button]:appearance-none
         "
         placeholder="0.00"
       />
+
+
+      {/* FULL */}
 
       <button
         type="button"
         onClick={onFill}
         className="
-          h-8
-          px-2
+          h-9
+          w-12
+          shrink-0
           rounded-md
           bg-zinc-700
           text-[10px]
-          font-semibold
+          font-bold
           text-zinc-200
           hover:bg-zinc-600
+          transition-colors
         "
       >
         FULL
@@ -389,7 +589,7 @@ function SummaryRow({
       <span
         className={`
           text-xs
-          font-semibold
+          font-bold
           ${valueClass}
         `}
       >

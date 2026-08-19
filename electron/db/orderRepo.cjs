@@ -8,6 +8,20 @@ const { randomUUID } = require('crypto');
 
 function insertOrder(master, items) {
 
+  const createdAt =
+  master.createdAt ?? Date.now();
+
+ const realDate =
+  getRealDate(createdAt);
+
+  console.log('========== INSERT ORDER DATE DEBUG ==========');
+console.log({
+  createdAt,
+  createdAtISO: new Date(createdAt).toISOString(),
+  businessDate: master.businessDate,
+  realDate,
+});
+
   const insertMaster = db.prepare(`
     INSERT INTO pos_order_master (
 
@@ -38,8 +52,8 @@ function insertOrder(master, items) {
       appVersion,
 
       businessDate,
+      realDate,
       createdAt,
-
       syncStatus
 
     ) VALUES (
@@ -71,6 +85,7 @@ function insertOrder(master, items) {
       @appVersion,
 
       @businessDate,
+      @realDate,
       @createdAt,
 
       @syncStatus
@@ -249,6 +264,9 @@ function insertOrder(master, items) {
       businessDate:
         master.businessDate ??
         getLocalBusinessDate(),
+
+        realDate:
+  realDate,
 
       createdAt:
         master.createdAt ??
@@ -446,7 +464,15 @@ function getLocalBusinessDate() {
   return `${year}-${month}-${day}`;
 }
 
+function getRealDate(createdAt) {
+  const date = new Date(createdAt);
 
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
 // =====================================================
 // GET ORDERS BY BUSINESS DATE
 // =====================================================
@@ -520,7 +546,104 @@ function getOrders(date) {
     .all(businessDate);
 }
 
+function getOrdersByBusinessDate(date) {
+  const businessDate =
+    date || getCurrentBusinessDate();
 
+  return db
+    .prepare(`
+      SELECT
+        id,
+        srno,
+        orderType,
+        tableNo,
+        tableName,
+
+        customerName,
+        customerPhone,
+
+        itemTotal,
+        itemTax,
+        taxTotal,
+        discountTotal,
+        grandTotal,
+
+        paymentMode,
+        paymentStatus,
+
+        paidAmount,
+        dueAmount,
+
+        orderStatus,
+
+        deviceId,
+        deviceName,
+        appVersion,
+
+        businessDate,
+        realDate,
+        createdAt,
+
+        syncStatus
+
+      FROM pos_order_master
+
+      WHERE businessDate = ?
+
+      ORDER BY createdAt DESC
+    `)
+    .all(businessDate);
+}
+
+
+function getOrdersByRealDate(date) {
+  const realDate =
+    date || getLocalBusinessDate();
+
+  return db
+    .prepare(`
+      SELECT
+        id,
+        srno,
+        orderType,
+        tableNo,
+        tableName,
+
+        customerName,
+        customerPhone,
+
+        itemTotal,
+        itemTax,
+        taxTotal,
+        discountTotal,
+        grandTotal,
+
+        paymentMode,
+        paymentStatus,
+
+        paidAmount,
+        dueAmount,
+
+        orderStatus,
+
+        deviceId,
+        deviceName,
+        appVersion,
+
+        businessDate,
+        realDate,
+        createdAt,
+
+        syncStatus
+
+      FROM pos_order_master
+
+      WHERE realDate = ?
+
+      ORDER BY createdAt DESC
+    `)
+    .all(realDate);
+}
 // =====================================================
 // EXPORTS
 // =====================================================
@@ -528,6 +651,9 @@ function getOrders(date) {
 module.exports = {
 
   insertOrder,
+
+  getOrdersByBusinessDate,
+  getOrdersByRealDate,
 
   getOrders,
 

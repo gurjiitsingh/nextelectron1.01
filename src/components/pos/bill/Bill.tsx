@@ -8,7 +8,17 @@ import { fromPaise } from '@/lib/pos/billing/money';
 import { calculateBillAndroid } from '@/lib/pos/billing/calculator';
 import { POS_THEME } from '@/style/posTheme';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
-import { PaymentAllocationValue } from './PaymentAllocationValue';
+import PaymentAllocation, { PaymentAllocationValue } from './PaymentAllocationValue';
+
+type PaymentAllocationProps = {
+  totalAmount: number;
+
+  value: PaymentAllocationValue;
+
+  onChange: (
+    payment: PaymentAllocationValue
+  ) => void;
+};
 
 type BillProps = {
   onSuccess?: () => void;
@@ -49,7 +59,8 @@ export default function Bill({
 
 const [complimentaryReason, setComplimentaryReason] =
   useState<string | null>(null);
-
+const [showPaymentAllocation, setShowPaymentAllocation] =
+  useState(false);
   
 
   // =====================================================
@@ -713,7 +724,350 @@ async function increaseBillItem(item: any) {
     }
   }
 
+// =====================================================
+// MULTIPLE / CREDIT PAYMENT CHECKOUT
+// =====================================================
 
+async function handlePaymentAllocation(
+  payment: PaymentAllocationValue
+) {
+  if (processing) {
+    return;
+  }
+
+  if (billItems.length === 0) {
+    setError('No items in bill');
+    return;
+  }
+
+  if (!currentTableId) {
+    setError('No table selected');
+    return;
+  }
+
+  const totalAmount =
+    Number(calculation.grandTotal) || 0;
+
+  const cash = Math.max(0, Number(payment.cash) || 0);
+  const card = Math.max(0, Number(payment.card) || 0);
+  const upi = Math.max(0, Number(payment.upi) || 0);
+  const credit = Math.max(0, Number(payment.credit) || 0);
+
+  const totalAllocated =
+    cash +
+    card +
+    upi +
+    credit;
+
+  // Small floating-point tolerance
+  if (
+    Math.abs(totalAllocated - totalAmount) > 0.01
+  ) {
+    setError(
+      `Payment allocation must equal ₹${totalAmount.toFixed(2)}`
+    );
+    return;
+  }
+
+  try {
+    setProcessing(true);
+    setError(null);
+
+    // =================================================
+    // BUILD PAYMENT ARRAY
+    // =================================================
+
+    const payments: {
+      mode:
+        | 'CASH'
+        | 'CARD'
+        | 'UPI'
+        | 'CREDIT';
+
+      amount: number;
+    }[] = [];
+
+    if (cash > 0) {
+      payments.push({
+        mode: 'CASH',
+        amount: cash,
+      });
+    }
+
+    if (card > 0) {
+      payments.push({
+        mode: 'CARD',
+        amount: card,
+      });
+    }
+
+    if (upi > 0) {
+      payments.push({
+        mode: 'UPI',
+        amount: upi,
+      });
+    }
+
+    if (credit > 0) {
+      payments.push({
+        mode: 'CREDIT',
+        amount: credit,
+      });
+    }
+
+    // =================================================
+    // DETERMINE PAYMENT STATUS
+    // =================================================
+
+    const paidAmount =
+      cash +
+      card +
+      upi;
+
+    let paymentStatus:
+      | 'PAID'
+      | 'PARTIAL'
+      | 'CREDIT';
+
+    if (credit <= 0.01) {
+      paymentStatus = 'PAID';
+    } else if (paidAmount > 0) {
+      paymentStatus = 'PARTIAL';
+    } else {
+      paymentStatus = 'CREDIT';
+    }
+
+    // =================================================
+    // PAYMENT MODE
+    //
+    // For multiple payments use MIXED.
+    // For single payment keep actual mode.
+    // =================================================
+
+    let finalPaymentMode:
+      | 'CASH'
+      | 'CARD'
+      | 'UPI'
+      | 'CREDIT'
+      | 'MIXED';
+
+    if (payments.length === 1) {
+      finalPaymentMode = payments[0].mode;
+    } else {
+      finalPaymentMode = 'MIXED';
+    }
+
+    console.log(
+      'MULTIPLE PAYMENT CHECKOUT:',
+      {
+        totalAmount,
+        payments,
+        paidAmount,
+        credit,
+        paymentStatus,
+        finalPaymentMode,
+      }
+    );
+
+    // =================================================
+    // CREATE BILL
+    // =================================================
+
+    const result =
+      await window.posApi.createBill({
+
+        tableNo:
+          currentTableId,
+
+        tableName:
+          currentTableName,
+
+        orderType:
+          'DINE_IN',
+
+        customerName:
+          customerName.trim() ||
+          'Customer',
+
+        customerPhone:
+          customerPhone.trim(),
+
+        // =================================================
+        // TAX / DISCOUNT / DELIVERY
+        // =================================================
+
+        discountTotal:
+          calculation.discount,
+
+        deliveryFee:
+          calculation.deliveryFee,
+
+        deliveryTax:
+          calculation.deliveryTax,
+
+        // =================================================
+        // PAYMENT
+        // =================================================
+
+        paymentMode:
+          finalPaymentMode,
+
+        paymentStatus,
+
+        paidAmount,
+
+        payments,
+
+        // =================================================
+        // DEVICE
+        // =================================================
+
+        deviceId:
+          'POS',
+
+        deviceName:
+          'Electron POS',
+
+        appVersion:
+          '1.0',
+
+        // =================================================
+        // DATE
+        // =================================================
+
+        businessDate:
+          new Date()
+            .toISOString()
+            .slice(0, 10),
+
+        currency:
+          '₹',
+      });
+
+    // =================================================
+    // CHECK BILL RESULT
+    // =================================================
+
+    if (!result?.success) {
+      throw new Error(
+        result?.error ||
+        'Failed to create bill'
+      );
+    }
+
+    console.log(
+      'MULTIPLE PAYMENT BILL CREATED:',
+      result
+    );
+
+    // =================================================
+    // MARK KOT HISTORY PAID
+    // =================================================
+
+    const kotResult =
+      await window.posApi.markTableHistoryPaid({
+        tableNo:
+          currentTableId,
+
+        billItems:
+          billItems,
+
+        orderId:
+          result.srno || '',
+      });
+
+    if (!kotResult?.success) {
+      throw new Error(
+        kotResult?.error ||
+        'Failed to update KOT history'
+      );
+    }
+
+    // =================================================
+    // RESET BILL DRAFT
+    // =================================================
+
+    setBillDraft({
+
+      customerName:
+        'Customer',
+
+      customerPhone:
+        '',
+
+      discount:
+        0,
+
+      discountPercent:
+        0,
+
+      deliveryFee:
+        0,
+
+      paymentMode:
+        'CASH',
+
+      paidAmount:
+        0,
+    });
+
+    // =================================================
+    // RESET PAYMENT ALLOCATION
+    // =================================================
+
+    setPaymentAllocation({
+      cash: 0,
+      card: 0,
+      upi: 0,
+      credit: 0,
+    });
+
+    // =================================================
+    // CLOSE PAYMENT SUMMARY
+    // =================================================
+
+    setShowPaymentSummary(false);
+
+    // =================================================
+    // CLEAR BILL
+    // =================================================
+
+    setBillRows([]);
+
+    // =================================================
+    // RELOAD
+    // =================================================
+
+    await loadBillItems();
+
+    // =================================================
+    // SUCCESS
+    // =================================================
+
+    onSuccess?.();
+
+  } catch (e) {
+
+    console.error(
+      'MULTIPLE PAYMENT CHECKOUT FAILED:',
+      e
+    );
+
+    const message =
+      e instanceof Error
+        ? e.message
+        : String(e);
+
+    setError(
+      message ||
+      'Payment failed'
+    );
+
+  } finally {
+
+    setProcessing(false);
+  }
+}
 
 // =====================================================
 // COMPLIMENTARY CHECKOUT
@@ -753,98 +1107,96 @@ async function handleComplimentaryCheckout(
     // 1. CREATE COMPLIMENTARY BILL
     // =================================================
 
-    const result =
-      await window.posApi.createBill({
+const result =
+  await window.posApi.createBill({
 
-        tableNo:
-          currentTableId,
+    tableNo:
+      currentTableId,
 
-        tableName:
-          currentTableName,
+    tableName:
+      currentTableName,
 
-        orderType:
-          'DINE_IN',
+    orderType:
+      'DINE_IN',
 
-        customerName:
-          customerName.trim() ||
-          'Customer',
+    customerName:
+      customerName.trim() ||
+      'Customer',
 
-        customerPhone:
-          customerPhone.trim(),
+    customerPhone:
+      customerPhone.trim(),
 
-        // =================================================
-        // COMPLIMENTARY
-        // =================================================
+    // =================================================
+    // COMPLIMENTARY
+    // =================================================
 
-        billType:
+    billType:
+      'COMPLIMENTARY',
+
+    complimentaryReason:
+      reason,
+
+    // =================================================
+    // TAX / DISCOUNT / DELIVERY
+    // =================================================
+
+    discountTotal:
+      0,
+
+    deliveryFee:
+      0,
+
+    deliveryTax:
+      0,
+
+    // =================================================
+    // PAYMENT
+    // =================================================
+
+    paymentMode:
+      'COMPLIMENTARY',
+
+    paymentStatus:
+      'PAID',
+
+    paidAmount:
+      0,
+
+    payments: [
+      {
+        mode:
           'COMPLIMENTARY',
 
-        complimentaryReason:
-          reason,
-
-        // =================================================
-        // TAX / DISCOUNT / DELIVERY
-        // =================================================
-
-        discountTotal:
+        amount:
           0,
+      },
+    ],
 
-        deliveryFee:
-          0,
+    // =================================================
+    // DEVICE
+    // =================================================
 
-        deliveryTax:
-          0,
+    deviceId:
+      'POS',
 
-        // =================================================
-        // PAYMENT
-        // =================================================
+    deviceName:
+      'Electron POS',
 
-        paymentMode:
-          'COMPLIMENTARY',
+    appVersion:
+      '1.0',
 
-        paymentStatus:
-          'PAID',
+    // =================================================
+    // DATE
+    // =================================================
 
-        paidAmount:
-          0,
+    businessDate:
+      new Date()
+        .toISOString()
+        .slice(0, 10),
 
-        payments: [
-
-          {
-            mode:
-              'COMPLIMENTARY',
-
-            amount:
-              0,
-          },
-
-        ],
-
-        // =================================================
-        // DEVICE
-        // =================================================
-
-        deviceId:
-          'POS',
-
-        deviceName:
-          'Electron POS',
-
-        appVersion:
-          '1.0',
-
-        // =================================================
-        // DATE
-        // =================================================
-
-        businessDate:
-          new Date()
-            .toISOString()
-            .slice(0, 10),
-
-        currency:
-          '₹',
-      });
+    currency:
+      '₹',
+  });
 
 
     // =================================================
@@ -1830,25 +2182,24 @@ const isCreditSale =
 
         {/* CREDIT */}
 
-        {creditAmount > 0 && (
-          <div
-            className="
-              flex
-              items-center
-              justify-between
-              py-1
-              text-xs
-            "
-          >
-            <span className="text-zinc-400">
-              CREDIT
-            </span>
+       {/* {showPaymentAllocation && ( */}
+     <PaymentAllocation
+  totalAmount={calculation.grandTotal}
+  value={paymentAllocation}
+  onChange={setPaymentAllocation}
+  onPay={handlePaymentAllocation}
+  onCancel={() => {
+    setShowPaymentSummary(false);
 
-            <span className="font-semibold text-white">
-              ₹{Number(creditAmount).toFixed(2)}
-            </span>
-          </div>
-        )}
+    setPaymentAllocation({
+      cash: 0,
+      card: 0,
+      upi: 0,
+      credit: 0,
+    });
+  }}
+/>
+        {/* )} */}
 
       </div>
 
@@ -2122,6 +2473,205 @@ const isCreditSale =
     >
       MORE
     </button>
+
+            {showMoreMenu && (
+  <div
+    className="
+      absolute
+      bottom-[100%]
+      right-2
+      mb-2
+      z-50
+      w-48
+      rounded-lg
+      border
+      border-zinc-600
+      bg-zinc-800
+      p-1
+      shadow-xl
+    "
+  >
+
+    {/* =========================================
+        COMPLIMENTARY
+    ========================================= */}
+
+    <button
+      type="button"
+  onClick={() => {
+  setShowMoreMenu(false);
+  setShowComplimentaryMenu(true);
+}}
+      className="
+        flex
+        w-full
+        items-center
+        rounded-md
+        px-3
+        py-2
+        text-left
+        text-xs
+        font-medium
+        text-white
+        hover:bg-zinc-700
+        transition-colors
+      "
+    >
+      Complimentary
+    </button>
+
+
+    {/* =========================================
+        DRIVER
+    ========================================= */}
+
+    <button
+      type="button"
+      onClick={() => {
+       handleComplimentaryCheckout('DRIVER')
+
+        setShowMoreMenu(false);
+      }}
+      className="
+        flex
+        w-full
+        items-center
+        rounded-md
+        px-3
+        py-2
+        text-left
+        text-xs
+        font-medium
+        text-white
+        hover:bg-zinc-700
+        transition-colors
+      "
+    >
+      Driver
+    </button>
+
+
+    {/* =========================================
+        FRIEND
+    ========================================= */}
+
+    <button
+      type="button"
+      onClick={() => {
+        handleComplimentaryCheckout('FRIEND')
+
+        setShowMoreMenu(false);
+      }}
+      className="
+        flex
+        w-full
+        items-center
+        rounded-md
+        px-3
+        py-2
+        text-left
+        text-xs
+        font-medium
+        text-white
+        hover:bg-zinc-700
+        transition-colors
+      "
+    >
+      Friend
+    </button>
+
+
+    {/* =========================================
+        FAMILY
+    ========================================= */}
+
+    <button
+      type="button"
+      onClick={() => {
+       handleComplimentaryCheckout('FAMILY')
+
+        setShowMoreMenu(false);
+      }}
+      className="
+        flex
+        w-full
+        items-center
+        rounded-md
+        px-3
+        py-2
+        text-left
+        text-xs
+        font-medium
+        text-white
+        hover:bg-zinc-700
+        transition-colors
+      "
+    >
+      Family
+    </button>
+
+
+    {/* =========================================
+        STAFF
+    ========================================= */}
+
+    <button
+      type="button"
+      onClick={() => {
+       handleComplimentaryCheckout('STAFF')
+
+        setShowMoreMenu(false);
+      }}
+      className="
+        flex
+        w-full
+        items-center
+        rounded-md
+        px-3
+        py-2
+        text-left
+        text-xs
+        font-medium
+        text-white
+        hover:bg-zinc-700
+        transition-colors
+      "
+    >
+      Staff
+    </button>
+
+
+    {/* =========================================
+        OWNER
+    ========================================= */}
+
+    <button
+      type="button"
+      onClick={() => {
+       handleComplimentaryCheckout('OWNER')
+
+        setShowMoreMenu(false);
+      }}
+      className="
+        flex
+        w-full
+        items-center
+        rounded-md
+        px-3
+        py-2
+        text-left
+        text-xs
+        font-medium
+        text-white
+        hover:bg-zinc-700
+        transition-colors
+      "
+    >
+      Owner
+    </button>
+
+  </div>
+)}
 
   </div>
 
