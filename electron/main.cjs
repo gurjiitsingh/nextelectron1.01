@@ -6,7 +6,7 @@ const {
 } = require('electron');
 
 const { shell } = require('electron');
- 
+
 const fs = require('fs');
 const path = require('path');
 
@@ -16,7 +16,7 @@ const billRepo = require('./db/billItemRepo.cjs');
 const { db, getDebugCounts } = require('./db/sqlite.cjs');
 const tableRepo = require('./db/tableRepo.cjs');
 console.log('MAIN STARTED');
- console.log(
+console.log(
   'USER DATA PATH:',
   app.getPath('userData')
 );
@@ -25,7 +25,7 @@ const {
 } = require('./db/modifierGroupRepo.cjs');
 
 const cartRepo = require('./db/cartRepo.cjs');
- const orderRepo = require('./db/orderRepo.cjs');
+const orderRepo = require('./db/orderRepo.cjs');
 const {
   getProductModifiers,
 } = require('./db/productModifierRepo.cjs');
@@ -36,7 +36,7 @@ const dayClosingRepo =
 const businessDayRepo =
   require('./db/businessDayRepository.cjs');
 
-  const kotHistoryRepo =
+const kotHistoryRepo =
   require('./db/kotHistoryRepository.cjs');
 
 const billItemRepo = require('./db/billItemRepo.cjs');
@@ -59,7 +59,7 @@ const {
   PrinterRole,
 } = require('../shared/printer/types.js');
 
- 
+
 const {
   uploadOrderCounter,
 } = require('./sync/orderCounterUpload.cjs');
@@ -116,25 +116,63 @@ ipcMain.handle(
 ipcMain.handle(
   'printer:print',
   async (_event, payload) => {
-    try {
-      const { role, data, source } = payload;
 
-      const jobId = await printManager.enqueue(
+    try {
+
+      const {
         role,
         data,
-        source || 'POS'
-      );
+        source,
+      } = payload;
+
+
+      // ===============================================
+      // PRINT
+      // ===============================================
+
+      const jobId =
+        await printManager.enqueue(
+          role,
+          data,
+          source || 'POS'
+        );
+
+
+      // ===============================================
+      // UPDATE TABLE STATUS
+      // ONLY FOR BILL PRINT
+      // ===============================================
+
+      if (
+        role === 'BILL' &&
+        data?.tableNo
+      ) {
+
+        tableRepo.updateTableStatus(
+          data.tableNo,
+          'PAYMENT_PENDING'
+        );
+
+      }
+
 
       return {
         success: true,
         jobId,
       };
+
     } catch (e) {
-      console.error('PRINTER PRINT FAILED', e);
+
+      console.error(
+        'PRINTER PRINT FAILED',
+        e
+      );
 
       return {
         success: false,
-        error: e?.message || String(e),
+        error:
+          e?.message ||
+          String(e),
       };
     }
   }
@@ -297,7 +335,7 @@ ipcMain.handle(
   }
 );
 
- // =====================================================
+// =====================================================
 // SYNC DATA
 // =====================================================
 
@@ -309,7 +347,7 @@ ipcMain.handle('outlet:get', async () => {
   return getOutlet();
 });
 
- ipcMain.handle(
+ipcMain.handle(
   'tables:list',
   async () => {
     return tableRepo.getAllTables();
@@ -542,7 +580,7 @@ ipcMain.handle(
 ipcMain.handle(
   'kot-history:mark-paid',
   async (_e, kotHistoryId) => {
-console.log("call------------------------")
+    console.log("call------------------------")
     try {
 
       if (!kotHistoryId) {
@@ -696,44 +734,84 @@ ipcMain.handle(
 // =====================================================
 
 
+// =====================================================
+// INSERT BILL ITEMS
+// =====================================================
 
 ipcMain.handle(
   'bill-items:insert',
   async (_e, items) => {
-    billItemRepo.insertBillItems(items);
-    return { success: true };
+
+    try {
+
+      const result =
+        await billItemRepo.insertBillItems(
+          items
+        );
+
+      // ===========================================
+      // BILL ITEMS HAVE CHANGED
+      // ===========================================
+
+      tableRepo.refreshAllTableBillVisualStates();
+
+      return {
+        success: true,
+        result,
+      };
+
+    } catch (error) {
+
+      console.error(
+        'BILL ITEMS INSERT FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
   }
 );
 
-ipcMain.handle(
-  'bill-items:list',
-  async (_e, tableNo) => {
-    return billItemRepo.getOpenBillItems(tableNo);
-  }
-);
 
-ipcMain.handle(
-  'bill-items:mark-billed',
-  async (_e, tableNo, billId, billNo) => {
-    return billItemRepo.markBillItemsBilled(
-      tableNo,
-      billId,
-      billNo
-    );
-  }
-);
+// =====================================================
+// CREATE BILL
+// =====================================================
 
 ipcMain.handle(
   'bill:create',
   async (_event, input) => {
+
     try {
+
       const result =
         await createBillFromKitchen(
           input
         );
 
+      // ===========================================
+      // BILL CREATED SUCCESSFULLY
+      // ===========================================
+
+      if (result?.success !== false) {
+
+        // Cart was changed/cleared
+        tableRepo.refreshAllTableCartVisualStates();
+
+        // Bill state was changed
+        tableRepo.refreshAllTableBillVisualStates();
+
+      }
+
       return result;
+
     } catch (error) {
+
       console.error(
         'BILL CREATE FAILED:',
         error
@@ -748,6 +826,155 @@ ipcMain.handle(
     }
   }
 );
+
+
+// =====================================================
+// UPDATE BILL ITEM QUANTITY
+// =====================================================
+
+ipcMain.handle(
+  'bill:update-item-quantity',
+  async (_event, args) => {
+
+    try {
+
+      const result =
+        await billRepo.updateBillItemQuantity(
+          args
+        );
+
+      // ===========================================
+      // BILL ITEM CHANGED
+      // ===========================================
+
+      if (result?.success !== false) {
+
+        tableRepo.refreshAllTableBillVisualStates();
+
+      }
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        'BILL UPDATE ITEM QUANTITY FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
+
+
+// =====================================================
+// DELETE BILL ITEM
+// =====================================================
+
+ipcMain.handle(
+  'bill:delete-item',
+  async (_event, args) => {
+
+    try {
+
+      const result =
+        await billRepo.deleteBillItem(
+          args
+        );
+
+      // ===========================================
+      // BILL ITEM CHANGED
+      // ===========================================
+
+      if (result?.success !== false) {
+
+        tableRepo.refreshAllTableBillVisualStates();
+
+      }
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        'BILL DELETE ITEM FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
+
+
+// =====================================================
+// LIST OPEN BILL ITEMS
+// =====================================================
+
+ipcMain.handle(
+  'bill-items:list',
+  async (_e, tableNo) => {
+
+    return billItemRepo.getOpenBillItems(
+      tableNo
+    );
+
+  }
+);
+
+
+// =====================================================
+// MARK BILL ITEMS AS BILLED
+// =====================================================
+
+ipcMain.handle(
+  'bill-items:mark-billed',
+  async (
+    _e,
+    tableNo,
+    billId,
+    billNo
+  ) => {
+
+    const result =
+      await billItemRepo.markBillItemsBilled(
+        tableNo,
+        billId,
+        billNo
+      );
+
+    // ===========================================
+    // IMPORTANT
+    // Items are no longer OPEN
+    // ===========================================
+
+    if (result?.success !== false) {
+
+      tableRepo.refreshAllTableBillVisualStates();
+
+    }
+
+    return result;
+
+  }
+);
+
+// -------------------------------
+// KOT 
+// -------------------------------
 
 ipcMain.handle(
   'clear-kot-by-table',
@@ -781,30 +1008,30 @@ ipcMain.handle(
 );
 
 
- // =====================================================
- // ORDERS
- // =====================================================
+// =====================================================
+// ORDERS
+// =====================================================
 
- ipcMain.handle(
-   'orders:list',
-   async (_e, date) => {
-     return orderRepo.getOrders(date);
-   }
- );
+ipcMain.handle(
+  'orders:list',
+  async (_e, date) => {
+    return orderRepo.getOrders(date);
+  }
+);
 
- ipcMain.handle(
-   'orders:get',
-   async (_e, orderId) => {
-     return orderRepo.getOrderById(orderId);
-   }
- );
+ipcMain.handle(
+  'orders:get',
+  async (_e, orderId) => {
+    return orderRepo.getOrderById(orderId);
+  }
+);
 
- ipcMain.handle(
-   'orders:items',
-   async (_e, orderId) => {
-     return orderRepo.getOrderItems(orderId);
-   }
- );
+ipcMain.handle(
+  'orders:items',
+  async (_e, orderId) => {
+    return orderRepo.getOrderItems(orderId);
+  }
+);
 // =====================================================
 // WINDOW
 // =====================================================
@@ -877,34 +1104,74 @@ app.whenReady().then(() => {
   // CART
   // -------------------------------
 
+  // =====================================================
+  // CART LIST
+  // =====================================================
+
   ipcMain.handle(
     'cart:list',
     async (_e, tableNo) => {
-      // console.log(
-      //   'IPC cart:list',
-      //   tableNo
-      // );
 
       return cartRepo.getCartItems(
         tableNo
       );
+
     }
   );
+
+
+  // =====================================================
+  // CART ADD
+  // =====================================================
 
   ipcMain.handle(
     'cart:add',
     async (_e, item, tableNo) => {
-      // console.log(
-      //   'IPC cart:add',
-      //   item
-      // );
 
-      return cartRepo.addCartItem(
-        item,
-        tableNo
-      );
+      try {
+
+        // ===============================================
+        // 1. UPDATE CART
+        // ===============================================
+
+        const result =
+          await cartRepo.addCartItem(
+            item,
+            tableNo
+          );
+
+
+        // ===============================================
+        // 2. REFRESH ALL TABLE VISUAL STATES
+        // ===============================================
+
+        tableRepo.refreshAllTableCartVisualStates();
+
+
+        // ===============================================
+        // 3. RETURN CART RESULT
+        // ===============================================
+
+        return result;
+
+      } catch (error) {
+
+        console.error(
+          'cart:add failed',
+          error
+        );
+
+        throw error;
+
+      }
+
     }
   );
+
+
+  // =====================================================
+  // CART REMOVE
+  // =====================================================
 
   ipcMain.handle(
     'cart:remove',
@@ -914,82 +1181,169 @@ app.whenReady().then(() => {
       tableNo,
       removeAll
     ) => {
-      return cartRepo.removeCartItem(
-        uniqueKey,
-        tableNo,
-        removeAll
-      );
+
+      try {
+
+        // ===============================================
+        // 1. UPDATE CART
+        // ===============================================
+
+        const result =
+          cartRepo.removeCartItem(
+            uniqueKey,
+            tableNo,
+            removeAll
+          );
+
+
+        // ===============================================
+        // 2. REFRESH TABLE VISUAL STATE
+        // ===============================================
+
+        if (result?.success !== false) {
+          tableRepo.refreshAllTableCartVisualStates();
+          // tableRepo.refreshAllTableCartVisualStates(
+          //   tableNo
+          // );
+
+        }
+
+
+        // ===============================================
+        // 3. RETURN RESULT
+        // ===============================================
+
+        return result;
+
+      } catch (error) {
+
+        console.error(
+          'cart:remove failed',
+          error
+        );
+
+        throw error;
+
+      }
+
     }
   );
+
+
+  // =====================================================
+  // CART CLEAR
+  // =====================================================
 
   ipcMain.handle(
     'cart:clear',
     async (_e, tableNo) => {
-      return cartRepo.clearCart(
-        tableNo
-      );
+
+      try {
+
+        // ===============================================
+        // 1. CLEAR CART
+        // ===============================================
+
+        const result =
+          cartRepo.clearCart(
+            tableNo
+          );
+
+
+        // ===============================================
+        // 2. REFRESH TABLE VISUAL STATE
+        // ===============================================
+
+        if (result?.success !== false) {
+          tableRepo.refreshAllTableCartVisualStates();
+          // tableRepo.refreshAllTableCartVisualStates(
+          //   tableNo
+          // );
+
+        }
+
+
+        // ===============================================
+        // 3. RETURN RESULT
+        // ===============================================
+
+        return result;
+
+      } catch (error) {
+
+        console.error(
+          'cart:clear failed',
+          error
+        );
+
+        throw error;
+
+      }
+
     }
   );
-  // -------------------------------
-  // ADD REMOVE ITEM FROM BILL
-  // -------------------------------
 
-ipcMain.handle(
-  'bill:update-item-quantity',
-  async (_event, args) => {
 
-    try {
+  // =====================================================
+  // CART UPDATE NOTE
+  // =====================================================
 
-      return await billRepo.updateBillItemQuantity(
-        args
-      );
+  ipcMain.handle(
+    'cart:update-note',
+    async (
+      _e,
+      itemId,
+      note,
+      tableNo
+    ) => {
 
-    } catch (error) {
+      try {
 
-      console.error(
-        'BILL UPDATE ITEM QUANTITY FAILED:',
-        error
-      );
+        // ===============================================
+        // 1. UPDATE CART NOTE
+        // ===============================================
 
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
+        const result =
+          cartRepo.updateCartItemNote(
+            itemId,
+            note,
+            tableNo
+          );
+
+
+        // ===============================================
+        // 2. REFRESH TABLE VISUAL STATE
+        // ===============================================
+
+        if (result?.success !== false) {
+          tableRepo.refreshAllTableCartVisualStates();
+          // tableRepo.refreshAllTableCartVisualStates(
+          //   tableNo
+          // );
+
+        }
+
+
+        // ===============================================
+        // 3. RETURN RESULT
+        // ===============================================
+
+        return result;
+
+      } catch (error) {
+
+        console.error(
+          'cart:update-note failed',
+          error
+        );
+
+        throw error;
+
+      }
+
     }
-  }
-);
+  );
 
-
-ipcMain.handle(
-  'bill:delete-item',
-  async (_event, args) => {
-
-    try {
-
-      return await billRepo.deleteBillItem(
-        args
-      );
-
-    } catch (error) {
-
-      console.error(
-        'BILL DELETE ITEM FAILED:',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
-  }
-);
 
   // -------------------------------
   // SYNC
@@ -1048,11 +1402,11 @@ ipcMain.handle(
   // MODIFIERS
   // -------------------------------
 
-ipcMain.handle(
-  'modifier-groups:list',
-  async () => getModifierGroups()
-);
-  
+  ipcMain.handle(
+    'modifier-groups:list',
+    async () => getModifierGroups()
+  );
+
 
   ipcMain.handle(
     'product-modifiers:list',
@@ -1068,7 +1422,7 @@ ipcMain.handle(
   const win = createWindow();
 
 
-    // Upload local counter every 5 minutes
+  // Upload local counter every 5 minutes
   setInterval(() => {
     uploadOrderCounter().catch(console.error);
   }, 5 * 60 * 1000);

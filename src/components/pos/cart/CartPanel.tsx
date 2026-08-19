@@ -1,9 +1,11 @@
 'use client';
 
+import { cartProductType } from '@/lib/types/cartDataType';
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { useCartContext } from '@/store/CartContext';
+import { useState } from 'react';
 
 export default function CartPanel() {
 
@@ -14,6 +16,7 @@ export default function CartPanel() {
     addProductToCart,
     decCartProduct,
     setCartData,
+     updateCartItemNote,
   } = useCartContext();
 
   const {
@@ -33,6 +36,12 @@ export default function CartPanel() {
     background,
   } = usePosTheme();
 
+
+  const [editingNoteId, setEditingNoteId] =
+  useState<number | null>(null);
+
+const [noteText, setNoteText] =
+  useState('');
 
   // =====================================================
   // SEND TO KITCHEN
@@ -524,6 +533,50 @@ async function sendToKitchenHandle() {
 }
 
 
+
+function startEditingNote(
+  item: cartProductType
+) {
+  setEditingNoteId(item.id);
+  setNoteText(item.note ?? '');
+}
+
+function cancelEditingNote() {
+  setEditingNoteId(null);
+  setNoteText('');
+}
+
+async function saveItemNote(
+  item: cartProductType
+) {
+  try {
+    const tableNo =
+      activeTable?.tableId || 'T1';
+
+    await window.posApi.updateCartItemNote(
+      item.id,
+      noteText.trim(),
+      tableNo
+    );
+
+    // Reload SQLite → React state
+    await reloadCart(tableNo);
+
+    setEditingNoteId(null);
+    setNoteText('');
+
+  } catch (error) {
+    console.error(
+      'FAILED TO UPDATE CART NOTE',
+      error
+    );
+
+    alert(
+      'Failed to save item note.'
+    );
+  }
+}
+
   // =====================================================
   // UI
   // =====================================================
@@ -656,40 +709,159 @@ async function sendToKitchenHandle() {
                           NAME + NOTE
                       ================================================= */}
 
-                      <div
-                        className="
-                          min-w-0
-                          flex-1
-                        "
-                      >
+               <div
+  className="
+    min-w-0
+    flex-1
+  "
+>
 
-                        <p
-                          className="
-                            truncate
-                            text-[10px]
-                            font-medium
-                          "
-                        >
-                          {item.name}
-                        </p>
+  {/* PRODUCT NAME */}
+
+  <p
+    className="
+      truncate
+      text-[10px]
+      font-medium
+  "
+  >
+    {item.name}
+  </p>
 
 
-                        {item.note && (
+  {/* NOTE */}
 
-                          <p
-                            className="
-                              mt-0.5
-                              truncate
-                              text-xs
-                              opacity-60
-                            "
-                          >
-                            {item.note}
-                          </p>
+  {editingNoteId === item.id ? (
 
-                        )}
+    <div
+      className="
+        mt-1
+        flex
+        flex-col
+        gap-1
+      "
+    >
 
-                      </div>
+      <input
+        type="text"
+        autoFocus
+        value={noteText}
+        onChange={(e) =>
+          setNoteText(e.target.value)
+        }
+        onKeyDown={(e) => {
+
+          if (e.key === 'Enter') {
+            saveItemNote(item);
+          }
+
+          if (e.key === 'Escape') {
+            cancelEditingNote();
+          }
+
+        }}
+        placeholder="Customer note..."
+        className={`
+          w-full
+          rounded
+          border
+          ${background.border}
+          bg-transparent
+          px-2
+          py-1
+          text-[10px]
+          outline-none
+        `}
+      />
+
+      <div
+        className="
+          flex
+          items-center
+          gap-3
+        "
+      >
+
+        <button
+          type="button"
+          onClick={() =>
+            saveItemNote(item)
+          }
+          className="
+            text-[9px]
+            font-semibold
+            opacity-80
+            hover:opacity-100
+          "
+        >
+          SAVE
+        </button>
+
+        <button
+          type="button"
+          onClick={
+            cancelEditingNote
+          }
+          className="
+            text-[9px]
+            opacity-50
+            hover:opacity-100
+          "
+        >
+          CANCEL
+        </button>
+
+      </div>
+
+    </div>
+
+  ) : (
+
+    <button
+      type="button"
+      onClick={() =>
+        startEditingNote(item)
+      }
+      className="
+        mt-0.5
+        block
+        max-w-full
+        text-left
+      "
+    >
+
+      {item.note ? (
+
+        <span
+          className="
+            block
+            truncate
+            text-[9px]
+            opacity-60
+          "
+        >
+          📝 {item.note}
+        </span>
+
+      ) : (
+
+        <span
+          className="
+            text-[9px]
+            opacity-40
+            hover:opacity-80
+          "
+        >
+          + Add note
+        </span>
+
+      )}
+
+    </button>
+
+  )}
+
+</div>
 
 
                       {/* =================================================

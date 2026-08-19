@@ -156,6 +156,41 @@ async function removeCartItem(
   return getCartItems(tableNo);
 }
 
+// =====================================================
+// UPDATE CART ITEM NOTE
+// =====================================================
+
+async function updateCartItemNote(
+  itemId,
+  note,
+  tableNo
+) {
+  const result = db
+    .prepare(
+      `UPDATE pos_cart_item
+       SET note = ?
+       WHERE id = ?
+         AND tableId = ?`
+    )
+    .run(
+      note || '',
+      itemId,
+      tableNo
+    );
+
+  console.log(
+    'UPDATE CART NOTE =>',
+    {
+      itemId,
+      tableNo,
+      note: note || '',
+      changes: result.changes,
+    }
+  );
+
+  return getCartItems(tableNo);
+}
+
 async function clearCart(tableNo) {
   const result = db.prepare(
     'DELETE FROM pos_cart_item WHERE tableId = ?'
@@ -174,6 +209,7 @@ async function clearCart(tableNo) {
 module.exports = {
   addCartItem,
   getCartItems,
+  updateCartItemNote,
   removeCartItem,
   clearCart,
 };

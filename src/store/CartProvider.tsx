@@ -210,6 +210,28 @@ await reloadCart(currentTable);
   }
 
   // =====================================================
+// UPDATE CART ITEM NOTE
+// =====================================================
+
+async function updateCartItemNote(
+  itemId: number,
+  note: string
+) {
+  const table =
+    activeTable?.tableId ||
+    activeTable?.tableName ||
+    'T1';
+
+  await posApi.updateCartItemNote(
+    itemId,
+    note,
+    table
+  );
+
+  await reloadCart(table);
+}
+
+  // =====================================================
   // DECREASE QUANTITY BY 1
   // =====================================================
 
@@ -313,43 +335,46 @@ async function removeCartProduct(
     setTotalDiscountL(d);
   }
 
+  
 return (
-  <CartContext.Provider
-    value={{
-      cartData,
-      setCartData,
+<CartContext.Provider
+  value={{
+    cartData,
+    setCartData,
 
-      address,
-      addProduct,
-      addAddress,
+    address,
+    addProduct,
+    addAddress,
 
-      endTotalG,
-      setEndTotalG,
+    endTotalG,
+    setEndTotalG,
 
-      counter,
-      productTotalCost,
+    counter,
+    productTotalCost,
 
-      reloadCart,
+    reloadCart,
 
-      addProductToCart,
-      decCartProduct,
-      decCartProductAll,
-      removeCartProduct,
-      emptyCart,
+    updateCartItemNote,
 
-      totalDiscountG,
-      setTotalDiscountG,
+    addProductToCart,
+    decCartProduct,
+    decCartProductAll,
+    removeCartProduct,
+    emptyCart,
 
-      orderType,
-      setOrderType,
+    totalDiscountG,
+    setTotalDiscountG,
 
-      tableNo: currentTable,
-      setTableNo: () => {},
+    orderType,
+    setOrderType,
 
-      scheduledAt,
-      setScheduledAt,
-    }}
-  >
+    tableNo: currentTable,
+    setTableNo: () => {},
+
+    scheduledAt,
+    setScheduledAt,
+  }}
+>
     {children}
   </CartContext.Provider>
 );}

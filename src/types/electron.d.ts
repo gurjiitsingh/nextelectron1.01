@@ -9,6 +9,12 @@ declare global {
         tableNo: string
       ) => Promise<void>;
 
+      updateCartItemNote: (
+        itemId: number,
+        note: string,
+        tableNo: string
+      ) => Promise<any>;
+
       getCartItems: (
         tableNo: string
       ) => Promise<any[]>;
@@ -94,7 +100,7 @@ declare global {
       createBill: (input: {
         tableNo: string;
         orderType?: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
- 
+
         customerName?: string;
         customerPhone?: string;
         customerId?: string | null;
@@ -167,69 +173,69 @@ declare global {
 
 
 
-    uploadOrderCounter: () => Promise<{
-      success: boolean;
-      invoiceSerialNo?: number;
-      docId?: string;
-      source?: string;
-      error?: string;
-    }>;
+      uploadOrderCounter: () => Promise<{
+        success: boolean;
+        invoiceSerialNo?: number;
+        docId?: string;
+        source?: string;
+        error?: string;
+      }>;
 
 
-    print: (payload: {
-  role: string;
-  source?: 'POS' | 'WAITER' | 'SYSTEM';
-  data: any;
-}) => Promise<{
-  success: boolean;
-  jobId?: string;
-  error?: string;
-}>;
+      print: (payload: {
+        role: string;
+        source?: 'POS' | 'WAITER' | 'SYSTEM';
+        data: any;
+      }) => Promise<{
+        success: boolean;
+        jobId?: string;
+        error?: string;
+      }>;
 
 
-// =====================================================
-  // PRINTER SETTINGS
-  // =====================================================
-getPrinterSettings: () => Promise<any[]>;
+      // =====================================================
+      // PRINTER SETTINGS
+      // =====================================================
+      getPrinterSettings: () => Promise<any[]>;
 
-savePrinterSetting: (
-  config: any
-) => Promise<{
-  success: boolean;
-}>;
-
-
+      savePrinterSetting: (
+        config: any
+      ) => Promise<{
+        success: boolean;
+      }>;
 
 
 
-getCurrentBusinessDay: () => Promise<any>;
 
-getDayClosingSummary: (
-  businessDate: string
-) => Promise<any>;
 
-getDayClosingHistory: () => Promise<any>;
+      getCurrentBusinessDay: () => Promise<any>;
 
-markTableHistoryPaid: (data: {
-  tableNo: string;
-  orderId: string;
-  billItems: KitchenItem[];
-}) => Promise<{
-  success: boolean;
-  error?: string;
-  paidItems?: number;
-  deletedItems?: number;
-  paidHistory?: number;
-}>;
+      getDayClosingSummary: (
+        businessDate: string
+      ) => Promise<any>;
 
-closeBusinessDay: (
-  data: {
-    actualCash: number;
-    notes?: string;
-    closedById?: string;
-    closedByName?: string;
-  }
-) => Promise<any>;
+      getDayClosingHistory: () => Promise<any>;
+
+      markTableHistoryPaid: (data: {
+        tableNo: string;
+        orderId: string;
+        billItems: KitchenItem[];
+      }) => Promise<{
+        success: boolean;
+        error?: string;
+        paidItems?: number;
+        deletedItems?: number;
+        paidHistory?: number;
+      }>;
+
+      closeBusinessDay: (
+        data: {
+          actualCash: number;
+          notes?: string;
+          closedById?: string;
+          closedByName?: string;
+        }
+      ) => Promise<any>;
 
 
       // Modifiers

@@ -1,4 +1,4 @@
- 
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -36,6 +36,44 @@ export default function TablesPage() {
       setLoading(true);
 
       const rows = await window.posApi.getTables();
+
+      console.log(
+        '========== GET TABLES RESULT =========='
+      );
+
+      console.log('ROWS:', rows);
+
+      console.log(
+        'ROW COUNT:',
+        Array.isArray(rows)
+          ? rows.length
+          : 'NOT ARRAY'
+      );
+
+      if (Array.isArray(rows)) {
+        rows.forEach((table, index) => {
+          console.log(
+            `TABLE [${index}]`,
+            table
+          );
+
+          console.log(
+            `TABLE [${index}] COUNTS`,
+            {
+              id: table.id,
+              tableName: table.tableName,
+              status: table.status,
+
+              cartCount: table.cartCount,
+              billCount: table.billCount,
+              billAmount: table.billAmount,
+
+              cartItems: table.cartItems,
+              billItems: table.billItems,
+            }
+          );
+        });
+      }
 
       setTables(rows);
     } catch (e) {
@@ -106,12 +144,58 @@ export default function TablesPage() {
   // TABLE STATUS
   // =====================================================
 
-  function getTableStatus(table: any) {
-    return String(
-      table.status || 'FREE'
-    ).toUpperCase();
+function getTableStatus(table: any) {
+  const cartCount = Number(table.cartCount || 0);
+  const billCount = Number(table.billCount || 0);
+  const billAmount = Number(table.billAmount || 0);
+
+  console.log('🪑 TABLE STATUS CHECK', {
+    table: table.tableName,
+    rawStatus: table.status,
+    cartCount,
+    billCount,
+    billAmount,
+    billItems: table.billItems,
+    cartItems: table.cartItems,
+    activeOrderId: table.activeOrderId,
+  });
+
+  // ===================================================
+  // EMPTY
+  // ===================================================
+
+  if (
+    cartCount === 0 &&
+    billCount === 0 &&
+    billAmount === 0
+  ) {
+    console.log('🟢 AVAILABLE:', table.tableName);
+
+    return 'AVAILABLE';
   }
 
+  // ===================================================
+  // CART HAS ITEMS
+  // ===================================================
+
+  if (cartCount > 0) {
+    console.log('🟩 OCCUPIED / RUNNING:', table.tableName);
+
+    return 'OCCUPIED';
+  }
+
+  // ===================================================
+  // BILL EXISTS
+  // ===================================================
+
+  if (billCount > 0 || billAmount > 0) {
+    console.log('🟠 PENDING PAYMENT:', table.tableName);
+
+    return 'PENDING_PAYMENT';
+  }
+
+  return 'AVAILABLE';
+}
   // =====================================================
   // CHECK DARK BACKGROUND
   // =====================================================
@@ -129,145 +213,142 @@ export default function TablesPage() {
   // TABLE STATUS STYLE
   // =====================================================
 
-  function getStatusStyle(
-    table: any,
-    isActive: boolean
+function getStatusStyle(table: any) {
+  const status = getTableStatus(table);
+
+  console.log(
+    '🎨 STATUS STYLE:',
+    {
+      table: table.tableName,
+      status,
+    }
+  );
+
+  // ===================================================
+  // AVAILABLE / FREE
+  // ===================================================
+
+  if (
+    status === 'AVAILABLE' 
+    
   ) {
-    const status = getTableStatus(table);
-
-    // ===================================================
-    // SELECTED
-    // ===================================================
-
-    if (isActive) {
-      return {
-        background: theme.primarySelected,
-        color: theme.primaryText,
-        border: theme.primary,
-        secondaryText: theme.primaryText,
-        separator: theme.primary,
-      };
-    }
-
-    // ===================================================
-    // RUNNING / OCCUPIED
-    // ===================================================
-
-    if (
-      status === 'RUNNING' ||
-      status === 'OCCUPIED'
-    ) {
-      return {
-        background: theme.primaryLight,
-        color: theme.primaryText,
-        border: theme.primary,
-        secondaryText: theme.primaryText,
-        separator: theme.primary,
-      };
-    }
-
-    // ===================================================
-    // HOLD
-    // ===================================================
-
-    if (status === 'HOLD') {
-      return {
-        background: '#FFF3E8',
-        color: '#C96F25',
-        border: '#F4C7A1',
-        secondaryText: '#C96F25',
-        separator: '#F4C7A1',
-      };
-    }
-
-    // ===================================================
-    // FREE
-    // ===================================================
-
-    if (background.className === 'bg-white') {
-      return {
-        background: '#FFFFFF',
-        color: '#334155',
-        border: background.line,
-        secondaryText: '#64748B',
-        separator: background.line,
-      };
-    }
-
-    if (background.className === 'bg-slate-200') {
-      return {
-        background: '#E2E8F0',
-        color: '#1E293B',
-        border: background.line,
-        secondaryText: '#475569',
-        separator: background.line,
-      };
-    }
-
-    if (background.className === 'bg-slate-700') {
-      return {
-        background: '#475569',
-        color: '#FFFFFF',
-        border: '#94A3B8',
-        secondaryText: '#CBD5E1',
-        separator: '#94A3B8',
-      };
-    }
-
-    // ===================================================
-    // BLACK
-    // ===================================================
-
-    if (background.className === 'bg-black') {
-      return {
-        background: '#111111',
-        color: '#FFFFFF',
-        border: '#475569',
-        secondaryText: '#CBD5E1',
-        separator: '#475569',
-      };
-    }
-
-    // ===================================================
-    // DARK
-    // ===================================================
-
-    if (background.className === 'bg-slate-800') {
-      return {
-        background: '#1E293B',
-        color: '#FFFFFF',
-        border: '#64748B',
-        secondaryText: '#CBD5E1',
-        separator: '#64748B',
-      };
-    }
-
-    // ===================================================
-    // BLUE
-    // ===================================================
-
-    if (background.className === 'bg-[#406093]') {
-      return {
-        background: '#334F7A',
-        color: '#FFFFFF',
-        border: '#8FAED6',
-        secondaryText: '#C7D2E3',
-        separator: '#8FAED6',
-      };
-    }
-
-    // ===================================================
-    // FALLBACK
-    // ===================================================
+    console.log(
+      '🟢 AVAILABLE STYLE',
+      table.tableName
+    );
 
     return {
-      background: '#FFFFFF',
-      color: '#334155',
-      border: background.line,
-      secondaryText: '#64748B',
-      separator: background.line,
+      background: '#F0FDF4',
+      color: '#166534',
+      border: '#86EFAC',
+      secondaryText: '#16A34A',
+      separator: '#BBF7D0',
     };
   }
+
+  // ===================================================
+  // RUNNING / OCCUPIED
+  // ===================================================
+
+  if (
+   
+    status === 'OCCUPIED'
+  ) {
+    console.log(
+      '🟩 RUNNING DARK GREEN STYLE',
+      table.tableName
+    );
+
+    return {
+      background: '#166534',
+      color: '#FFFFFF',
+      border: '#14532D',
+      secondaryText: '#DCFCE7',
+      separator: '#22C55E',
+    };
+  }
+
+  // ===================================================
+  // PENDING PAYMENT
+  // ===================================================
+
+  if (
+    status === 'PENDING_PAYMENT' ||
+    status === 'PENDING'
+  ) {
+    console.log(
+      '🟠 PENDING PAYMENT STYLE',
+      table.tableName
+    );
+
+    return {
+      background: '#d4937d',
+      color: '#9A3412',
+      border: '#F97316',
+      secondaryText: '#EA580C',
+      separator: '#FDBA74',
+    };
+  }
+
+  // ===================================================
+  // HOLD
+  // ===================================================
+
+  if (status === 'HOLD') {
+    console.log(
+      '🟡 HOLD STYLE',
+      table.tableName
+    );
+
+    return {
+      background: '#FEFCE8',
+      color: '#854D0E',
+      border: '#EAB308',
+      secondaryText: '#CA8A04',
+      separator: '#FDE047',
+    };
+  }
+
+  // ===================================================
+  // CLOSED
+  // ===================================================
+
+  if (status === 'CLOSED') {
+    console.log(
+      '⚪ CLOSED STYLE',
+      table.tableName
+    );
+
+    return {
+      background: '#f1f9f8',
+      color: '#334155',
+      border: '#94A3B8',
+      secondaryText: '#64748B',
+      separator: '#CBD5E1',
+    };
+  }
+
+  // ===================================================
+  // UNKNOWN
+  // ===================================================
+
+  console.log(
+    '❌ UNKNOWN STATUS - FALLBACK',
+    {
+      table: table.tableName,
+      status,
+      rawStatus: table.status,
+    }
+  );
+
+  return {
+    background: '#F8FAFC',
+    color: '#334155',
+    border: '#CBD5E1',
+    secondaryText: '#64748B',
+    separator: '#E2E8F0',
+  };
+}
 
   // =====================================================
   // RENDER
@@ -334,15 +415,16 @@ export default function TablesPage() {
                       AREA TABLES
                   ================================================= */}
 
-                  <div
-                    className="
-                      grid
-                      grid-cols-3
-                      gap-2
-                      md:grid-cols-8
-                      lg:grid-cols-13
-                    "
-                  >
+               <div
+  className="
+    grid
+    grid-cols-3
+    gap-2
+    md:grid-cols-8
+    lg:grid-cols-13
+    items-end
+  "
+>
                     {areaTables.map((table) => {
                       const isActive =
                         activeTable?.tableId ===
@@ -351,11 +433,8 @@ export default function TablesPage() {
                       const status =
                         getTableStatus(table);
 
-                      const statusStyle =
-                        getStatusStyle(
-                          table,
-                          isActive
-                        );
+                     const statusStyle =
+  getStatusStyle(table);
 
                       return (
                         <button
@@ -364,16 +443,17 @@ export default function TablesPage() {
                           onClick={() =>
                             handleTableClick(table)
                           }
-                          className="
-                            rounded-xl
-                            border
-                            p-3
-                            text-left
-                            transition-all
-                            duration-150
-                            hover:shadow-md
-                            active:scale-[0.98]
-                          "
+                         className="
+ 
+  rounded-xl
+  border
+  p-3
+  text-left
+  transition-all
+  duration-150
+  hover:shadow-md
+  active:scale-[0.98]
+"
                           style={{
                             backgroundColor:
                               statusStyle.background,
@@ -384,9 +464,9 @@ export default function TablesPage() {
                             borderColor:
                               statusStyle.border,
 
-                            boxShadow: isActive
-                              ? `0 0 0 2px ${theme.primary}40`
-                              : undefined,
+                           boxShadow: isActive
+  ? `0 0 0 3px ${statusStyle.border}`
+  : undefined,
                           }}
                         >
 
@@ -400,109 +480,157 @@ export default function TablesPage() {
                             </h2>
                           </div>
 
-                          {/* =================================================
-                              STATUS
-                          ================================================= */}
+                         {/* =================================================
+    STATUS
+================================================= */}
 
-                          {/* <div className="mt-1">
-                            <span
-                              className="
-                                text-[10px]
-                                font-semibold
-                                uppercase
-                                tracking-wide
-                              "
-                              style={{
-                                color:
-                                  statusStyle.secondaryText,
-                                opacity: 0.75,
-                              }}
-                            >
-                              {status}
-                            </span>
-                          </div> */}
-
+{/* <div className="mt-2">
+  <span
+    className="
+      inline-flex
+      items-center
+      rounded-md
+      px-2
+      py-1
+      text-[9px]
+      font-semibold
+      uppercase
+      tracking-wide
+    "
+    style={{
+      color: statusStyle.secondaryText,
+      backgroundColor:
+        statusStyle.statusBackground,
+    }}
+  >
+    {status}
+  </span>
+</div> */}
                           {/* =================================================
                               TABLE INFORMATION
                           ================================================= */}
 
-                <div
-  className="
-    mt-3
-    space-y-1
-    border-t
-    pt-2
-  "
-  style={{
-    borderColor: statusStyle.separator,
-  }}
->
-  {/* ITEMS */}
+               {/* =================================================
+    TABLE INFORMATION
+================================================= */}
 
-  <div className="flex items-center justify-between text-xs">
-    <ShoppingBasket
-      size={14}
-      strokeWidth={2}
+{/* =================================================
+    TABLE INFORMATION
+================================================= */}
+
+{(() => {
+  const cartCount = Number(table.cartCount || 0);
+  const billCount = Number(table.billCount || 0);
+  const billAmount = Number(table.billAmount || 0);
+
+  const hasInformation =
+    cartCount > 0 ||
+    billCount > 0 ||
+    billAmount > 0;
+
+  return (
+    <div
+      className="
+        mt-3
+        space-y-1
+     
+        pt-2
+        min-h-[58px]
+      "
       style={{
-        color: statusStyle.secondaryText,
-        opacity: 0.75,
-      }}
-    />
-
-    <span
-      className="font-medium"
-      style={{
-        color: statusStyle.color,
-      }}
-    >
-      {table.cartCount || 0}
-    </span>
-  </div>
-
-  {/* BILLS */}
-
-  <div className="flex items-center justify-between text-xs">
-    <Receipt
-      size={14}
-      strokeWidth={2}
-      style={{
-        color: statusStyle.secondaryText,
-        opacity: 0.75,
-      }}
-    />
-
-    <span
-      className="font-medium"
-      style={{
-        color: statusStyle.color,
+        borderColor: hasInformation
+          ? statusStyle.separator
+          : 'transparent',
       }}
     >
-      {table.billCount || 0}
-    </span>
-  </div>
 
-  {/* AMOUNT */}
+      {/* =================================================
+          ITEMS
+      ================================================= */}
 
-  <div className="flex items-center justify-between text-xs">
-    <IndianRupee
-      size={14}
-      strokeWidth={2}
-      style={{
-        color: statusStyle.secondaryText,
-        opacity: 0.75,
-      }}
-    />
+      {cartCount > 0 ? (
+        <div className="flex items-center  gap-1 text-xs">
+          <ShoppingBasket
+            size={14}
+            strokeWidth={2}
+            style={{
+              color: statusStyle.secondaryText,
+              opacity: 0.75,
+            }}
+          />
 
-    <span
-      className="font-semibold"
-      style={{
-        color: statusStyle.color,
-      }}
-    >
-      {Number(table.billAmount || 0).toFixed(2)}
-    </span>
-  </div>
-</div>
+          <span
+            className="font-medium"
+            style={{
+              color: statusStyle.color,
+            }}
+          >
+            {cartCount}
+          </span>
+        </div>
+      ) : (
+        <div className="h-[16px]" />
+      )}
+
+      {/* =================================================
+          BILLS
+      ================================================= */}
+
+      {billCount > 0 ? (
+        <div className="flex items-center gap-1  text-xs">
+          <Receipt
+            size={14}
+            strokeWidth={2}
+            style={{
+              color: statusStyle.secondaryText,
+              opacity: 0.75,
+            }}
+          />
+
+          <span
+            className="font-medium"
+            style={{
+              color: statusStyle.color,
+            }}
+          >
+            {billCount}
+          </span>
+        </div>
+      ) : (
+        <div className="h-[16px]" />
+      )}
+
+      {/* =================================================
+          AMOUNT
+      ================================================= */}
+
+      {billAmount > 0 ? (
+        <div className="flex items-center gap-1 text-xs">
+          <IndianRupee
+            size={14}
+            strokeWidth={2}
+            style={{
+              color: statusStyle.secondaryText,
+              opacity: 0.75,
+            }}
+          />
+
+          <span
+            className="font-semibold"
+            style={{
+              color: statusStyle.color,
+            }}
+          >
+            {billAmount.toFixed(2)}
+          </span>
+        </div>
+      ) : (
+        <div className="h-[16px]" />
+      )}
+
+    </div>
+  );
+})()}
 
                         </button>
                       );

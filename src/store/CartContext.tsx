@@ -12,32 +12,50 @@ interface CartContextType {
   productTotalCost: number;
   cartData: cartProductType[];
   address: addressT;
+
   addAddress: (a: addressT) => void;
 
-  //getAddress:()=>{};
   addProduct: (c: cartProductType) => void;
   addProductToCart: (c: cartProductType) => void;
+
   decCartProduct: (c: cartProductType) => void;
   decCartProductAll: (c: cartProductType) => void;
-  removeCartProduct: (c: cartProductType | undefined) => void;
-  // =====================================================
-// RELOAD CART FROM SQLITE
-// =====================================================
-setCartData: React.Dispatch<React.SetStateAction<cartProductType[]>>;
-reloadCart: (tableName?: string) => Promise<void>;
+  removeCartProduct: (
+    c: cartProductType | undefined
+  ) => void;
+
+  setCartData: React.Dispatch<
+    React.SetStateAction<cartProductType[]>
+  >;
+
+  reloadCart: (
+    tableName?: string
+  ) => Promise<void>;
+
+  updateCartItemNote: (
+    itemId: number,
+    note: string
+  ) => Promise<void>;
+
   emptyCart: () => void;
+
   endTotalG: number;
   setEndTotalG: (c: number) => void;
+
   totalDiscountG: number;
   setTotalDiscountG: (c: number) => void;
+
   scheduledAt: string | null;
-  setScheduledAt: (value: string | null) => void;
+  setScheduledAt: (
+    value: string | null
+  ) => void;
+
   orderType: OrderType;
   setOrderType: (t: OrderType) => void;
+
   tableNo: string | null;
   setTableNo: (t: string | null) => void;
 }
-
 //const CartContext = createContext<CartContextType | null>(null);
 
 const CartContext = createContext<CartContextType>({
@@ -73,7 +91,7 @@ reloadCart: async () => {},
 
   totalDiscountG: 0,
   setTotalDiscountG: () => {},
-
+updateCartItemNote: async () => {},
   //  scheduling
   scheduledAt: null,
   setScheduledAt: () => {},

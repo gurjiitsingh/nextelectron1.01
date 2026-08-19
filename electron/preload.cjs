@@ -35,6 +35,19 @@ contextBridge.exposeInMainWorld('posApi', {
   getCartItems: (tableNo) =>
     ipcRenderer.invoke('cart:list', tableNo),
 
+  updateCartItemNote: (
+  itemId,
+  note,
+  tableNo
+) =>
+  ipcRenderer.invoke(
+    'cart:update-note',
+    itemId,
+    note,
+    tableNo
+  ),
+
+
   removeCartItem: (
     uniqueKey,
     tableNo,

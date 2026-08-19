@@ -826,18 +826,18 @@ function markTableHistoryPaid({
       );
 
 
-      console.log(
-        'KOT HISTORY CHECKOUT:',
-        {
-          kotHistoryId: history.id,
-          kotNumber: history.kotNumber,
-          total,
-          paid,
-          active,
-          deleted,
-          status,
-        }
-      );
+      // console.log(
+      //   'KOT HISTORY CHECKOUT:',
+      //   {
+      //     kotHistoryId: history.id,
+      //     kotNumber: history.kotNumber,
+      //     total,
+      //     paid,
+      //     active,
+      //     deleted,
+      //     status,
+      //   }
+      // );
     }
   });
 

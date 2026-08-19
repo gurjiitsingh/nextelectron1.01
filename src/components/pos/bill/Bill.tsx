@@ -8,6 +8,7 @@ import { fromPaise } from '@/lib/pos/billing/money';
 import { calculateBillAndroid } from '@/lib/pos/billing/calculator';
 import { POS_THEME } from '@/style/posTheme';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
+import { PaymentAllocationValue } from './PaymentAllocationValue';
 
 type BillProps = {
   onSuccess?: () => void;
@@ -31,6 +32,25 @@ export default function Bill({
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showPaymentSummary, setShowPaymentSummary] =
+  useState(false);
+
+  const [paymentAllocation, setPaymentAllocation] =
+  useState<PaymentAllocationValue>({
+    cash: 0,
+    card: 0,
+    upi: 0,
+    credit: 0,
+  });
+
+  const [showComplimentaryMenu, setShowComplimentaryMenu] =
+  useState(false);
+
+const [complimentaryReason, setComplimentaryReason] =
+  useState<string | null>(null);
+
+  
 
   // =====================================================
   // POS THEME
@@ -71,6 +91,8 @@ export default function Bill({
       setLoading(false);
     }
   }
+
+  
 
   // =====================================================
   // FORM STATE
@@ -391,50 +413,7 @@ async function increaseBillItem(item: any) {
 }  
 
 
-async function updateBillItemQuantity(
-  item: any,
-  quantity: number
-) {
-  try {
-    const result =
-      await window.posApi.updateBillItemQuantity({
-        tableNo: currentTableId,
 
-        billItemGroupKey:
-          item.billItemGroupKey,
-
-        quantity,
-      });
-
-    if (!result.success) {
-      throw new Error(
-        result.error ||
-        'Failed to update bill item'
-      );
-    }
-
-    // Reload bill rows so:
-    // quantity
-    // subtotal
-    // tax
-    // grand total
-    // all update immediately
-
-    await loadBillItems();
-
-  } catch (e) {
-    console.error(
-      'UPDATE BILL ITEM FAILED:',
-      e
-    );
-
-    setError(
-      e instanceof Error
-        ? e.message
-        : 'Failed to update bill item'
-    );
-  }
-}
   // =====================================================
   // FINALIZE BILL
   // =====================================================
@@ -733,6 +712,271 @@ async function updateBillItemQuantity(
       setProcessing(false);
     }
   }
+
+
+
+// =====================================================
+// COMPLIMENTARY CHECKOUT
+// =====================================================
+
+async function handleComplimentaryCheckout(
+  reason: string
+) {
+  if (processing) {
+    return;
+  }
+
+  if (billItems.length === 0) {
+    setError('No items in bill');
+    return;
+  }
+
+  if (!currentTableId) {
+    setError('No table selected');
+    return;
+  }
+
+  try {
+    setProcessing(true);
+    setError(null);
+
+    console.log(
+      'COMPLIMENTARY BILL:',
+      {
+        reason,
+        tableNo: currentTableId,
+        items: billItems,
+      }
+    );
+
+    // =================================================
+    // 1. CREATE COMPLIMENTARY BILL
+    // =================================================
+
+    const result =
+      await window.posApi.createBill({
+
+        tableNo:
+          currentTableId,
+
+        tableName:
+          currentTableName,
+
+        orderType:
+          'DINE_IN',
+
+        customerName:
+          customerName.trim() ||
+          'Customer',
+
+        customerPhone:
+          customerPhone.trim(),
+
+        // =================================================
+        // COMPLIMENTARY
+        // =================================================
+
+        billType:
+          'COMPLIMENTARY',
+
+        complimentaryReason:
+          reason,
+
+        // =================================================
+        // TAX / DISCOUNT / DELIVERY
+        // =================================================
+
+        discountTotal:
+          0,
+
+        deliveryFee:
+          0,
+
+        deliveryTax:
+          0,
+
+        // =================================================
+        // PAYMENT
+        // =================================================
+
+        paymentMode:
+          'COMPLIMENTARY',
+
+        paymentStatus:
+          'PAID',
+
+        paidAmount:
+          0,
+
+        payments: [
+
+          {
+            mode:
+              'COMPLIMENTARY',
+
+            amount:
+              0,
+          },
+
+        ],
+
+        // =================================================
+        // DEVICE
+        // =================================================
+
+        deviceId:
+          'POS',
+
+        deviceName:
+          'Electron POS',
+
+        appVersion:
+          '1.0',
+
+        // =================================================
+        // DATE
+        // =================================================
+
+        businessDate:
+          new Date()
+            .toISOString()
+            .slice(0, 10),
+
+        currency:
+          '₹',
+      });
+
+
+    // =================================================
+    // 2. CHECK RESULT
+    // =================================================
+
+    if (!result?.success) {
+
+      throw new Error(
+        result?.error ||
+        'Failed to create complimentary bill'
+      );
+    }
+
+
+    console.log(
+      'COMPLIMENTARY BILL CREATED:',
+      result
+    );
+
+
+    // =================================================
+    // 3. MARK KOT HISTORY PAID
+    // =================================================
+
+    const kotResult =
+      await window.posApi.markTableHistoryPaid({
+
+        tableNo:
+          currentTableId,
+
+        billItems:
+          billItems,
+
+        orderId:
+          result.srno || '',
+
+      });
+
+
+    if (!kotResult?.success) {
+
+      throw new Error(
+        kotResult?.error ||
+        'Failed to update KOT history'
+      );
+    }
+
+
+    // =================================================
+    // 4. RESET BILL DRAFT
+    // =================================================
+
+    setBillDraft({
+
+      customerName:
+        'Customer',
+
+      customerPhone:
+        '',
+
+      discount:
+        0,
+
+      discountPercent:
+        0,
+
+      deliveryFee:
+        0,
+
+      paymentMode:
+        'CASH',
+
+      paidAmount:
+        0,
+
+    });
+
+
+    // =================================================
+    // 5. CLEAR BILL UI
+    // =================================================
+
+    setBillRows([]);
+
+
+    // =================================================
+    // 6. RELOAD BILL ITEMS
+    // =================================================
+
+    await loadBillItems();
+
+
+    // =================================================
+    // 7. CLEAR COMPLIMENTARY STATE
+    // =================================================
+
+    setComplimentaryReason(null);
+
+    setShowMoreMenu(false);
+
+    setShowComplimentaryMenu(false);
+
+
+    // =================================================
+    // 8. SUCCESS
+    // =================================================
+
+    onSuccess?.();
+
+  } catch (e) {
+
+    console.error(
+      'COMPLIMENTARY BILL FAILED',
+      e
+    );
+
+    const message =
+      e instanceof Error
+        ? e.message
+        : String(e);
+
+    setError(
+      message ||
+      'Complimentary bill failed'
+    );
+
+  } finally {
+
+    setProcessing(false);
+  }
+}
 
   // =====================================================
   // PREVIEW BILL IMAGE
@@ -1084,9 +1328,51 @@ async function updateBillItemQuantity(
     }
   }
 
+
+
+  // =====================================================
+// PAYMENT SUMMARY VALUES
+// =====================================================
+
+const grandTotal =
+  Number(calculation.grandTotal || 0);
+
+const totalPaid =
+  Number(paidAmount || 0);
+
+const cashPaid =
+  paymentMode === 'CASH'
+    ? totalPaid
+    : 0;
+
+const cardPaid =
+  paymentMode === 'CARD'
+    ? totalPaid
+    : 0;
+
+const upiPaid =
+  paymentMode === 'UPI'
+    ? totalPaid
+    : 0;
+
+const creditAmount =
+  Math.max(
+    0,
+    grandTotal - totalPaid
+  );
+
+const isPartialPayment =
+  totalPaid > 0 &&
+  creditAmount > 0;
+
+const isCreditSale =
+  totalPaid === 0 &&
+  creditAmount > 0;
+
   // =====================================================
   // UI
   // =====================================================
+
 
   return (
     <div
@@ -1385,135 +1671,463 @@ async function updateBillItemQuantity(
       </div>
 
 
-      {/* =================================================
-          BILL BUTTONS
-      ================================================= */}
+   
 
-      <div className="shrink-0 px-2  bg-zinc-800 py-1">
+  {/* =================================================
+    BILL BUTTONS
+================================================= */}
 
-        <div className="flex items-center gap-2">
+<div
+  className="
+    relative
+    shrink-0
+    px-2
+    bg-zinc-800
+    py-1
+  "
+>
 
-          {/* =============================================
-        PRINT
-    ============================================= */}
+  {/* =================================================
+      PAYMENT SUMMARY STRIP
+  ================================================= */}
 
-          <button
-            type="button"
-            onClick={printBill}
-            className={`
+  {showPaymentSummary && (
+    <div
+      className="
+        absolute
+        bottom-[100%]
+        left-2
+        right-2
+        mb-1
+        z-40
+        overflow-hidden
+        rounded-t-md
+        border
+        border-zinc-600
+        bg-zinc-900
+        shadow-xl
+      "
+    >
+
+      {/* HEADER */}
+
+      <div
+        className="
+          flex
+          items-center
+          justify-between
+          border-b
+          border-zinc-700
+          px-3
+          py-2
+        "
+      >
+        <div
+          className="
+            text-xs
+            font-semibold
+            uppercase
+            tracking-wide
+            text-white
+          "
+        >
+          {isCreditSale
+            ? 'Credit Sale'
+            : 'Partial Payment'}
+        </div>
+
+        <div
+          className="
+            text-xs
+            font-semibold
+            text-zinc-300
+          "
+        >
+          ₹{Number(grandTotal || 0).toFixed(2)}
+        </div>
+      </div>
+
+
+      {/* PAYMENT BREAKDOWN */}
+
+      <div
+        className="
+          max-h-32
+          overflow-y-auto
+          px-3
+          py-2
+        "
+      >
+
+        {/* CASH */}
+
+        {cashPaid > 0 && (
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+              py-1
+              text-xs
+            "
+          >
+            <span className="text-zinc-400">
+              CASH
+            </span>
+
+            <span className="font-semibold text-white">
+              ₹{Number(cashPaid).toFixed(2)}
+            </span>
+          </div>
+        )}
+
+
+        {/* CARD */}
+
+        {cardPaid > 0 && (
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+              py-1
+              text-xs
+            "
+          >
+            <span className="text-zinc-400">
+              CARD
+            </span>
+
+            <span className="font-semibold text-white">
+              ₹{Number(cardPaid).toFixed(2)}
+            </span>
+          </div>
+        )}
+
+
+        {/* UPI */}
+
+        {upiPaid > 0 && (
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+              py-1
+              text-xs
+            "
+          >
+            <span className="text-zinc-400">
+              UPI
+            </span>
+
+            <span className="font-semibold text-white">
+              ₹{Number(upiPaid).toFixed(2)}
+            </span>
+          </div>
+        )}
+
+
+        {/* CREDIT */}
+
+        {creditAmount > 0 && (
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+              py-1
+              text-xs
+            "
+          >
+            <span className="text-zinc-400">
+              CREDIT
+            </span>
+
+            <span className="font-semibold text-white">
+              ₹{Number(creditAmount).toFixed(2)}
+            </span>
+          </div>
+        )}
+
+      </div>
+
+
+      {/* TOTALS */}
+
+      <div
+        className="
+          border-t
+          border-zinc-700
+          px-3
+          py-2
+        "
+      >
+
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            text-xs
+          "
+        >
+          <span className="text-zinc-400">
+            PAID
+          </span>
+
+          <span className="font-semibold text-green-400">
+            ₹{Number(paidAmount || 0).toFixed(2)}
+          </span>
+        </div>
+
+
+        <div
+          className="
+            mt-1
+            flex
+            items-center
+            justify-between
+            text-xs
+          "
+        >
+          <span className="text-zinc-400">
+            DUE
+          </span>
+
+          <span
+            className="
+              font-semibold
+              text-red-400
+            "
+          >
+            ₹{Number(dueAmount || 0).toFixed(2)}
+          </span>
+        </div>
+
+      </div>
+
+    </div>
+  )}
+
+
+  {/* =================================================
+      PAYMENT STATUS BADGE
+  ================================================= */}
+
+  {(isPartialPayment || isCreditSale) && (
+    <button
+      type="button"
+      onClick={() =>
+        setShowPaymentSummary(
+          (prev) => !prev
+        )
+      }
+      className="
+        absolute
+        bottom-[100%]
+        left-1/2
+        z-50
+        flex
+        -translate-x-1/2
+        translate-y-[1px]
+        items-center
+        gap-1
+        rounded-t-md
+        border
+        border-b-0
+        border-zinc-600
+        bg-zinc-800
+        px-3
+        py-1
+        text-[10px]
+        font-bold
+        uppercase
+        tracking-wide
+        text-white
+        shadow-md
+        transition-colors
+        hover:bg-zinc-700
+      "
+    >
+
+      {/* UP ARROW */}
+
+      <span
+        className={`
+          text-[11px]
+          transition-transform
+          duration-200
+          ${
+            showPaymentSummary
+              ? 'rotate-180'
+              : ''
+          }
+        `}
+      >
+        ↑
+      </span>
+
+
+      {/* TITLE */}
+
+      <span>
+        {isCreditSale
+          ? 'CREDIT'
+          : 'PARTIAL'}
+      </span>
+
+    </button>
+  )}
+
+
+  {/* =================================================
+      PAYMENT BUTTONS
+  ================================================= */}
+
+  <div className="flex items-center gap-2">
+
+    {/* PRINT */}
+
+    <button
+      type="button"
+      onClick={printBill}
+      className={`
         h-8
         w-fit
-        px-3
         rounded
+        px-3
         text-xs
         font-semibold
         ${POS_THEME.BillButton}
       `}
-          >
-            PRINT
-          </button>
+    >
+      PRINT
+    </button>
 
 
-          {/* =============================================
-        CASH
-    ============================================= */}
+    {/* CASH */}
 
-          <button
-            type="button"
-            onClick={() =>
-              handleCheckout('CASH')
-            }
-            disabled={
-              processing ||
-              billItems.length === 0
-            }
-            className="
+    <button
+      type="button"
+      onClick={() =>
+        handleCheckout('CASH')
+      }
+      disabled={
+        processing ||
+        billItems.length === 0
+      }
+      className="
         h-8
         w-fit
-        px-3
         rounded-md
-        text-xs
-        font-semibold
-        text-white
         bg-green-600
+        px-3
+        text-xs
+        font-semibold
+        text-white
+        transition-colors
         hover:bg-green-700
-        transition-colors
-        disabled:opacity-50
         disabled:cursor-not-allowed
+        disabled:opacity-50
       "
-          >
-            {processing
-              ? 'PROCESSING...'
-              : 'CASH'}
-          </button>
+    >
+      {processing
+        ? 'PROCESSING...'
+        : 'CASH'}
+    </button>
 
 
-          {/* =============================================
-        CARD
-    ============================================= */}
+    {/* CARD */}
 
-          <button
-            type="button"
-            onClick={() =>
-              handleCheckout('CARD')
-            }
-            disabled={
-              processing ||
-              billItems.length === 0
-            }
-            className="
+    <button
+      type="button"
+      onClick={() =>
+        handleCheckout('CARD')
+      }
+      disabled={
+        processing ||
+        billItems.length === 0
+      }
+      className="
         h-8
         w-fit
-        px-3
         rounded-md
-        text-xs
-        font-semibold
-        text-white
         bg-blue-600
-        hover:bg-blue-700
-        transition-colors
-        disabled:opacity-50
-        disabled:cursor-not-allowed
-      "
-          >
-            CARD
-          </button>
-
-
-          {/* =============================================
-        UPI
-    ============================================= */}
-
-          <button
-            type="button"
-            onClick={() =>
-              handleCheckout('UPI')
-            }
-            disabled={
-              processing ||
-              billItems.length === 0
-            }
-            className="
-        h-8
-        w-fit
         px-3
-        rounded-md
         text-xs
         font-semibold
         text-white
-        bg-purple-600
-        hover:bg-purple-700
         transition-colors
-        disabled:opacity-50
+        hover:bg-blue-700
         disabled:cursor-not-allowed
+        disabled:opacity-50
       "
-          >
-            UPI
-          </button>
+    >
+      CARD
+    </button>
 
-        </div>
 
-      </div>
+    {/* UPI */}
+
+    <button
+      type="button"
+      onClick={() =>
+        handleCheckout('UPI')
+      }
+      disabled={
+        processing ||
+        billItems.length === 0
+      }
+      className="
+        h-8
+        w-fit
+        rounded-md
+        bg-purple-600
+        px-3
+        text-xs
+        font-semibold
+        text-white
+        transition-colors
+        hover:bg-purple-700
+        disabled:cursor-not-allowed
+        disabled:opacity-50
+      "
+    >
+      UPI
+    </button>
+
+
+    {/* MORE */}
+
+    <button
+      type="button"
+      onClick={() =>
+        setShowMoreMenu(
+          (prev) => !prev
+        )
+      }
+      className="
+        h-8
+        w-fit
+        rounded-md
+        bg-zinc-600
+        px-3
+        text-xs
+        font-semibold
+        text-white
+        transition-colors
+        hover:bg-zinc-700
+      "
+    >
+      MORE
+    </button>
+
+  </div>
+
+  {/* KEEP YOUR EXISTING MORE MENU HERE */}
+
+</div>
 
 
       {/* =================================================
