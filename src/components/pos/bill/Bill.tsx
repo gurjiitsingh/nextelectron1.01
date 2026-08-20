@@ -2324,7 +2324,7 @@ const isCreditSale =
 
       <span>
         {isCreditSale
-          ? 'CREDIT'
+          ? 'CREDIT + Mix Pay'
           : 'PARTIAL'}
       </span>
 
@@ -2451,28 +2451,61 @@ const isCreditSale =
 
     {/* MORE */}
 
-    <button
-      type="button"
-      onClick={() =>
-        setShowMoreMenu(
-          (prev) => !prev
-        )
-      }
-      className="
-        h-8
-        w-fit
-        rounded-md
-        bg-zinc-600
-        px-3
-        text-xs
-        font-semibold
-        text-white
-        transition-colors
-        hover:bg-zinc-700
-      "
-    >
-      MORE
-    </button>
+{/* =================================================
+    MORE STATUS STRIP
+================================================= */}
+
+<button
+  type="button"
+  onClick={() =>
+    setShowMoreMenu(
+      (prev) => !prev
+    )
+  }
+  className="
+    absolute
+    bottom-[100%]
+    right-2
+    z-50
+    flex
+    items-center
+    gap-1
+    rounded-t-md
+    border
+    border-b-0
+    border-zinc-600
+    bg-zinc-800
+    px-3
+    py-1
+    text-[10px]
+    font-bold
+    uppercase
+    tracking-wide
+    text-white
+    shadow-md
+    transition-colors
+    hover:bg-zinc-700
+  "
+>
+  {/* ARROW */}
+
+  <span
+    className="
+      text-[11px]
+      transition-transform
+      duration-200
+    "
+  >
+    ↑
+  </span>
+
+  {/* TITLE */}
+
+  <span>
+    MORE
+  </span>
+
+</button>
 
             {showMoreMenu && (
   <div

@@ -8,6 +8,7 @@ import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
 export default function Page() {
 
   const { background } = usePosTheme();
+  
 
   return (
     <div

@@ -49,6 +49,7 @@ export type ProductType = {
   inventoryItemId?: string;
   trackInventory?: boolean;
   allowNegativeStock?: boolean;
+  favorite?: boolean;
 };
 
 

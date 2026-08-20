@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { UseSiteContext } from "@/SiteContext/SiteContext";
 import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
+import { FaStar } from "react-icons/fa";
 
 export type CategoryType = {
   id: string;
@@ -16,17 +17,24 @@ export type CategoryType = {
   disablePickupDiscount?: boolean;
 };
 
+// =====================================================
+// SPECIAL POS CATEGORY
+// =====================================================
+
+export const FAVORITES_CATEGORY_ID = "__FAVORITES__";
+
 export default function PosSidebarCategories() {
   const [categoryData, setCategoryData] = useState<CategoryType[]>([]);
   const [displayCategory, setDisplayCategory] =
     useState<string | null>(null);
 
-  const {
-    productCategoryIdG,
-    setProductCategoryIdG,
-    setDisablePickupCatDiscountIds,
-    settings,
-  } = UseSiteContext();
+const {
+  productCategoryIdG,
+  setProductCategoryIdG,
+  setProductToSearchQuery,
+  setDisablePickupCatDiscountIds,
+  settings,
+} = UseSiteContext();
 
   // =====================================================
   // POS THEME
@@ -39,14 +47,14 @@ export default function PosSidebarCategories() {
   // =====================================================
 
   useEffect(() => {
+    // No category selected yet
+    // Default to FAVORITES
     if (!productCategoryIdG) {
-      setDisplayCategory(
-        settings?.display_category?.toString() ?? null
-      );
+      setDisplayCategory(FAVORITES_CATEGORY_ID);
     } else {
       setDisplayCategory(productCategoryIdG);
     }
-  }, [settings, productCategoryIdG]);
+  }, [productCategoryIdG]);
 
   // =====================================================
   // LOAD CATEGORIES
@@ -68,12 +76,14 @@ export default function PosSidebarCategories() {
             Number(b.sortOrder ?? 0)
         );
 
+        // Keep your existing featured-category behavior
         const featured = categories.filter(
           (c) => c.isFeatured !== "no"
         );
 
         setCategoryData(featured);
 
+        // Pickup discount disabled categories
         const pickupDisabled = categories
           .filter(
             (c) => c.disablePickupDiscount === true
@@ -99,84 +109,120 @@ export default function PosSidebarCategories() {
   }, [setDisablePickupCatDiscountIds]);
 
   // =====================================================
+  // CATEGORY BUTTON
+  // =====================================================
+
+  const renderCategoryButton = (
+    id: string,
+    name: string,
+    favorite = false
+  ) => {
+    const active = displayCategory === id;
+
+    return (
+      <button
+        key={id}
+        type="button"
+    onClick={() => {
+  setProductToSearchQuery("");
+  setProductCategoryIdG(id);
+  setDisplayCategory(id);
+}}
+        className={`
+          w-full
+          h-11
+          px-3
+          flex
+          items-center
+          gap-2
+          text-left
+          text-sm
+          border-b
+          border-zinc-600
+          transition-all
+          duration-100
+          outline-none
+
+          ${
+            active
+              ? "text-white"
+              : `${background.text} opacity-60 hover:bg-black/10`
+          }
+        `}
+        style={
+          active
+            ? {
+                backgroundColor: theme.primary,
+                borderColor: theme.primary,
+              }
+            : undefined
+        }
+      >
+        {favorite && (
+          <FaStar
+            size={14}
+            className="shrink-0"
+          />
+        )}
+
+        <span
+          className="
+            text-[12px]
+            font-medium
+            truncate
+          "
+        >
+          {name}
+        </span>
+      </button>
+    );
+  };
+
+  // =====================================================
   // UI
   // =====================================================
 
- return (
-  <aside
-    className={`
-      h-full
-      w-full
-      bg-zinc-500
-      ${background.text}
-      flex
-      flex-col
-    `}
-  >
-    <div
-      className="
-        pos-sidebar-scroll
-        flex-1
-        overflow-y-auto
-        app-scrollbar
-        py-2
-      "
+  return (
+    <aside
+      className={`
+        h-full
+        w-full
+        bg-zinc-500
+        ${background.text}
+        flex
+        flex-col
+      `}
     >
-      {categoryData.map((cat) => {
-        const active =
-          displayCategory === cat.id;
+      <div
+        className="
+          pos-sidebar-scroll
+          flex-1
+          overflow-y-auto
+          app-scrollbar
+          py-2
+        "
+      >
+        {/* =================================================
+            FAVORITES
+        ================================================= */}
 
-        return (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() =>
-              setProductCategoryIdG(cat.id)
-            }
-            className={`
-              w-full
-              h-11
-              px-3
-              flex
-              items-center
-              text-left
-              text-sm
-              border-b
-              border-zinc-600
-              transition-all
-              duration-100
-              outline-none
+        {renderCategoryButton(
+          FAVORITES_CATEGORY_ID,
+          "Favorites",
+          true
+        )}
 
-              ${
-                active
-                  ? "text-white"
-                  : `${background.text} opacity-60 hover:bg-black/10`
-              }
-            `}
-            style={
-              active
-                ? {
-                    backgroundColor:
-                      theme.primary,
-                    borderColor:
-                      theme.primary,
-                  }
-                : undefined
-            }
-          >
-            <span
-              className="
-                text-[12px]
-                font-medium
-                truncate
-              "
-            >
-              {cat.name}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  </aside>
-);
+        {/* =================================================
+            NORMAL CATEGORIES
+        ================================================= */}
+
+        {categoryData.map((cat) =>
+          renderCategoryButton(
+            cat.id,
+            cat.name
+          )
+        )}
+      </div>
+    </aside>
+  );
 }

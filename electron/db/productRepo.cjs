@@ -8,6 +8,7 @@ async function insertProducts(list) {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO products (
       id, searchCode,
+      favorite,
       name, price, discountPrice, image,
       foodType,
       sortOrder, kitchenPrintReq,
@@ -21,6 +22,7 @@ async function insertProducts(list) {
       outletId
     ) VALUES (
       @id, @searchCode,
+      @favorite,
       @name, @price, @discountPrice, @image,
       @foodType,
       @sortOrder, @kitchenPrintReq,
@@ -40,7 +42,7 @@ async function insertProducts(list) {
       stmt.run({
         id: row.id,
         searchCode: row.searchCode ?? null,
-
+        favorite: row.favorite ? 1 : 0,
         name: row.name ?? '',
         price: Number(row.price ?? 0),
         discountPrice:
@@ -54,8 +56,8 @@ async function insertProducts(list) {
           row.kitchenPrintReq == null
             ? null
             : row.kitchenPrintReq
-            ? 1
-            : 0,
+              ? 1
+              : 0,
 
         categoryId: row.categoryId ?? '',
         productCat: row.productCat ?? '',
@@ -88,11 +90,16 @@ async function insertProducts(list) {
 }
 
 async function getAllProducts() {
-  return db
+  const rows = db
     .prepare(
       'SELECT * FROM products ORDER BY sortOrder ASC, name ASC'
     )
     .all();
+
+  return rows.map((row) => ({
+    ...row,
+    favorite: row.favorite === 1,
+  }));
 }
 
 async function getProductsByCategory(

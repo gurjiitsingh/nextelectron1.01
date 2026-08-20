@@ -37,58 +37,72 @@ async function syncProducts() {
   const list = snapshot.docs.map((doc) => {
     const data = doc.data() || {};
 
-    return {
-      id: doc.id,
-      searchCode:
-        data.searchCode ||
-        doc.id.slice(-6),
+  return {
+  id: doc.id,
 
-      name: data.name || '',
-      price: anyToDouble(data.price),
-      discountPrice:
-        typeof data.discountPrice ===
-        'number'
-          ? data.discountPrice
-          : null,
-      image: data.image || null,
+  searchCode:
+    data.searchCode ||
+    doc.id.slice(-6),
 
-      foodType: data.foodType || null,
+  name: data.name || '',
+  price: anyToDouble(data.price),
 
-      sortOrder: data.sortOrder || 0,
-      kitchenPrintReq:
-        data.kitchenPrintReq ?? null,
+  discountPrice:
+    typeof data.discountPrice === 'number'
+      ? data.discountPrice
+      : null,
 
-      categoryId: data.categoryId || '',
-      productCat: data.productCat || '',
+  image: data.image || null,
 
-      parentId: data.parentId || null,
-      baseProductId:
-        data.baseProductId || null,
+  foodType: data.foodType || null,
 
-      hasVariants:
-        data.hasVariants || false,
-      hasModifiers:
-        data.hasModifiers || false,
+  sortOrder: data.sortOrder || 0,
 
-      currentStock:
-        typeof data.currentStock ===
-        'number'
-          ? data.currentStock
-          : 0,
+  kitchenPrintReq:
+    data.kitchenPrintReq ?? null,
 
-      productMode:
-        data.productMode || 'raw_stock',
+  categoryId: data.categoryId || '',
+  productCat: data.productCat || '',
 
-      taxRate:
-        typeof data.taxRate === 'number'
-          ? data.taxRate
-          : null,
-      taxType: data.taxType || null,
+  parentId: data.parentId || null,
 
-      type: data.type || null,
+  baseProductId:
+    data.baseProductId || null,
 
-      outletId: data.outletId || null,
-    };
+  hasVariants:
+    data.hasVariants || false,
+
+  hasModifiers:
+    data.hasModifiers || false,
+
+  currentStock:
+    typeof data.currentStock === 'number'
+      ? data.currentStock
+      : 0,
+
+  productMode:
+    data.productMode || 'raw_stock',
+
+  taxRate:
+    typeof data.taxRate === 'number'
+      ? data.taxRate
+      : null,
+
+  taxType:
+    data.taxType || null,
+
+  type: data.type || null,
+
+  outletId:
+    data.outletId || null,
+
+  // ==========================================
+  // FAVORITE
+  // Firestore boolean -> SQLite integer
+  // ==========================================
+  favorite:
+    data.favorite === true,
+};
   });
 
   console.log(

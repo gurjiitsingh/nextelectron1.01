@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS products (
 
   type TEXT,
 
-  outletId TEXT
+  outletId TEXT,
+  favorite INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_name
