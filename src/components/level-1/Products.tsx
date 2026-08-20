@@ -9,6 +9,7 @@ import { addOnType } from "@/lib/types/addOnType";
 import { FAVORITES_CATEGORY_ID } from "../pos/PosSidebarCategories";
 
 import { FiSearch, FiX } from "react-icons/fi";
+import { usePosSession } from "@/PosSessionStore/PosSessionContext";
 
 export default function Products() {
   const {
@@ -18,6 +19,12 @@ export default function Products() {
     setAllProduct,
   } = UseSiteContext();
   
+const {
+  activeTable,
+  activeOrder,
+  setActiveTable,
+  setActiveOrder,
+} = usePosSession();
 
   const [allProducts, setAllProducts] = useState<ProductType[]>([]);
   const [variants, setVariants] = useState<ProductType[]>([]);
@@ -65,6 +72,8 @@ export default function Products() {
 
     loadProducts();
   }, [setAllProduct]);
+
+  
 
   // =====================================================
   // FILTER PRODUCTS
@@ -252,85 +261,271 @@ export default function Products() {
 
   return (
     <div className="w-full">
-      {/* =================================================
-          SEARCH BAR
-      ================================================= */}
+   {/* =================================================
+    SEARCH + ORDER TYPE
+================================================= */}
 
-      <div
+<div
+  className="
+    sticky
+    top-0
+    z-20
+    w-full
+    px-2
+    py-2
+    bg-inherit
+  "
+>
+  <div
+    className="
+      flex
+      items-center
+      gap-2
+      w-full
+    "
+  >
+
+    {/* =============================================
+        SEARCH
+    ============================================= */}
+
+    <div
+      className="
+        relative
+        flex
+        items-center
+        flex-1
+        h-11
+        rounded-md
+        border
+        border-zinc-300
+        dark:border-zinc-600
+        bg-white
+        dark:bg-zinc-800
+      "
+    >
+
+      <FiSearch
+        size={19}
         className="
-          sticky
-          top-0
-          z-20
-          w-full
-          px-2
-          py-2
-          bg-inherit
+          ml-3
+          shrink-0
+          text-zinc-400
         "
-      >
-        <div
+      />
+
+      <input
+        type="text"
+        value={
+          productToSearchQuery ?? ""
+        }
+        onChange={handleSearchChange}
+        placeholder="Search product name or code..."
+        className="
+          flex-1
+          h-full
+          px-3
+          text-sm
+          outline-none
+          bg-transparent
+          text-zinc-800
+          dark:text-white
+          placeholder:text-zinc-400
+        "
+      />
+
+      {productToSearchQuery && (
+        <button
+          type="button"
+          onClick={clearSearch}
+          title="Clear search"
           className="
-            relative
-            flex
-            items-center
-            w-full
-            h-11
-            rounded-md
-            border
-            border-zinc-300
-            dark:border-zinc-600
-            bg-white
-            dark:bg-zinc-800
+            mr-2
+            p-1.5
+            rounded
+            text-zinc-400
+            hover:text-zinc-700
+            dark:hover:text-white
+            hover:bg-zinc-100
+            dark:hover:bg-zinc-700
+            transition
           "
         >
-          <FiSearch
-            size={19}
-            className="
-              ml-3
-              shrink-0
-              text-zinc-400
-            "
-          />
+          <FiX size={18} />
+        </button>
+      )}
 
-          <input
-            type="text"
-            value={productToSearchQuery ?? ""}
-            onChange={handleSearchChange}
-            placeholder="Search product name or code..."
-            className="
-              flex-1
-              h-full
-              px-3
-              text-sm
-              outline-none
-              bg-transparent
-              text-zinc-800
-              dark:text-white
-              placeholder:text-zinc-400
-            "
-          />
+    </div>
 
-          {productToSearchQuery && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              title="Clear search"
-              className="
-                mr-2
-                p-1.5
-                rounded
-                text-zinc-400
-                hover:text-zinc-700
-                dark:hover:text-white
-                hover:bg-zinc-100
-                dark:hover:bg-zinc-700
-                transition
-              "
-            >
-              <FiX size={18} />
-            </button>
-          )}
-        </div>
-      </div>
+
+    {/* =============================================
+        ORDER TYPE
+    ============================================= */}
+
+    <div
+      className="
+        flex
+        h-11
+        shrink-0
+        overflow-hidden
+        rounded-md
+        border
+        border-zinc-300
+        dark:border-zinc-600
+        bg-white
+        dark:bg-zinc-800
+      "
+    >
+
+      {/* DINE IN */}
+
+      <button
+        type="button"
+        onClick={() => {
+
+          // if (!activeTable) {
+          //   alert(
+          //     "Please select a table first."
+          //   );
+          //   return;
+          // }
+
+          setActiveOrder({
+            orderType: "DINE_IN",
+            orderNo: "",
+            tableId:
+              activeTable!.tableId,
+            tableName:
+              activeTable!.tableName,
+          });
+
+        }}
+        className={`
+          px-3
+          text-[11px]
+          font-semibold
+          transition
+          ${
+            activeOrder?.orderType ===
+            "DINE_IN"
+              ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+              : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          }
+        `}
+      >
+        DINE IN
+      </button>
+
+
+      {/* TAKEAWAY */}
+
+      <button
+        type="button"
+   onClick={async () => {
+  try {
+
+    const orderNo =
+      await window.posApi.generateNextPosOrderNumber(
+        "TAKEAWAY"
+      );
+
+    setActiveTable({
+      tableId: orderNo,
+      tableName: orderNo,
+    });
+
+    setActiveOrder({
+      orderType: "TAKEAWAY",
+      orderNo,
+      tableId: orderNo,
+      tableName: orderNo,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Failed to generate takeaway order number",
+      error
+    );
+
+    alert(
+      "Failed to create takeaway order."
+    );
+  }
+}}
+        className={`
+          px-3
+          text-[11px]
+          font-semibold
+          transition
+          ${
+            activeOrder?.orderType ===
+            "TAKEAWAY"
+              ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+              : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          }
+        `}
+      >
+        TAKEAWAY
+      </button>
+
+
+      {/* DELIVERY */}
+
+      <button
+        type="button"
+     onClick={async () => {
+  try {
+
+    const orderNo =
+      await window.posApi.generateNextPosOrderNumber(
+        "DELIVERY"
+      );
+
+    setActiveTable({
+      tableId: orderNo,
+      tableName: orderNo,
+    });
+
+    setActiveOrder({
+      orderType: "DELIVERY",
+      orderNo,
+      tableId: orderNo,
+      tableName: orderNo,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Failed to generate delivery order number",
+      error
+    );
+
+    alert(
+      "Failed to create delivery order."
+    );
+  }
+}}
+        className={`
+          px-3
+          text-[11px]
+          font-semibold
+          transition
+          ${
+            activeOrder?.orderType ===
+            "DELIVERY"
+              ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+              : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          }
+        `}
+      >
+        DELIVERY
+      </button>
+
+    </div>
+
+  </div>
+</div>
 
       {/* =================================================
           PRODUCTS

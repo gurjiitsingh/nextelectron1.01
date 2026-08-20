@@ -8,7 +8,7 @@ import PosTopBar from "./PosTopBar";
 
 import Products from "@/components/level-1/Products";
 import PosSidebarCategories from "../PosSidebarCategories";
-import CartPanel from "../cart/CartPanel";
+import CartPanel from "../rightSideBar/CartPanel";
 
 export default function PosLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);

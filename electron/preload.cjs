@@ -442,7 +442,24 @@ getOrderItems: (orderId) =>
     businessDate
   ),
 
+generateNextPosOrderNumber: (
+  orderType
+) =>
+  ipcRenderer.invoke(
+    'pos-order:generate-number',
+    orderType
+  ),
 
+
+  // =====================================================
+// POS ORDER LIST
+// =====================================================
+
+getTodayPosOrders: (orderType) =>
+  ipcRenderer.invoke(
+    'pos-order:list',
+    orderType
+  ),
 
 
 });

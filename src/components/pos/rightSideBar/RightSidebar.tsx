@@ -3,11 +3,12 @@
 import { usePosUi } from '@/PosUiStore/PosUiContext';
 
  
-import KitchenView from '../kitchen/KitchenView';
-import Bill from '../bill/Bill';
+import KitchenView from './KitchenView';
+import Bill from './Bill';
 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
-import CartPanel from '../cart/CartPanel';
+import CartPanel from './CartPanel';
+import RunningOrderView from './RunningOrderView';
 
 export default function RightSideBar() {
 
@@ -35,7 +36,7 @@ export default function RightSideBar() {
       `}
     >
 
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden bg-red-500">
 
         {rightSidebarView === 'cart' && (
           <CartPanel />
@@ -47,6 +48,9 @@ export default function RightSideBar() {
 
         {rightSidebarView === 'kitchen' && (
           <KitchenView />
+        )}
+           {rightSidebarView === 'RO' && (
+          <RunningOrderView />
         )}
 
       </div>

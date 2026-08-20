@@ -36,7 +36,25 @@ const { theme, background } = usePosTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ProductType | null>(null);
 
-  const { activeTable } = usePosSession();
+  const {
+  activeTable,
+  activeOrder,
+} = usePosSession();
+
+// =====================================================
+// CURRENT CART PARTITION
+// =====================================================
+
+const currentPartition =
+  activeOrder?.orderType === 'DINE_IN'
+    ? activeTable?.tableId ?? ''
+    : activeOrder?.orderNo ?? '';
+
+const currentDisplayName =
+  activeOrder?.orderType === 'DINE_IN'
+    ? activeTable?.tableName ?? ''
+    : activeOrder?.orderNo ?? '';
+
   const { addProductToCart } = useCartContext();
 
   const [selectedModifiers, setSelectedModifiers] = useState<{
@@ -150,10 +168,17 @@ const { theme, background } = usePosTheme();
     // POS session
     sessionId: 'DEFAULT',
 
-    // DINE_IN table
+     
 
-    tableId: activeTable?.tableId ?? null,
-    tableName: activeTable?.tableName ?? null,
+   // =====================================================
+// ORDER / TABLE
+// =====================================================
+
+tableId:
+  currentPartition || null,
+
+tableName:
+  currentDisplayName || null,
 
     // user snapshot
     createdById: '',
@@ -225,14 +250,45 @@ const { theme, background } = usePosTheme();
   // ---------------- UI ----------------
 
 const handleAdd = () => {
-  // No table selected
-  if (!activeTable?.tableId) {
+  // =====================================================
+  // NO ACTIVE ORDER
+  // =====================================================
+
+  if (!activeOrder) {
+    alert('Please select an order type first.');
+    return;
+  }
+
+  // =====================================================
+  // DINE IN REQUIRES TABLE
+  // =====================================================
+
+  if (
+    activeOrder.orderType === 'DINE_IN' &&
+    !activeTable?.tableId
+  ) {
     router.push('/tables');
     return;
   }
 
-  // Table selected
+  // =====================================================
+  // TAKEAWAY / DELIVERY REQUIRE ORDER NUMBER
+  // =====================================================
+
+  if (
+    activeOrder.orderType !== 'DINE_IN' &&
+    !activeOrder.orderNo
+  ) {
+    alert('Order number is not available yet.');
+    return;
+  }
+
+  // =====================================================
+  // ADD TO CART
+  // =====================================================
+
   setRightSidebarView('cart');
+
   addProductToCart(cartProduct);
 };
 

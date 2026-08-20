@@ -28,15 +28,28 @@ export default function Bill({
   onSuccess,
 }: BillProps) {
 
-  const { activeTable } = usePosSession();
+const {
+  activeTable,
+  activeOrder,
+} = usePosSession();
 
-  const currentTableId =
-    activeTable?.tableId ||
-    activeTable?.tableName ||
-    'T1';
+const isRunningOrder =
+  !!activeOrder?.orderNo;
 
-  const currentTableName =
-    activeTable?.tableName || 'N/A';
+const currentTableId =
+  activeOrder?.orderNo ||
+  activeTable?.tableId ||
+  activeTable?.tableName ||
+  'T1';
+
+const currentTableName =
+  activeOrder?.orderNo ||
+  activeTable?.tableName ||
+  'N/A';
+
+const currentOrderType =
+  activeOrder?.orderType ||
+  'DINE_IN';
 
   const [billRows, setBillRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,33 +88,75 @@ const [showPaymentAllocation, setShowPaymentAllocation] =
   // LOAD BILL ITEMS
   // =====================================================
 
-  useEffect(() => {
-    loadBillItems();
-  }, [currentTableId]);
+ useEffect(() => {
+  loadBillItems();
+}, [
+  currentTableId,
+  currentOrderType,
+]);
 
-  async function loadBillItems() {
-    if (!currentTableId) return;
+async function loadBillItems() {
+  if (!currentTableId) return;
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const rows =
-        await window.posApi.getBillItems(
-          currentTableId
-        );
+    // =============================================
+    // BILL ITEMS
+    // =============================================
 
-      console.log("bill items----------------------", rows)
-
-      setBillRows(rows);
-    } catch (e) {
-      console.error(
-        'Failed to load bill items',
-        e
+    const billRows =
+      await window.posApi.getBillItems(
+        currentTableId
       );
-    } finally {
-      setLoading(false);
-    }
+
+    // =============================================
+    // CART ITEMS
+    //
+    // These may not have been sent to kitchen/bill yet
+    // =============================================
+
+    const cartRows =
+      await window.posApi.getCartItems(
+        currentTableId
+      );
+
+    console.log(
+      'BILL ITEMS =>',
+      currentTableId,
+      billRows
+    );
+
+    console.log(
+      'CART ITEMS =>',
+      currentTableId,
+      cartRows
+    );
+
+    // =============================================
+    // COMBINE
+    // =============================================
+
+    const combinedRows = [
+      ...(billRows || []),
+      ...(cartRows || []),
+    ];
+
+    setBillRows(combinedRows);
+
+  } catch (e) {
+
+    console.error(
+      'Failed to load bill/cart items',
+      e
+    );
+
+  } finally {
+
+    setLoading(false);
+
   }
+}
 
   
 
@@ -515,8 +570,8 @@ async function increaseBillItem(item: any) {
           tableName:
             currentTableName,
 
-          orderType:
-            'DINE_IN',
+        orderType:
+      currentOrderType,
 
           customerName:
             customerName.trim() ||
@@ -882,8 +937,8 @@ async function handlePaymentAllocation(
         tableName:
           currentTableName,
 
-        orderType:
-          'DINE_IN',
+         orderType:
+      currentOrderType,
 
         customerName:
           customerName.trim() ||
@@ -1117,7 +1172,7 @@ const result =
       currentTableName,
 
     orderType:
-      'DINE_IN',
+      currentOrderType,
 
     customerName:
       customerName.trim() ||
@@ -1362,8 +1417,8 @@ const result =
           tableName:
             currentTableName,
 
-          orderType:
-            'DINE_IN',
+        orderType:
+      currentOrderType,
 
           paymentMode,
 
@@ -1560,7 +1615,7 @@ const result =
           currentTableName,
 
         orderType:
-          'DINE_IN',
+      currentOrderType,
 
         paymentMode,
 

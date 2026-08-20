@@ -19,9 +19,12 @@ export default function CartPanel() {
      updateCartItemNote,
   } = useCartContext();
 
-  const {
-    activeTable,
-  } = usePosSession();
+const {
+  activeTable,
+  activeOrder,
+} = usePosSession();
+
+
 
   const {
     setRightSidebarView,
@@ -35,6 +38,21 @@ export default function CartPanel() {
     theme,
     background,
   } = usePosTheme();
+
+
+  // =====================================================
+// CURRENT ORDER REFERENCE
+// =====================================================
+
+const currentOrderNo =
+  activeOrder?.orderType === 'DINE_IN'
+    ? activeTable?.tableId ?? null
+    : activeOrder?.orderNo ?? null;
+
+const currentOrderName =
+  activeOrder?.orderType === 'DINE_IN'
+    ? activeTable?.tableName ?? null
+    : activeOrder?.orderNo ?? null;
 
 
   const [editingNoteId, setEditingNoteId] =
@@ -61,15 +79,41 @@ async function sendToKitchenHandle() {
   // VALIDATE TABLE
   // ---------------------------------------------------
 
-  if (!activeTable?.tableId) {
+// ---------------------------------------------------
+// VALIDATE ORDER
+// ---------------------------------------------------
 
-    alert(
-      'Please select a table first.'
-    );
+if (!activeOrder) {
+  alert(
+    'Please select an order type first.'
+  );
 
-    return;
-  }
+  return;
+}
 
+// DINE IN requires table
+if (
+  activeOrder.orderType === 'DINE_IN' &&
+  !activeTable?.tableId
+) {
+  alert(
+    'Please select a table first.'
+  );
+
+  return;
+}
+
+// TAKEAWAY / DELIVERY require generated order number
+if (
+  activeOrder.orderType !== 'DINE_IN' &&
+  !activeOrder.orderNo
+) {
+  alert(
+    'Order number is not available yet.'
+  );
+
+  return;
+}
 
   try {
 
@@ -85,12 +129,11 @@ async function sendToKitchenHandle() {
       await window.posApi.generateNextKotNumber();
 
 
-    const currentTableId =
-      activeTable.tableId;
+  const currentTableId =
+  currentOrderNo ?? '';
 
-
-    const currentTableName =
-      activeTable.tableName || '';
+const currentTableName =
+  currentOrderName ?? '';
 
 
     const now =
@@ -284,8 +327,8 @@ async function sendToKitchenHandle() {
       tableName:
         currentTableName,
 
-      orderType:
-        'DINE_IN',
+     orderType:
+  activeOrder.orderType,
 
       businessDate,
 
@@ -442,8 +485,8 @@ async function sendToKitchenHandle() {
         tableName:
           currentTableName,
 
-        orderType:
-          'DINE_IN',
+       orderType:
+  activeOrder.orderType,
 
         createdAt:
           now,
@@ -550,8 +593,8 @@ async function saveItemNote(
   item: cartProductType
 ) {
   try {
-    const tableNo =
-      activeTable?.tableId || 'T1';
+   const tableNo =
+  currentOrderNo || 'T1';
 
     await window.posApi.updateCartItemNote(
       item.id,
@@ -611,13 +654,36 @@ async function saveItemNote(
         `}
       >
 
-        <p className="mt-1 text-xs">
+    <div className="flex items-center gap-2">
 
-          {activeTable
-            ? activeTable.tableName
-            : 'No table selected'}
+  <p className="mt-1 text-xs font-medium">
 
-        </p>
+    {currentOrderName ??
+      'No order selected'}
+
+  </p>
+
+  {activeOrder && (
+    <span
+      className="
+        rounded
+        bg-zinc-100
+        dark:bg-zinc-700
+        px-1.5
+        py-0.5
+        text-[9px]
+        uppercase
+        opacity-70
+      "
+    >
+      {activeOrder.orderType.replace(
+        '_',
+        ' '
+      )}
+    </span>
+  )}
+
+</div>
 
 
         <div className="flex items-center justify-between">

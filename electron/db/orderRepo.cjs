@@ -644,6 +644,177 @@ function getOrdersByRealDate(date) {
     `)
     .all(realDate);
 }
+
+function generateNextPosOrderNumber(orderType) {
+  let prefix;
+
+  if (orderType === 'TAKEAWAY') {
+    prefix = 'TW';
+  } else if (orderType === 'DELIVERY') {
+    prefix = 'DL';
+  } else {
+    throw new Error(
+      `Unsupported POS order type: ${orderType}`
+    );
+  }
+
+  // =====================================================
+  // BUSINESS DATE
+  // Resets automatically every new day
+  // =====================================================
+
+  const now = new Date();
+
+  const dateKey =
+    `${now.getFullYear()}-` +
+    `${String(now.getMonth() + 1).padStart(2, '0')}-` +
+    `${String(now.getDate()).padStart(2, '0')}`;
+
+  // =====================================================
+  // SEQUENCE TABLE
+  // =====================================================
+
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS pos_daily_order_sequence (
+      dateKey TEXT NOT NULL,
+      orderType TEXT NOT NULL,
+      lastNumber INTEGER NOT NULL DEFAULT 0,
+
+      PRIMARY KEY (
+        dateKey,
+        orderType
+      )
+    )
+  `).run();
+
+  // =====================================================
+  // GENERATE NEXT NUMBER
+  // =====================================================
+
+  const transaction = db.transaction(() => {
+
+    const existing = db
+      .prepare(`
+        SELECT lastNumber
+        FROM pos_daily_order_sequence
+        WHERE dateKey = ?
+          AND orderType = ?
+      `)
+      .get(
+        dateKey,
+        orderType
+      );
+
+    let nextNumber;
+
+    if (!existing) {
+
+      nextNumber = 1;
+
+      db.prepare(`
+        INSERT INTO pos_daily_order_sequence (
+          dateKey,
+          orderType,
+          lastNumber
+        )
+        VALUES (?, ?, ?)
+      `).run(
+        dateKey,
+        orderType,
+        nextNumber
+      );
+
+    } else {
+
+      nextNumber =
+        existing.lastNumber + 1;
+
+      db.prepare(`
+        UPDATE pos_daily_order_sequence
+        SET lastNumber = ?
+        WHERE dateKey = ?
+          AND orderType = ?
+      `).run(
+        nextNumber,
+        dateKey,
+        orderType
+      );
+    }
+
+    return `${prefix}${nextNumber}`;
+  });
+
+  const orderNumber = transaction();
+
+  console.log(
+    'POS ORDER NUMBER =>',
+    {
+      orderType,
+      dateKey,
+      orderNumber,
+    }
+  );
+
+  return orderNumber;
+}
+
+
+async function getTodayPosOrderNumbers(orderType) {
+
+  if (
+    orderType !== 'TAKEAWAY' &&
+    orderType !== 'DELIVERY'
+  ) {
+    return [];
+  }
+
+  const prefix =
+    orderType === 'TAKEAWAY'
+      ? 'TW'
+      : 'DL';
+
+  const now = new Date();
+
+  const dateKey =
+    `${now.getFullYear()}-` +
+    `${String(now.getMonth() + 1).padStart(2, '0')}-` +
+    `${String(now.getDate()).padStart(2, '0')}`;
+
+  const row = db
+    .prepare(`
+      SELECT lastNumber
+      FROM pos_daily_order_sequence
+      WHERE dateKey = ?
+        AND orderType = ?
+    `)
+    .get(
+      dateKey,
+      orderType
+    );
+
+  if (!row) {
+    return [];
+  }
+
+  const orders = [];
+
+  for (
+    let i = 1;
+    i <= row.lastNumber;
+    i++
+  ) {
+    const orderNo = `${prefix}${i}`;
+
+    orders.push({
+      orderNo,
+      tableId: orderNo,
+      tableName: orderNo,
+      orderType,
+    });
+  }
+
+  return orders;
+}
 // =====================================================
 // EXPORTS
 // =====================================================
@@ -651,7 +822,8 @@ function getOrdersByRealDate(date) {
 module.exports = {
 
   insertOrder,
-
+  getTodayPosOrderNumbers,
+generateNextPosOrderNumber, 
   getOrdersByBusinessDate,
   getOrdersByRealDate,
 

@@ -18,8 +18,8 @@ interface Props {
 export const CartProvider: React.FC<Props> = ({ children }) => {
   const [cartData, setCartData] = useState<cartProductType[]>([]);
 
-  const [orderType, setOrderType] =
-    useState<OrderType>('DINE_IN');
+  // const [orderType, setOrderType] =
+  //   useState<OrderType>('DINE_IN');
 
   const [address, setAddress] = useState<addressT>({
     name: '',
@@ -45,7 +45,10 @@ export const CartProvider: React.FC<Props> = ({ children }) => {
   const [scheduledAt, setScheduledAt] = useState<
     string | null
   >(null);
-const { activeTable } =  usePosSession();
+const {
+  activeTable,
+  activeOrder,
+} = usePosSession();
  
 
   // =====================================================
@@ -53,14 +56,26 @@ const { activeTable } =  usePosSession();
   // =====================================================
 
  
-const currentTable =
-  activeTable?.tableId ||
-  activeTable?.tableName ||
-  'T1';
+const currentPartition =
+  activeOrder?.orderType === 'DINE_IN'
+    ? (
+        activeTable?.tableId ||
+        activeTable?.tableName ||
+        ''
+      )
+    : (
+        activeOrder?.orderNo ||
+        ''
+      );
  
 useEffect(() => {
-  reloadCart(currentTable);
-}, [currentTable]);
+  if (!currentPartition) {
+    setCartData([]);
+    return;
+  }
+
+  reloadCart(currentPartition);
+}, [currentPartition]);
       // =====================================================
     // RELOAD CART FROM SQLITE
     // Location: src/store/CartProvider.tsx
@@ -68,17 +83,23 @@ useEffect(() => {
 
 
 async function reloadCart(
-  tableName?: string
+  partition?: string
 ) {
-  const table =
-    tableName || currentTable;
+  const key =
+    partition || currentPartition;
+
+  if (!key) {
+    setCartData([]);
+    return;
+  }
 
   const rows =
-    await posApi.getCartItems(table);
+    await posApi.getCartItems(key);
 
-  setCartData(rows as cartProductType[]);
+  setCartData(
+    rows as cartProductType[]
+  );
 }
-
   // =====================================================
   // CALCULATE TOTALS
   // =====================================================
@@ -118,6 +139,26 @@ async function reloadCart(
   async function addProductToCart(
     newProduct: cartProductType
   ) {
+
+    if (!activeOrder) {
+  console.warn(
+    'Cannot add product: no active order'
+  );
+
+  return;
+}
+
+if (
+  activeOrder.orderType === 'DINE_IN' &&
+  !activeTable?.tableId
+) {
+  console.warn(
+    'Cannot add product: no table selected'
+  );
+
+  return;
+}
+
     if (
       isNaN(Number(newProduct.quantity)) ||
       isNaN(Number(newProduct.basePrice))
@@ -160,15 +201,23 @@ async function reloadCart(
     sessionId: newProduct.sessionId ?? 'DEFAULT',
 
     // ACTIVE TABLE
-    tableId:
-      newProduct.tableId ??
-      activeTable?.tableId ??
-      currentTable,
+   tableId:
+  activeOrder.orderType === 'DINE_IN'
+    ? (
+        newProduct.tableId ??
+        activeTable?.tableId ??
+        ''
+      )
+    : activeOrder.orderNo,
 
-    tableName:
-      newProduct.tableName ??
-      activeTable?.tableName ??
-      currentTable,
+tableName:
+  activeOrder.orderType === 'DINE_IN'
+    ? (
+        newProduct.tableName ??
+        activeTable?.tableName ??
+        ''
+      )
+    : activeOrder.orderNo,
 
     createdById:
       newProduct.createdById ?? '',
@@ -198,14 +247,12 @@ async function reloadCart(
   },
 
   // SQLITE PARTITION KEY
-  newProduct.tableId ??
-    activeTable?.tableId ??
-    currentTable
+     currentPartition
 );
 
-await reloadCart(currentTable);
+await reloadCart(currentPartition);
 
-   await reloadCart();
+   
 
   }
 
@@ -229,8 +276,8 @@ async function updateCartItemNote(
   );
 
   await reloadCart(table);
-}
 
+}
   // =====================================================
   // DECREASE QUANTITY BY 1
   // =====================================================
@@ -238,13 +285,17 @@ async function updateCartItemNote(
 async function decCartProduct(
   item: cartProductType
 ) {
+  if (!currentPartition) {
+    return;
+  }
+
   await posApi.removeCartItem(
-    String(item.id), // SQLite row id
-    currentTable,
-    false // decrease by 1
+    String(item.id),
+    currentPartition,
+    false
   );
 
-  await reloadCart(currentTable);
+  await reloadCart(currentPartition);
 }
 
   // =====================================================
@@ -256,15 +307,18 @@ async function decCartProductAll(
 ) {
   if (!item.uniqueKey) return;
 
+  if (!currentPartition) {
+    return;
+  }
+
   await posApi.removeCartItem(
     item.uniqueKey,
-    currentTable,
+    currentPartition,
     true
   );
 
-  await reloadCart(currentTable);
+  await reloadCart(currentPartition);
 }
-
   // =====================================================
   // REMOVE PRODUCT
   // =====================================================
@@ -274,32 +328,34 @@ async function removeCartProduct(
 ) {
   if (!item?.uniqueKey) return;
 
-  const currentTable =
-  activeTable?.tableId ||
-  activeTable?.tableName ||
-  'T1';
+  if (!currentPartition) {
+    return;
+  }
 
   await posApi.removeCartItem(
     item.uniqueKey,
-    currentTable
+    currentPartition
   );
 
-  await reloadCart(currentTable);
+  await reloadCart(currentPartition);
 }
 
   // =====================================================
   // EMPTY CART
   // =====================================================
 
- async function emptyCart() {
-  const currentTable =
-    activeTable?.tableId ||
-    activeTable?.tableName ||
-    'T1';
+async function emptyCart() {
+  if (!currentPartition) {
+    return;
+  }
 
-  await posApi.clearCart(currentTable);
+  await posApi.clearCart(
+    currentPartition
+  );
 
-  await reloadCart(currentTable);
+  await reloadCart(
+    currentPartition
+  );
 }
 
   // =====================================================
@@ -365,11 +421,15 @@ return (
     totalDiscountG,
     setTotalDiscountG,
 
-    orderType,
-    setOrderType,
+   orderType:
+  activeOrder?.orderType ?? 'DINE_IN',
 
-    tableNo: currentTable,
-    setTableNo: () => {},
+setOrderType: () => {},
+
+tableNo:
+  currentPartition || null,
+
+setTableNo: () => {},
 
     scheduledAt,
     setScheduledAt,

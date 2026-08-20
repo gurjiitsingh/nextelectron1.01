@@ -59,19 +59,33 @@ const navButtonClass = (active: boolean) =>
           :`${background.border} hover:opacity-90`       }
     `;
 
+    const rightSidebarButtonClass = `
+  rounded-sm
+  border
+  px-0.5
+  py-2
+  text-xs
+  font-medium
+  leading-none
+  whitespace-nowrap
+  transition-all
+  active:scale-[0.97]
+`;
 // =====================================================
 // SIDEBAR BUTTON CLASS
 // =====================================================
 
-const sidebarButtonClass = `rounded-lg
-    border
-    px-3
-    py-2
-    text-sm
-    font-medium
-    transition-all
-    active:scale-[0.97]
-  `;
+const sidebarButtonClass = `
+  rounded-sm
+  border
+  px-1.5
+  py-2
+  text-xs
+  font-medium
+  leading-none
+  transition-all
+  active:scale-[0.97]
+`;
 
 return (
 <header
@@ -322,8 +336,8 @@ borderColor: theme.primaryLight,
     {/* RIGHT SIDE SWITCH */}
     {/* ================================================= */}
 
-    <div className="shrink-0 p-2">
-      <div className="grid grid-cols-3 gap-2">
+   <div className="shrink-0">
+  <div className="grid grid-cols-4 gap-2">
 
         {/* ================================================= */}
         {/* CART */}
@@ -336,7 +350,7 @@ borderColor: theme.primaryLight,
               router.push('/');
           }
           }
-          className={sidebarButtonClass}
+          className={rightSidebarButtonClass}
           style={{
             backgroundColor:
               rightSidebarView === "cart"
@@ -378,7 +392,7 @@ borderColor: theme.primaryLight,
             }
           }}
         >
-          🛒 Cart
+          🛒 CART
         </button>
 
         {/* ================================================= */}
@@ -391,7 +405,7 @@ borderColor: theme.primaryLight,
             setRightSidebarView("bill")
               router.push('/');}
           }
-          className={sidebarButtonClass}
+          className={rightSidebarButtonClass}
           style={{
             backgroundColor:
               rightSidebarView === "bill"
@@ -447,7 +461,7 @@ borderColor: theme.primaryLight,
               router.push('/');
           }
           }
-          className={sidebarButtonClass}
+          className={rightSidebarButtonClass}
           style={{
             backgroundColor:
               rightSidebarView === "kitchen"
@@ -489,8 +503,69 @@ borderColor: theme.primaryLight,
             }
           }}
         >
-          🍳 Kitchen
+          🍳KOTs
         </button>
+
+
+  {/* ================================================= */}
+        {/* RUNNING ORDER */}
+        {/* ================================================= */}
+
+        <button
+  type="button"
+  onClick={() => {
+    setRightSidebarView("RO");
+    router.push("/");
+
+    // Running Orders
+    // RO = Running Orders
+    // If you have a state/setter for this, set it here.
+    // setActiveOrderView("RO");
+  }}
+  className={rightSidebarButtonClass}
+  style={{
+    backgroundColor:
+      rightSidebarView === "kitchen"
+        ? theme.primary
+        : theme.inactive,
+
+    borderColor:
+      rightSidebarView === "kitchen"
+        ? theme.primary
+        : theme.primarySelected,
+
+    color:
+      rightSidebarView === "kitchen"
+        ? "#FFFFFF"
+        : "#EEEEEE",
+  }}
+  onMouseEnter={(e) => {
+    if (rightSidebarView !== "kitchen") {
+      e.currentTarget.style.backgroundColor =
+        theme.primaryHover;
+
+      e.currentTarget.style.borderColor =
+        theme.primary;
+
+      e.currentTarget.style.color =
+        "#FFFFFF";
+    }
+  }}
+  onMouseLeave={(e) => {
+    if (rightSidebarView !== "kitchen") {
+      e.currentTarget.style.backgroundColor =
+        theme.inactive;
+
+      e.currentTarget.style.borderColor =
+        theme.primarySelected;
+
+      e.currentTarget.style.color =
+        "#EEEEEE";
+    }
+  }}
+>
+  🍳 RUNNING
+</button>
 
       </div>
     </div>

@@ -1118,258 +1118,224 @@ app.whenReady().then(() => {
   // CART
   // -------------------------------
 
-  // =====================================================
-  // CART LIST
-  // =====================================================
+ // =====================================================
+// CART LIST
+// =====================================================
 
-  ipcMain.handle(
-    'cart:list',
-    async (_e, tableNo) => {
+ipcMain.handle(
+  'cart:list',
+  async (_e, partition) => {
 
-      return cartRepo.getCartItems(
-        tableNo
+    try {
+
+      return await cartRepo.getCartItems(
+        partition
       );
 
+    } catch (error) {
+
+      console.error(
+        'cart:list failed',
+        error
+      );
+
+      throw error;
     }
-  );
+
+  }
+);
 
 
-  // =====================================================
-  // CART ADD
-  // =====================================================
+// =====================================================
+// CART ADD
+// =====================================================
 
-  ipcMain.handle(
-    'cart:add',
-    async (_e, item, tableNo) => {
+ipcMain.handle(
+  'cart:add',
+  async (
+    _e,
+    item,
+    partition
+  ) => {
 
-      try {
+    try {
 
-        // ===============================================
-        // 1. UPDATE CART
-        // ===============================================
-
-        const result =
-          await cartRepo.addCartItem(
-            item,
-            tableNo
-          );
+      const result =
+        await cartRepo.addCartItem(
+          item,
+          partition
+        );
 
 
-        // ===============================================
-        // 2. REFRESH ALL TABLE VISUAL STATES
-        // ===============================================
+      tableRepo.refreshAllTableCartVisualStates();
+
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        'cart:add failed',
+        error
+      );
+
+      throw error;
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// CART REMOVE
+// =====================================================
+
+ipcMain.handle(
+  'cart:remove',
+  async (
+    _e,
+    uniqueKey,
+    partition,
+    removeAll
+  ) => {
+
+    try {
+
+      const result =
+        await cartRepo.removeCartItem(
+          uniqueKey,
+          partition,
+          removeAll
+        );
+
+
+      if (result?.success !== false) {
 
         tableRepo.refreshAllTableCartVisualStates();
 
+      }
 
-        // ===============================================
-        // 3. RETURN CART RESULT
-        // ===============================================
 
-        return result;
+      return result;
 
-      } catch (error) {
+    } catch (error) {
 
-        console.error(
-          'cart:add failed',
-          error
+      console.error(
+        'cart:remove failed',
+        error
+      );
+
+      throw error;
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// CART CLEAR
+// =====================================================
+
+ipcMain.handle(
+  'cart:clear',
+  async (
+    _e,
+    partition
+  ) => {
+
+    try {
+
+      const result =
+        await cartRepo.clearCart(
+          partition
         );
 
-        throw error;
+
+      if (result?.success !== false) {
+
+        tableRepo.refreshAllTableCartVisualStates();
 
       }
 
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        'cart:clear failed',
+        error
+      );
+
+      throw error;
+
     }
-  );
+
+  }
+);
 
 
-  // =====================================================
-  // CART REMOVE
-  // =====================================================
+// =====================================================
+// CART UPDATE NOTE
+// =====================================================
 
-  ipcMain.handle(
-    'cart:remove',
-    async (
-      _e,
-      uniqueKey,
-      tableNo,
-      removeAll
-    ) => {
+ipcMain.handle(
+  'cart:update-note',
+  async (
+    _e,
+    itemId,
+    note,
+    partition
+  ) => {
 
-      try {
+    try {
 
-        // ===============================================
-        // 1. UPDATE CART
-        // ===============================================
-
-        const result =
-          cartRepo.removeCartItem(
-            uniqueKey,
-            tableNo,
-            removeAll
-          );
-
-
-        // ===============================================
-        // 2. REFRESH TABLE VISUAL STATE
-        // ===============================================
-
-        if (result?.success !== false) {
-          tableRepo.refreshAllTableCartVisualStates();
-          // tableRepo.refreshAllTableCartVisualStates(
-          //   tableNo
-          // );
-
-        }
-
-
-        // ===============================================
-        // 3. RETURN RESULT
-        // ===============================================
-
-        return result;
-
-      } catch (error) {
-
-        console.error(
-          'cart:remove failed',
-          error
+      const result =
+        await cartRepo.updateCartItemNote(
+          itemId,
+          note,
+          partition
         );
 
-        throw error;
+
+      if (result?.success !== false) {
+
+        tableRepo.refreshAllTableCartVisualStates();
 
       }
 
-    }
-  );
 
+      return result;
 
-  // =====================================================
-  // CART CLEAR
-  // =====================================================
+    } catch (error) {
 
-  ipcMain.handle(
-    'cart:clear',
-    async (_e, tableNo) => {
+      console.error(
+        'cart:update-note failed',
+        error
+      );
 
-      try {
-
-        // ===============================================
-        // 1. CLEAR CART
-        // ===============================================
-
-        const result =
-          cartRepo.clearCart(
-            tableNo
-          );
-
-
-        // ===============================================
-        // 2. REFRESH TABLE VISUAL STATE
-        // ===============================================
-
-        if (result?.success !== false) {
-          tableRepo.refreshAllTableCartVisualStates();
-          // tableRepo.refreshAllTableCartVisualStates(
-          //   tableNo
-          // );
-
-        }
-
-
-        // ===============================================
-        // 3. RETURN RESULT
-        // ===============================================
-
-        return result;
-
-      } catch (error) {
-
-        console.error(
-          'cart:clear failed',
-          error
-        );
-
-        throw error;
-
-      }
+      throw error;
 
     }
-  );
+
+  }
+);
 
 
-  // =====================================================
-  // CART UPDATE NOTE
-  // =====================================================
+// =====================================================
+// SYNC
+// =====================================================
 
-  ipcMain.handle(
-    'cart:update-note',
-    async (
-      _e,
-      itemId,
-      note,
-      tableNo
-    ) => {
+ipcMain.handle(
+  'sync:all',
+  async () => {
 
-      try {
+    return syncAll();
 
-        // ===============================================
-        // 1. UPDATE CART NOTE
-        // ===============================================
-
-        const result =
-          cartRepo.updateCartItemNote(
-            itemId,
-            note,
-            tableNo
-          );
-
-
-        // ===============================================
-        // 2. REFRESH TABLE VISUAL STATE
-        // ===============================================
-
-        if (result?.success !== false) {
-          tableRepo.refreshAllTableCartVisualStates();
-          // tableRepo.refreshAllTableCartVisualStates(
-          //   tableNo
-          // );
-
-        }
-
-
-        // ===============================================
-        // 3. RETURN RESULT
-        // ===============================================
-
-        return result;
-
-      } catch (error) {
-
-        console.error(
-          'cart:update-note failed',
-          error
-        );
-
-        throw error;
-
-      }
-
-    }
-  );
-
-
-  // -------------------------------
-  // SYNC
-  // -------------------------------
-
-  ipcMain.handle(
-    'sync:all',
-    async () => {
-      return syncAll();
-    }
-  );
-
+  }
+);
   // -------------------------------
   // CATEGORIES
   // -------------------------------
@@ -1696,6 +1662,71 @@ ipcMain.handle(
           e?.message ||
           String(e),
       };
+    }
+  }
+);
+
+
+// =====================================================
+// GENERATE POS ORDER NUMBER
+// TAKEAWAY -> TW1, TW2...
+// DELIVERY -> DL1, DL2...
+// =====================================================
+
+ipcMain.handle(
+  'pos-order:generate-number',
+  async (_e, orderType) => {
+
+    try {
+
+      const orderNumber =
+        orderRepo.generateNextPosOrderNumber(
+          orderType
+        );
+
+      return orderNumber;
+
+    } catch (error) {
+
+      console.error(
+        'pos-order:generate-number failed',
+        error
+      );
+
+      throw error;
+    }
+  }
+);
+
+
+// =====================================================
+// GET TODAY'S POS ORDER NUMBERS
+//
+// TAKEAWAY:
+//   TW1, TW2, TW3...
+//
+// DELIVERY:
+//   DL1, DL2, DL3...
+// =====================================================
+
+ipcMain.handle(
+  'pos-order:list',
+  async (_e, orderType) => {
+
+    try {
+
+      return await orderRepo.getTodayPosOrderNumbers(
+        orderType
+      );
+
+    } catch (error) {
+
+      console.error(
+        'pos-order:list failed',
+        error
+      );
+
+      throw error;
     }
   }
 );
