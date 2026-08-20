@@ -237,6 +237,39 @@ declare global {
         }
       ) => Promise<any>;
 
+            getAllUsers: () => Promise<any>;
+
+      getPosLoginUsers: () => Promise<{
+        success: boolean;
+        users: Array<{
+          userId: string;
+          outletId: string;
+          fullName: string;
+          username: string;
+          mobile: string;
+          employeeId: string;
+          role: string;
+        }>;
+        error?: string;
+      }>;
+
+      loginUser: (data: {
+        userId: string;
+        pin: string;
+      }) => Promise<{
+        success: boolean;
+        user?: {
+          userId: string;
+          outletId: string;
+          fullName: string;
+          username: string;
+          mobile: string;
+          employeeId: string;
+          role: string;
+        };
+        error?: string;
+      }>;
+
 
       // Modifiers
       getModifierGroups: () => Promise<any[]>;

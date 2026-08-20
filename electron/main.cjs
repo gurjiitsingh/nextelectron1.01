@@ -20,6 +20,8 @@ console.log(
   'USER DATA PATH:',
   app.getPath('userData')
 );
+const userRepository = require("./db/userRepo.cjs");
+const authRepository = require("./db/authRepository.cjs");
 const {
   getModifierGroups,
 } = require('./db/modifierGroupRepo.cjs');
@@ -1730,6 +1732,76 @@ ipcMain.handle(
     }
   }
 );
+
+// =====================================================
+// USER 
+// =====================================================
+ipcMain.handle("users:getAll", async () => {
+  try {
+    return userRepository.getAllUsers();
+  } catch (error) {
+    console.error("Failed to get users:", error);
+
+    return [];
+  }
+});
+
+// =====================================================
+// POS LOGIN USERS
+// =====================================================
+
+ipcMain.handle("users:getPosLoginUsers", async () => {
+  try {
+    const users = userRepository.getPosLoginUsers();
+
+    return {
+      success: true,
+      users,
+    };
+  } catch (error) {
+    console.error(
+      "Failed to get POS login users:",
+      error
+    );
+
+    return {
+      success: false,
+      users: [],
+      error:
+        error.message ||
+        "Failed to load POS users.",
+    };
+  }
+});
+
+// =====================================================
+// POS USER LOGIN
+// =====================================================
+
+ipcMain.handle(
+  "users:login",
+  async (_event, { userId, pin }) => {
+    try {
+      return authRepository.loginUser(
+        userId,
+        pin
+      );
+    } catch (error) {
+      console.error(
+        "POS user login failed:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message ||
+          "Login failed.",
+      };
+    }
+  }
+);
+
 // =====================================================
 // CLEANUP
 // =====================================================

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useClickAway } from "react-use";
 import { IoClose } from "react-icons/io5";
+import { LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { UseSiteContext } from "@/SiteContext/SiteContext";
 import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
+import { usePosAuth } from "@/store/PosAuthContext";
 
 const framerSidebarPanel = {
   initial: { x: "-100%" },
@@ -30,11 +32,25 @@ export const SideCart = () => {
     background,
   } = usePosTheme();
 
+  const {
+  logout,
+} = usePosAuth();
+
   const ref = useRef(null);
 
   useClickAway(ref, () => {
     sideBarToggle();
   });
+
+  const handleLogout = async () => {
+  try {
+    sideBarToggle();
+
+    logout();
+  } catch (error) {
+    console.error("POS logout failed:", error);
+  }
+};
 
   // =====================================================
   // CLOSE SIDEBAR AFTER LINK CLICK
@@ -186,7 +202,67 @@ export const SideCart = () => {
             {/* ================================================= */}
 
          
+{/* ================================================= */}
+{/* LOGOUT  mt-auto */}
+{/* ================================================= */}
 
+<div
+  className="
+   
+    shrink-0
+    border-t
+    px-3
+    py-3
+  "
+  style={{
+    borderColor: theme.primarySelected,
+  }}
+>
+
+  <button
+    type="button"
+    onClick={handleLogout}
+    className="
+      w-full
+      flex
+      items-center
+      gap-3
+      px-3
+      py-2
+      rounded-lg
+      text-sm
+      font-medium
+      transition-all
+      cursor-pointer
+    "
+    style={{
+      color:
+        background.text === "text-white"
+          ? "#FFFFFF"
+          : "#334155",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor =
+        theme.primarySelected;
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor =
+        "transparent";
+    }}
+  >
+
+    <LogOut
+      size={18}
+      strokeWidth={2}
+    />
+
+    <span>
+      Logout
+    </span>
+
+  </button>
+
+</div>
 
 
 
