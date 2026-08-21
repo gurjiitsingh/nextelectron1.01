@@ -395,64 +395,26 @@ async function updateBillItemQuantity(
     // DELETE ITEM
     // =============================================
 
-    if (quantity <= 0) {
-
       const result =
-        await window.posApi.deleteBillItem({
-          tableNo:
-            currentTableId,
+    await window.posApi.updateBillItemQuantity({
 
-          productId:
-            item.productId,
+      tableNo:
+        currentTableId,
 
-          // Important when modifiers/variants
-          // are present
-          modifiersJson:
-            item.modifiersJson || '',
+      billItemGroupKey:
+        item.billItemGroupKey,
 
-          note:
-            item.note || '',
-        });
+      quantity,
+    });
 
-      if (!result?.success) {
-        throw new Error(
-          result?.error ||
-          'Failed to remove item'
-        );
-      }
+  if (!result?.success) {
+    throw new Error(
+      result?.error ||
+      'Failed to update item quantity'
+    );
+  }
 
-    }
 
-    // =============================================
-    // UPDATE QUANTITY
-    // =============================================
-
-    else {
-
-      const result =
-        await window.posApi.updateBillItemQuantity({
-          tableNo:
-            currentTableId,
-
-          productId:
-            item.productId,
-
-          modifiersJson:
-            item.modifiersJson || '',
-
-          note:
-            item.note || '',
-
-          quantity,
-        });
-
-      if (!result?.success) {
-        throw new Error(
-          result?.error ||
-          'Failed to update item quantity'
-        );
-      }
-    }
 
     // =============================================
     // RELOAD
@@ -502,22 +464,86 @@ async function decreaseBillItem(item: any) {
 }
 
 
+
+
 // =====================================================
 // INCREASE
 // =====================================================
 
 async function increaseBillItem(item: any) {
+
+  console.log(
+    '========================================'
+  );
+
+  console.log(
+    'INCREASE BILL ITEM - RAW ITEM:'
+  );
+
+  console.log(
+    item
+  );
+
+  console.log(
+    'INCREASE BILL ITEM - JSON:'
+  );
+
+  console.log(
+    JSON.stringify(
+      item,
+      null,
+      2
+    )
+  );
+
+  console.log(
+    'INCREASE BILL ITEM - QUANTITY:',
+    item?.quantity
+  );
+
+  console.log(
+    'INCREASE BILL ITEM - PRODUCT ID:',
+    item?.productId
+  );
+
+  console.log(
+    'INCREASE BILL ITEM - GROUP KEY:',
+    item?.billItemGroupKey
+  );
+
+  console.log(
+    'INCREASE BILL ITEM - MODIFIERS:',
+    item?.modifiersJson
+  );
+
+  console.log(
+    'INCREASE BILL ITEM - NOTE:',
+    item?.note
+  );
+
+  console.log(
+    '========================================'
+  );
+
   const currentQuantity =
     Number(item.quantity || 0);
 
   const newQuantity =
     currentQuantity + 1;
 
+  console.log(
+    'CALCULATED QUANTITY:',
+    {
+      currentQuantity,
+      newQuantity,
+    }
+  );
+
   await updateBillItemQuantity(
     item,
     newQuantity
   );
-}  
+} 
 
 
 

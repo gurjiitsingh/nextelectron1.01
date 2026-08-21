@@ -410,22 +410,12 @@ async function handleWaiterKot(req, res) {
     const tables =
       tableRepo.refreshAllTableBillVisualStates();
 
- 
-console.log(
-  'SENDING WAITER KOT IPC TO WINDOWS:',
-  {
-    tableNo: batch.tableNo,
-    kotNumber: result.kotNumber,
-    itemCount: result.itemCount,
-    windowCount: BrowserWindow.getAllWindows().length,
-  }
-);
 
 for (const win of BrowserWindow.getAllWindows()) {
-  console.log(
-    'SENDING IPC TO WINDOW:',
-    win.id
-  );
+  // console.log(
+  //   'SENDING IPC TO WINDOW:',
+  //   win.id
+  // );
 
   win.webContents.send('waiter-kot-received', {
     tableNo: batch.tableNo,

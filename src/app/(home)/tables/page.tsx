@@ -23,13 +23,58 @@ export default function TablesPage() {
 
   const router = useRouter();
 
-  // =====================================================
-  // LOAD TABLES
-  // =====================================================
+ // =====================================================
+// LOAD TABLES
+// =====================================================
 
-  useEffect(() => {
-    loadTables();
-  }, []);
+useEffect(() => {
+  loadTables();
+}, []);
+
+
+// =====================================================
+// LIVE TABLE UPDATE
+// =====================================================
+
+useEffect(() => {
+
+  if (!window.posApi?.onKotReceived) {
+    console.log(
+      'TABLES: KOT LISTENER API NOT AVAILABLE'
+    );
+    return;
+  }
+
+  console.log(
+    'TABLES: REGISTERING KOT LISTENER'
+  );
+
+  const unsubscribe =
+    window.posApi.onKotReceived((data) => {
+
+      console.log(
+        'TABLES: KOT RECEIVED',
+        data
+      );
+
+      loadTables();
+
+    });
+
+  return () => {
+
+    console.log(
+      'TABLES: KOT LISTENER REMOVED'  
+    );
+
+    unsubscribe?.();
+
+  };
+
+}, []);
+
+
+ 
 
   async function loadTables() {
     try {

@@ -252,11 +252,7 @@ onKotReceived: (callback) => {
 
   const listener = (_event, data) => {
 
-    console.log(
-      'KOT REFRESH SIGNAL RECEIVED IN PRELOAD:',
-      data
-    );
-
+  
     callback(data);
   };
 
@@ -267,10 +263,7 @@ onKotReceived: (callback) => {
 
   return () => {
 
-    console.log(
-      'REMOVING WAITER KOT IPC LISTENER'
-    );
-
+   
     ipcRenderer.removeListener(
       'waiter-kot-received',
       listener
