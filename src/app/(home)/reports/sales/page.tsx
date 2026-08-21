@@ -69,10 +69,11 @@ type SalesReport = {
 
 export default function SalePage() {
 
-  const {
-    background,
-    theme,
-  } = usePosTheme();
+const {
+  theme,
+  background,
+  backgroundName,
+} = usePosTheme();
 
 
   // ===================================================
@@ -464,12 +465,14 @@ export default function SalePage() {
       font-semibold
       outline-none
     "
-    style={{
-      colorScheme:
-        theme.mode === "dark"
-          ? "dark"
-          : "light",
-    }}
+ style={{
+  colorScheme:
+    backgroundName === 'darkSlate' ||
+    backgroundName === 'black' ||
+    backgroundName === 'dark'
+      ? 'dark'
+      : 'light',
+}}
   />
 </div>
 

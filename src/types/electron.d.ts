@@ -99,6 +99,7 @@ declare global {
 
       createBill: (input: {
         tableNo: string;
+        tableName: string;
         orderType?: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
 
         customerName?: string;
@@ -269,6 +270,141 @@ declare global {
         };
         error?: string;
       }>;
+
+
+      updateBillItemQuantity: (args: {
+  tableNo: string;
+  billItemGroupKey: string;
+  quantity: number;
+}) => Promise<any>;
+
+createKot: (
+  kotBatch: any,
+  kotItems: {
+    categoryName: string;
+    productMode: string;
+    currentStock: number;
+    productId: string;
+    name: string;
+    categoryId: string;
+    sessionId: string;
+    tableNo: string;
+    tableName: string;
+    createdById: string;
+    createdByName: string;
+    parentId: string | null;
+    isVariant: boolean;
+    basePrice: number;
+    finalPrice: number;
+    modifierTotal: number;
+    quantity: number;
+    taxRate: number;
+    taxType: "inclusive" | "exclusive";
+    note: string;
+    modifiersJson: string;
+    createdAt: number;
+    source: string;
+    syncedToCloud: boolean;
+    syncedFromCloud: boolean;
+    id: string;
+    kotNumber: any;
+    kotBatchId: string;
+    status: string;
+    kitchenPrintReq: boolean;
+    kitchenPrinted: boolean;
+  }[]
+) => Promise<any>;
+
+getKotHistory: () => Promise<any>;
+
+getKotHistoryDetail: (
+  kotHistoryId: string
+) => Promise<any>;
+
+getOrdersByBusinessDate: (
+  date: string
+) => Promise<any>;
+
+getOrdersByRealDate: (
+  date: string
+) => Promise<any>;
+getSalesReport: (
+  businessDate: string
+) => Promise<any>;
+
+onKotReceived: (
+  callback: (data: any) => void
+) => void;
+
+onKotReceived: (
+  callback: (data: any) => void
+) => () => void;
+
+generateNextPosOrderNumber: (
+  orderType: string
+) => Promise<string>;
+
+previewBillImage: (data: {
+  billNo: string;
+  orderNo: string;
+  tableNo: string;
+  tableName: string;
+  orderType: string;
+  paymentMode: string;
+
+  createdAt: number;
+
+  items: {
+    name: string;
+    quantity: number;
+    rate: number;
+    amount: number;
+    modifiers: any[];
+    modifiersJson: string;
+    note: string;
+  }[];
+
+  subtotal: number;
+  tax: number;
+  discount: number;
+  deliveryFee: number;
+  deliveryTax: number;
+  grandTotal: number;
+
+  outletName: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressLine3: string;
+  city: string;
+
+  phone: string;
+  phone2: string;
+  gstVatNumber: string;
+
+  taxMode: string;
+  taxType: string;
+  countryCode: string;
+
+  customerName: string;
+  customerPhone: string;
+
+  qrEnabled: boolean;
+  upiId: string;
+  qrTitle: string;
+
+  stewardName: string;
+  kotNumberText: string;
+}) => Promise<any>;
+
+openFile: (
+  filePath: string
+) => Promise<void>;
+
+generateNextKotNumber: () => Promise<string>;
+
+getTodayPosOrders: (
+  orderType: string
+) => Promise<any[]>;
 
 
       // Modifiers

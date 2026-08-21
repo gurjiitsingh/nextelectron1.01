@@ -9,7 +9,8 @@ import {
 export type RightSidebarView =
   | 'cart'
   | 'kitchen'
-  | 'bill';
+  | 'bill'
+  | 'RO';
 
 type PosUiContextType = {
   rightSidebarView: RightSidebarView;

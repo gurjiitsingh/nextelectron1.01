@@ -75,9 +75,9 @@ export default function PosThemeSelector() {
                   }}
                 />
 
-                <span className="text-sm font-medium text-slate-700">
+                {/* <span className="text-sm font-medium text-slate-700">
                   {theme.name ?? name}
-                </span>
+                </span> */}
 
                 {selected && (
                   <span className="ml-auto text-xs font-semibold text-slate-500">

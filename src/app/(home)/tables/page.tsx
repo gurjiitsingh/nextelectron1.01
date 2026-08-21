@@ -61,15 +61,16 @@ useEffect(() => {
 
     });
 
+  // return () => {
+
+  //  unsubscribe?.();
+
+  // };
   return () => {
-
-    console.log(
-      'TABLES: KOT LISTENER REMOVED'  
-    );
-
-    unsubscribe?.();
-
-  };
+  console.log(
+    'TABLES: KOT LISTENER REMOVED'
+  );
+};
 
 }, []);
 

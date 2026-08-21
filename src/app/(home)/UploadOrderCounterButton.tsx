@@ -54,7 +54,7 @@ export default function UploadOrderCounterButton() {
 
             const errorMessage =
                 res.error ||
-                res.message ||
+               // res.message ||
                 'Unknown upload error';
 
             console.error(

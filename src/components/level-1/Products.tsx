@@ -198,17 +198,17 @@ useEffect(() => {
 
   const Card = useMemo(() => {
     switch (cardType) {
-      case "1":
-        return dynamic(
-          () =>
-            import("../level-2/ProductCard-h1")
-        );
+      // case "1":
+      //   return dynamic(
+      //     () =>
+      //       import("../level-2/ProductCard-h1")
+      //   );
 
-      case "11":
-        return dynamic(
-          () =>
-            import("../level-2/ProductCard-h1_1")
-        );
+      // case "11":
+      //   return dynamic(
+      //     () =>
+      //       import("../level-2/ProductCard-h1_1")
+      //   );
 
       case "111":
         return dynamic(
@@ -218,17 +218,17 @@ useEffect(() => {
             )
         );
 
-      case "2":
-        return dynamic(
-          () =>
-            import("../level-2/ProductCard-v2")
-        );
+      // case "2":
+      //   return dynamic(
+      //     () =>
+      //       import("../level-2/ProductCard-v2")
+      //   );
 
-      default:
-        return dynamic(
-          () =>
-            import("../level-2/ProductCard-h1")
-        );
+      // default:
+      //   return dynamic(
+      //     () =>
+      //       import("../level-2/ProductCard-h1")
+      //   );
     }
   }, [cardType]);
 
@@ -554,21 +554,23 @@ useEffect(() => {
           PRODUCTS
       ================================================= */}
 
-      <div className="flex flex-wrap ml-2">
-        {products.map((product, i) => (
-          <Card
-            key={
-              product.id ??
-              `${product.name}-${i}`
-            }
-            product={product}
-            variants={variants}
-            allAddOns={addOns}
-            modifierGroups={modifierGroups}
-            productModifiers={productModifiers}
-          />
-        ))}
-      </div>
+     {Card && (
+  <div className="flex flex-wrap ml-2">
+    {products.map((product, i) => (
+      <Card
+        key={
+          product.id ??
+          `${product.name}-${i}`
+        }
+        product={product}
+        variants={variants}
+        allAddOns={addOns}
+        modifierGroups={modifierGroups}
+        productModifiers={productModifiers}
+      />
+    ))}
+  </div>
+)}
 
       {/* =================================================
           NO RESULTS

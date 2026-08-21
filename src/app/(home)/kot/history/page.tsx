@@ -1503,7 +1503,7 @@ return (
 
           {/* DELETED */}
 
-          {selectedKot.deletedAt && (
+          {/* {selectedKot.deletedAt && (
 
             <div>
 
@@ -1525,7 +1525,7 @@ return (
 
             </div>
 
-          )}
+          )} */}
 
         </div>
 
@@ -1877,7 +1877,7 @@ return (
 
                       {/* SUBTOTAL */}
 
-                      <div className="bg-white px-4 py-3">
+                      {/* <div className="bg-white px-4 py-3">
 
                         <p
                           className="
@@ -1905,7 +1905,7 @@ return (
                           ).toFixed(2)}
                         </p>
 
-                      </div>
+                      </div> */}
 
                     </div>
 
@@ -1973,7 +1973,7 @@ return (
                       </div>
 
 
-                      <div>
+                      {/* <div>
 
                         <p className="text-[9px] uppercase tracking-wide text-slate-400">
                           Currency
@@ -1983,7 +1983,7 @@ return (
                           {item.currency || '₹'}
                         </p>
 
-                      </div>
+                      </div> */}
 
                     </div>
 

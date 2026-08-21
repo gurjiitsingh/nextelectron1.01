@@ -511,36 +511,31 @@ borderColor: theme.primaryLight,
         {/* RUNNING ORDER */}
         {/* ================================================= */}
 
-        <button
+    <button
   type="button"
   onClick={() => {
     setRightSidebarView("RO");
     router.push("/");
-
-    // Running Orders
-    // RO = Running Orders
-    // If you have a state/setter for this, set it here.
-    // setActiveOrderView("RO");
   }}
   className={rightSidebarButtonClass}
   style={{
     backgroundColor:
-      rightSidebarView === "kitchen"
+      rightSidebarView === "RO"
         ? theme.primary
         : theme.inactive,
 
     borderColor:
-      rightSidebarView === "kitchen"
+      rightSidebarView === "RO"
         ? theme.primary
         : theme.primarySelected,
 
     color:
-      rightSidebarView === "kitchen"
+      rightSidebarView === "RO"
         ? "#FFFFFF"
         : "#EEEEEE",
   }}
   onMouseEnter={(e) => {
-    if (rightSidebarView !== "kitchen") {
+    if (rightSidebarView !== "RO") {
       e.currentTarget.style.backgroundColor =
         theme.primaryHover;
 
@@ -552,7 +547,7 @@ borderColor: theme.primaryLight,
     }
   }}
   onMouseLeave={(e) => {
-    if (rightSidebarView !== "kitchen") {
+    if (rightSidebarView !== "RO") {
       e.currentTarget.style.backgroundColor =
         theme.inactive;
 

@@ -164,7 +164,7 @@ export default function OrderDetailPage() {
 
       const master =
         await window.posApi.getOrderById(
-          orderId
+          orderId!
         );
 
 
@@ -185,7 +185,7 @@ export default function OrderDetailPage() {
 
       const orderItems =
         await window.posApi.getOrderItems(
-          orderId
+          orderId!
         );
 
 

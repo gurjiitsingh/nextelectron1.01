@@ -50,10 +50,11 @@ const [detailsLoading, setDetailsLoading] =
       return `${year}-${month}-${day}`;
     });
 
-  const {
-    theme,
-    background,
-  } = usePosTheme();
+const {
+  theme,
+  background,
+  backgroundName,
+} = usePosTheme();
 
 
   // =====================================================
@@ -425,15 +426,14 @@ const [detailsLoading, setDetailsLoading] =
         outline-none
         focus:outline-none
       "
-      style={{
-        colorScheme:
-          theme.mode === 'dark'
-            ? 'dark'
-            : 'light',
-
-        WebkitAppearance:
-          'auto',
-      }}
+  style={{
+  colorScheme:
+    backgroundName === 'darkSlate' ||
+    backgroundName === 'black' ||
+    backgroundName === 'dark'
+      ? 'dark'
+      : 'light',
+}}
     />
 
   </div>

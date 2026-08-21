@@ -1252,11 +1252,11 @@ const result =
     // COMPLIMENTARY
     // =================================================
 
-    billType:
-      'COMPLIMENTARY',
+    // billType:
+    //   'COMPLIMENTARY',
 
-    complimentaryReason:
-      reason,
+    // complimentaryReason:
+    //   reason,
 
     // =================================================
     // TAX / DISCOUNT / DELIVERY

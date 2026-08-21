@@ -16,7 +16,7 @@ import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
 export default function ProductCardHorizontical({
   product,
   variants,
-  allAddOns,
+  
   modifierGroups,
   productModifiers,
 }: {

@@ -11,7 +11,7 @@ import {
 } from "react-icons/bi";
 import { HiOutlineChatBubbleBottomCenterText } from "react-icons/hi2";
 import { TbBrandBooking } from "react-icons/tb";
-import {  BRANDING } from "@/config/languages";
+ 
 
 // Icon mapping (optional)
 const iconMap: Record<string, any> = {
@@ -98,31 +98,7 @@ export const BargerMenu = () => {
             </div>
 
             {/* Menu Items */}
-            <ul>
-              {BRANDING.menu.map((item, idx) => {
-                const Icon = iconMap[item.link] || BiHomeSmile;
-
-                return (
-                  <li key={item.name}>
-                    <a
-                      onClick={() => bargerMenuToggle(false)}
-                      href={item.link}
-                      className="flex items-center justify-between gap-5 p-5 transition-all border-b-2 hover:bg-zinc-400 border-zinc-100"
-                    >
-                      <motion.span
-                        {...framerText(idx)}
-                        className="text-white bg-red-400 rounded-2xl py-1 px-2"
-                      >
-                        {item.name}
-                      </motion.span>
-                      <motion.div {...framerIcon}>
-                        <Icon className="text-2xl text-white" />
-                      </motion.div>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
+           
           </motion.div>
         </>
       )}
