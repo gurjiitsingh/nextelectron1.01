@@ -155,7 +155,7 @@ markKotHistoryPaid: (kotHistoryId) =>
 
 createKot: (batch, items) =>
   ipcRenderer.invoke(
-    'kot:create',
+    'kot:create', 
     {
       batch,
       items,
@@ -239,6 +239,44 @@ getKotHistoryDetail: (kotHistoryId) =>
     'kotHistory:markTablePaid',
     args
   ),
+
+   // =====================================================
+  // UPDATE UI WHEN KOT RECIEVE FROM WAITER
+  // =====================================================
+
+onKotReceived: (callback) => {
+
+  console.log(
+    'REGISTERING WAITER KOT IPC LISTENER'
+  );
+
+  const listener = (_event, data) => {
+
+    console.log(
+      'KOT REFRESH SIGNAL RECEIVED IN PRELOAD:',
+      data
+    );
+
+    callback(data);
+  };
+
+  ipcRenderer.on(
+    'waiter-kot-received',
+    listener
+  );
+
+  return () => {
+
+    console.log(
+      'REMOVING WAITER KOT IPC LISTENER'
+    );
+
+    ipcRenderer.removeListener(
+      'waiter-kot-received',
+      listener
+    );
+  };
+},
 
   // =====================================================
   // BILLING

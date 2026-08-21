@@ -95,6 +95,47 @@ const [showPaymentAllocation, setShowPaymentAllocation] =
   currentOrderType,
 ]);
 
+// =====================================================
+// LOAD BILL ITEMS
+// =====================================================
+useEffect(() => {
+
+  if (!window.posApi?.onKotReceived) {
+    console.log(
+      'WAITER KOT LISTENER API NOT AVAILABLE'
+    );
+    return;
+  }
+
+  console.log(
+    'REGISTERING BILL WAITER KOT LISTENER'
+  );
+
+  const unsubscribe =
+    window.posApi.onKotReceived((data) => {
+
+      console.log(
+        'WAITER KOT RECEIVED IN BILL UI:',
+        data
+      );
+
+      if (
+        data?.tableNo &&
+        data.tableNo !== currentTableId
+      ) {
+        return;
+      }
+
+      loadBillItems();
+
+    });
+
+  return unsubscribe;
+
+}, [currentTableId]);
+
+
+
 async function loadBillItems() {
   if (!currentTableId) return;
 

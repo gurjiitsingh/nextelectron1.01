@@ -6,6 +6,8 @@ const { randomUUID } = require('crypto');
 // =====================================================
 
 function insertBillItems(items) {
+//console.log("item inserted by insertBillItems:----------------888888888")
+
   const stmt = db.prepare(`
     INSERT INTO pos_bill_items (
       id,

@@ -20,6 +20,12 @@ console.log(
   'USER DATA PATH:',
   app.getPath('userData')
 );
+
+const {
+  createWaiterLanServer,
+  stopWaiterLanServer,
+} = require('./waiterLanServer.cjs');
+
 const userRepository = require("./db/userRepo.cjs");
 const authRepository = require("./db/authRepository.cjs");
 const {
@@ -1802,6 +1808,15 @@ ipcMain.handle(
   }
 );
 
+// =============================================
+  // WAITER LAN SERVER
+  // =============================================
+
+  createWaiterLanServer();
+
+  app.on('before-quit', () => {
+  stopWaiterLanServer();
+});
 // =====================================================
 // CLEANUP
 // =====================================================

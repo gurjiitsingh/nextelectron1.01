@@ -136,6 +136,7 @@ function createKot({
   batch,
   items = [],
 }) {
+  // console.log("Kot created by createKot-------------------7777777",items)
   if (!batch?.id) {
     throw new Error('KOT batch id is required');
   }

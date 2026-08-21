@@ -649,26 +649,22 @@ async function saveItemNote(
           shrink-0
           border-b
           ${background.border}
+          bg-zinc-600
           px-4
           py-3
+          m-2
+          rounded-lg
         `}
       >
 
     <div className="flex items-center gap-2">
 
-  <p className="mt-1 text-xs font-medium">
-
-    {currentOrderName ??
-      'No order selected'}
-
-  </p>
-
-  {activeOrder && (
+       {activeOrder && (
     <span
       className="
         rounded
-        bg-zinc-100
-        dark:bg-zinc-700
+        bg-zinc-300
+        dark:bg-zinc-500
         px-1.5
         py-0.5
         text-[9px]
@@ -682,6 +678,15 @@ async function saveItemNote(
       )}
     </span>
   )}
+
+  <p className="mt-1 text-xs font-medium">
+
+    {currentOrderName ??
+      'No order selected'}
+
+  </p>
+
+ 
 
 </div>
 

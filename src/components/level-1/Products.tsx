@@ -26,6 +26,29 @@ const {
   setActiveOrder,
 } = usePosSession();
 
+// =====================================================
+// DEFAULT ORDER TYPE
+// =====================================================
+
+useEffect(() => {
+  // Do not overwrite an existing order/session
+  if (activeOrder) {
+    return;
+  }
+
+  // Default POS order type
+  setActiveOrder({
+    orderType: "DINE_IN",
+    orderNo: "",
+    tableId: activeTable?.tableId ?? "",
+    tableName: activeTable?.tableName ?? "",
+  });
+}, [
+  activeOrder,
+  activeTable,
+  setActiveOrder,
+]);
+
   const [allProducts, setAllProducts] = useState<ProductType[]>([]);
   const [variants, setVariants] = useState<ProductType[]>([]);
   const [addOns] = useState<addOnType[]>([]);
@@ -362,167 +385,167 @@ const {
         ORDER TYPE
     ============================================= */}
 
-    <div
-      className="
-        flex
-        h-11
-        shrink-0
-        overflow-hidden
-        rounded-md
-        border
-        border-zinc-300
-        dark:border-zinc-600
-        bg-white
-        dark:bg-zinc-800
-      "
-    >
+   <div
+  className="
+    flex
+    h-11
+    shrink-0
+    overflow-hidden
+    rounded-md
+    border
+    border-zinc-300
+    dark:border-zinc-600
+    bg-white
+    dark:bg-zinc-800
+  "
+>
 
-      {/* DINE IN */}
+  {/* DINE IN */}
 
-      <button
-        type="button"
-        onClick={() => {
+  <button
+    type="button"
+    onClick={() => {
 
-          // if (!activeTable) {
-          //   alert(
-          //     "Please select a table first."
-          //   );
-          //   return;
-          // }
+      setActiveOrder({
+        orderType: "DINE_IN",
+        orderNo: "",
+        tableId: activeTable!.tableId,
+        tableName: activeTable!.tableName,
+      });
 
-          setActiveOrder({
-            orderType: "DINE_IN",
-            orderNo: "",
-            tableId:
-              activeTable!.tableId,
-            tableName:
-              activeTable!.tableName,
-          });
+    }}
+    className={`
+      px-3
+      text-[11px]
+      font-semibold
+      transition
 
-        }}
-        className={`
-          px-3
-          text-[11px]
-          font-semibold
-          transition
-          ${
-            activeOrder?.orderType ===
-            "DINE_IN"
-              ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-              : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
-          }
-        `}
-      >
-        DINE IN
-      </button>
+      ${
+        activeOrder?.orderType === "DINE_IN"
+          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+      }
+    `}
+  >
+    DINE IN
+  </button>
 
 
-      {/* TAKEAWAY */}
+  {/* TAKEAWAY */}
 
-      <button
-        type="button"
-   onClick={async () => {
-  try {
+  <button
+    type="button"
+    onClick={async () => {
 
-    const orderNo =
-      await window.posApi.generateNextPosOrderNumber(
-        "TAKEAWAY"
-      );
+      try {
 
-    setActiveTable({
-      tableId: orderNo,
-      tableName: orderNo,
-    });
-
-    setActiveOrder({
-      orderType: "TAKEAWAY",
-      orderNo,
-      tableId: orderNo,
-      tableName: orderNo,
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Failed to generate takeaway order number",
-      error
-    );
-
-    alert(
-      "Failed to create takeaway order."
-    );
-  }
-}}
-        className={`
-          px-3
-          text-[11px]
-          font-semibold
-          transition
-          ${
-            activeOrder?.orderType ===
+        const orderNo =
+          await window.posApi.generateNextPosOrderNumber(
             "TAKEAWAY"
-              ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-              : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
-          }
-        `}
-      >
-        TAKEAWAY
-      </button>
+          );
+
+        setActiveTable({
+          tableId: orderNo,
+          tableName: orderNo,
+        });
+
+        setActiveOrder({
+          orderType: "TAKEAWAY",
+          orderNo,
+          tableId: orderNo,
+          tableName: orderNo,
+        });
+
+      } catch (error) {
+
+        console.error(
+          "Failed to generate takeaway order number",
+          error
+        );
+
+        alert(
+          "Failed to create takeaway order."
+        );
+      }
+
+    }}
+    className={`
+      px-3
+      text-[11px]
+      font-semibold
+      transition
+
+      border-l
+      border-r
+      border-zinc-300
+      dark:border-zinc-600
+
+      ${
+        activeOrder?.orderType === "TAKEAWAY"
+          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+      }
+    `}
+  >
+    TAKEAWAY
+  </button>
 
 
-      {/* DELIVERY */}
+  {/* DELIVERY */}
 
-      <button
-        type="button"
-     onClick={async () => {
-  try {
+  <button
+    type="button"
+    onClick={async () => {
 
-    const orderNo =
-      await window.posApi.generateNextPosOrderNumber(
-        "DELIVERY"
-      );
+      try {
 
-    setActiveTable({
-      tableId: orderNo,
-      tableName: orderNo,
-    });
-
-    setActiveOrder({
-      orderType: "DELIVERY",
-      orderNo,
-      tableId: orderNo,
-      tableName: orderNo,
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Failed to generate delivery order number",
-      error
-    );
-
-    alert(
-      "Failed to create delivery order."
-    );
-  }
-}}
-        className={`
-          px-3
-          text-[11px]
-          font-semibold
-          transition
-          ${
-            activeOrder?.orderType ===
+        const orderNo =
+          await window.posApi.generateNextPosOrderNumber(
             "DELIVERY"
-              ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-              : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
-          }
-        `}
-      >
-        DELIVERY
-      </button>
+          );
 
-    </div>
+        setActiveTable({
+          tableId: orderNo,
+          tableName: orderNo,
+        });
+
+        setActiveOrder({
+          orderType: "DELIVERY",
+          orderNo,
+          tableId: orderNo,
+          tableName: orderNo,
+        });
+
+      } catch (error) {
+
+        console.error(
+          "Failed to generate delivery order number",
+          error
+        );
+
+        alert(
+          "Failed to create delivery order."
+        );
+      }
+
+    }}
+    className={`
+      px-3
+      text-[11px]
+      font-semibold
+      transition
+
+      ${
+        activeOrder?.orderType === "DELIVERY"
+          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+      }
+    `}
+  >
+    DELIVERY
+  </button>
+
+</div>
 
   </div>
 </div>
@@ -531,7 +554,7 @@ const {
           PRODUCTS
       ================================================= */}
 
-      <div className="flex flex-wrap">
+      <div className="flex flex-wrap ml-2">
         {products.map((product, i) => (
           <Card
             key={
