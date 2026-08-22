@@ -1,9 +1,18 @@
 const { db } = require('../db/sqlite.cjs');
-const { adminDb } = require('../lib/firebaseAdmin.cjs');
+
+const {
+  doc,
+  getDoc,
+  setDoc,
+} = require('firebase/firestore');
+
+const { firestore } = require('./firebaseClient.cjs');
+
 const {
   TERMINAL_CODE,
   getFinancialYearCode,
 } = require('../lib/orderSequence.cjs');
+
 
 async function uploadOrderCounter() {
 
@@ -16,7 +25,10 @@ async function uploadOrderCounter() {
   const localSerial =
     Number(row?.invoiceSerialNo || 0);
 
-  if (localSerial <= 0) return;
+  if (localSerial <= 0) {
+    return;
+  }
+
 
   const financialYear =
     getFinancialYearCode();
@@ -24,37 +36,56 @@ async function uploadOrderCounter() {
   const docId =
     `${TERMINAL_CODE}_${financialYear}`;
 
-  const ref = adminDb
-    .collection('orderCounters')
-    .doc(docId);
 
-  const snap = await ref.get();
+  // Firebase Client SDK
+  const ref = doc(
+    firestore,
+    'orderCounters',
+    docId
+  );
+
+
+  const snap = await getDoc(ref);
+
 
   const remoteSerial =
-    snap.exists
-      ? Number(snap.get('invoiceSerialNo') || 0)
+    snap.exists()
+      ? Number(
+          snap.data()?.invoiceSerialNo || 0
+        )
       : 0;
+
 
   // Only move forward
   if (localSerial > remoteSerial) {
 
-    await ref.set({
-      invoiceSerialNo: localSerial,
-      deviceCode: TERMINAL_CODE,
-      financialYear,
-      updatedAt: Date.now(),
-    }, { merge: true });
+    await setDoc(
+      ref,
+      {
+        invoiceSerialNo: localSerial,
+        deviceCode: TERMINAL_CODE,
+        financialYear,
+        updatedAt: Date.now(),
+      },
+      {
+        merge: true,
+      }
+    );
+
 
     console.log(
       'ORDER COUNTER UPLOADED =',
       localSerial
     );
+
   } else {
+
     console.log(
       'ORDER COUNTER ALREADY UP TO DATE'
     );
   }
 }
+
 
 module.exports = {
   uploadOrderCounter,

@@ -1,3 +1,4 @@
+
 const { syncCategories } = require('./categorySync.cjs');
 const { syncProducts } = require('./productSync.cjs');
 const { syncTables } = require('./tableSync.cjs');

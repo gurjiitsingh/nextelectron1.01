@@ -10,10 +10,19 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+console.log("========== ELECTRON FIREBASE CONFIG ==========");
+console.log("apiKey exists:", !!firebaseConfig.apiKey);
+console.log("authDomain:", firebaseConfig.authDomain);
+console.log("projectId:", firebaseConfig.projectId);
+console.log("storageBucket:", firebaseConfig.storageBucket);
+console.log("messagingSenderId:", firebaseConfig.messagingSenderId);
+console.log("appId:", firebaseConfig.appId);
+console.log("==============================================");
+
 const app =
   getApps()[0] ||
   initializeApp(firebaseConfig);
 
 const firestore = getFirestore(app);
 
-module.exports = { firestore };
+module.exports = { firestore }; 

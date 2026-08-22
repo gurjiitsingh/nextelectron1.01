@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase-admin/firestore";
+ 
 import { Timestamp } from "firebase/firestore";
 
 export type ownerDataT = {
@@ -29,8 +29,8 @@ export type ownerDataT = {
   // ================================
   // META
   // ================================
-  createdAt: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
+  createdAt: Timestamp ;
+  updatedAt?: Timestamp ;
 
   isActive: boolean;
 };
@@ -78,6 +78,6 @@ export type outletDataT = {
   // ================================
   // META
   // ================================
-  createdAt: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
+  createdAt: Timestamp ;
+  updatedAt?: Timestamp ;
 };

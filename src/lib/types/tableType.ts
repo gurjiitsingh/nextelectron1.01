@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase-admin/firestore";
+ 
 import { Timestamp } from "firebase/firestore";
 
 export type tableDataT = {
@@ -28,10 +28,10 @@ export type tableDataT = {
   sortOrder?: number;
 
   /** When table was last updated */
-  updatedAt: Timestamp | FieldValue;
+  updatedAt: Timestamp ;
 
   /** When table was created */
-  createdAt: Timestamp | FieldValue;
+  createdAt: Timestamp  ;
 
   /** Optional notes (special requests, reservation name, etc.) */
   notes?: string;
