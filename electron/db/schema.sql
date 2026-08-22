@@ -1227,3 +1227,24 @@ ON order_serial_map(srno);
   idx_pos_day_closing_businessDate
   ON pos_day_closing (businessDate);
  
+
+
+-- =====================================================
+-- FIRE STORE
+-- =====================================================
+ CREATE TABLE IF NOT EXISTS firebase_config (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+
+  clientId TEXT NOT NULL,
+
+  apiKey TEXT NOT NULL,
+  authDomain TEXT,
+  databaseURL TEXT,
+  projectId TEXT NOT NULL,
+  storageBucket TEXT,
+  messagingSenderId TEXT,
+  appId TEXT NOT NULL,
+  measurementId TEXT,
+
+  updatedAt INTEGER NOT NULL
+);

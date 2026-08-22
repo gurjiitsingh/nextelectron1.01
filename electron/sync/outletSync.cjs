@@ -5,7 +5,7 @@ const {
   limit,
 } = require('firebase/firestore');
 
-const { firestore } = require('../db/firebaseClient.cjs');
+const { firestore } = require('../lib/firebaseClient.cjs');
 
 const {
   clearOutlet,

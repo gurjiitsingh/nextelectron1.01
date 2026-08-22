@@ -103,6 +103,15 @@ const {
 } = require('./sync/orderCounterUpload.cjs');
 
 const {
+  fetchClientWebApi,
+} = require("./lib/clientWebApi.cjs");
+
+const {
+  saveFirebaseConfig,
+  getFirebaseConfig,
+} = require("./db/firebaseConfigRepo.cjs");
+
+const {
   PrinterSettingsRepository,
 } = require(
   '../shared/printer/PrinterSettingsRepository.cjs'
@@ -1203,6 +1212,68 @@ ipcMain.handle(
   }
 );
 
+
+
+
+ipcMain.handle(
+  "firebase:initialize",
+  async (_event, clientId) => {
+    try {
+      const config =
+        await fetchClientWebApi(clientId);
+
+      saveFirebaseConfig(
+        config,
+        clientId
+      );
+
+      console.log(
+        "FIREBASE CONFIG SAVED FOR:",
+        clientId
+      );
+
+      return {
+        success: true,
+        data: config,
+      };
+
+    } catch (error) {
+      console.error(
+        "FIREBASE INITIALIZATION FAILED:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message ||
+          "Failed to initialize Firebase",
+      };
+    }
+  }
+);
+
+
+ipcMain.handle(
+  "firebase:get-config",
+  async () => {
+    try {
+      const config = getFirebaseConfig();
+
+      return {
+        success: true,
+        data: config || null,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+
+
  
 }
 
@@ -1387,7 +1458,7 @@ function createWindow() {
   });
 
   if (isDev) {
-    win.webContents.openDevTools();
+ //   win.webContents.openDevTools();
   }
 
   if (isDev) {
@@ -1474,6 +1545,7 @@ app.whenReady().then(async () => {
   // DEVTOOLS SHORTCUTS
   // ===================================================
 
+if (!app.isPackaged) {
   globalShortcut.register(
     "F12",
     () => {
@@ -1487,6 +1559,7 @@ app.whenReady().then(async () => {
       win.webContents.toggleDevTools();
     }
   );
+}
 
 });
 

@@ -532,4 +532,21 @@ getTodayPosOrders: (orderType) =>
   ),
 
 
+
+firebase: {
+  initialize: (clientId) =>
+    ipcRenderer.invoke(
+      "firebase:initialize",
+      clientId
+    ),
+
+  getConfig: () =>
+    ipcRenderer.invoke(
+      "firebase:get-config"
+    ),
+},
+
+
+
+
 });

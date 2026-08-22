@@ -1,6 +1,7 @@
 import TestPrinter from "@/components/systemButton/TestPrinter";
 import SyncButton from "../SyncButton";
 import UploadOrderCounterButton from "../UploadOrderCounterButton";
+import Link from "next/link";
 
 export default function Page() {
   return (
@@ -12,6 +13,7 @@ export default function Page() {
   <SyncButton />
    <UploadOrderCounterButton />
    <TestPrinter />
+   <Link href={'/settings/init'}> INIT</Link>
     </div>
     </main>
   );

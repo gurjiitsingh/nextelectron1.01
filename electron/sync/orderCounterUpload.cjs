@@ -6,7 +6,7 @@ const {
   setDoc,
 } = require('firebase/firestore');
 
-const { firestore } = require('./firebaseClient.cjs');
+const { firestore } = require('../lib/firebaseClient.cjs');
 
 const {
   TERMINAL_CODE,
