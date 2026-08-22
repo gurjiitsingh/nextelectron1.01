@@ -19,6 +19,7 @@ import {
   usePosAuth,
   PosUser,
 } from "@/store/PosAuthContext";
+import SyncButton from "@/app/(home)/SyncButton";
 
 
 // =====================================================
@@ -360,7 +361,7 @@ export default function LoginScreen() {
               >
                 POS Login
               </div>
-
+  <SyncButton />
               <div
                 className="
                   text-[11px]

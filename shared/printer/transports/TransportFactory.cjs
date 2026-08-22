@@ -1,6 +1,6 @@
 const {
   PrinterConnectionType,
-} = require('../types.js');
+} = require('../types.ts');
 
 const {
   LanPrinter,

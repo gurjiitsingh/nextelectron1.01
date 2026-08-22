@@ -21,7 +21,7 @@ const {
 const {
   PrinterRole,
   ReceiptRenderMode,
-} = require('./types.js');
+} = require('./types.ts');
 
 class PrintManager {
   constructor() {

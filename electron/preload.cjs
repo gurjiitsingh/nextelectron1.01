@@ -12,8 +12,8 @@ contextBridge.exposeInMainWorld('posApi', {
   // SYNC DATA
   // =====================================================
 
-  getAllUsers: () =>
-    ipcRenderer.invoke('users:list'),
+  // getAllUsers: () =>
+  //   ipcRenderer.invoke('users:list'),
 
   getOutlet: () =>
     ipcRenderer.invoke('outlet:get'),
@@ -520,10 +520,7 @@ generateNextPosOrderNumber: (
 
 
 
-   getAllUsers: () =>
-      ipcRenderer.invoke(
-        "users:getAll"
-      ),
+  
   // =====================================================
 // POS ORDER LIST
 // =====================================================

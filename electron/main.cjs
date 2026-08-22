@@ -1,3 +1,5 @@
+const { initDb } = require('./db/initDb.cjs');
+
 const {
   app,
   BrowserWindow,
@@ -9,31 +11,43 @@ const { shell } = require('electron');
 
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const { syncAll } = require('./sync/syncAll.cjs');
+
 const billRepo = require('./db/billItemRepo.cjs');
-// Import BOTH db and getDebugCounts from the same file
-const { db, getDebugCounts } = require('./db/sqlite.cjs');
-const tableRepo = require('./db/tableRepo.cjs');
-console.log('MAIN STARTED');
-console.log(
-  'USER DATA PATH:',
-  app.getPath('userData')
-);
 
 const {
   createWaiterLanServer,
   stopWaiterLanServer,
 } = require('./waiterLanServer.cjs');
+const {
+  db,
+  getDebugCounts,
+} = require('./db/sqlite.cjs');
 
-const userRepository = require("./db/userRepo.cjs");
-const authRepository = require("./db/authRepository.cjs");
+const tableRepo = require('./db/tableRepo.cjs');
+
+const userRepository =
+  require('./db/userRepo.cjs');
+
+  const {
+  getAllUsers,
+} = require('./db/userRepo.cjs');
+
+const authRepository =
+  require('./db/authRepository.cjs');
+
 const {
   getModifierGroups,
 } = require('./db/modifierGroupRepo.cjs');
 
-const cartRepo = require('./db/cartRepo.cjs');
-const orderRepo = require('./db/orderRepo.cjs');
+const cartRepo =
+  require('./db/cartRepo.cjs');
+
+const orderRepo =
+  require('./db/orderRepo.cjs');
+
 const {
   getProductModifiers,
 } = require('./db/productModifierRepo.cjs');
@@ -47,26 +61,42 @@ const businessDayRepo =
 const kotHistoryRepo =
   require('./db/kotHistoryRepository.cjs');
 
-const billItemRepo = require('./db/billItemRepo.cjs');
+const billItemRepo =
+  require('./db/billItemRepo.cjs');
 
-const { getAllUsers } = require('./db/userRepo.cjs');
-const { getOutlet } = require('./db/outletRepo.cjs');
 
-const saleReportRepo = require(
-  './db/saleReportRepo.cjs'
-);
 
-// =====================================================
-// PRINTER
-// =====================================================
+const {
+  getOutlet,
+} = require('./db/outletRepo.cjs');
+
+const saleReportRepo =
+  require('./db/saleReportRepo.cjs');
+
+const {
+  getAllCategories,
+} = require('./db/categoryRepo.cjs');
+
+const {
+  getAllProducts,
+  getProductsByCategory,
+  searchProducts,
+  searchExactCode,
+} = require('./db/productRepo.cjs');
+
+const kotRepo =
+  require('./db/kotRepo.cjs');
+
+const {
+  createBillFromKitchen,
+  getBillableKotItems,
+} = require('./db/billingRepo.cjs');
+
 const {
   printManager,
 } = require('../shared/printer/PrintManager.cjs');
 
-const {
-  PrinterRole,
-} = require('../shared/printer/types.js');
-
+ 
 
 const {
   uploadOrderCounter,
@@ -74,69 +104,36 @@ const {
 
 const {
   PrinterSettingsRepository,
-} = require('../shared/printer/PrinterSettingsRepository.cjs');
+} = require(
+  '../shared/printer/PrinterSettingsRepository.cjs'
+);
 
 const printerSettingsRepo =
   new PrinterSettingsRepository();
 
 
+console.log('MAIN STARTED');
 
-// =====================================================
-// UPLOAD DATA
-// =====================================================
-app.on('before-quit', async () => {
-  try {
-    await uploadOrderCounter();
-  } catch (e) {
-    console.error(
-      'Failed to upload order counter on quit',
-      e
-    );
-  }
-});
-
-
-ipcMain.handle(
-  'orderCounter:upload',
-  async () => {
-    try {
-      const result = await uploadOrderCounter();
-
-      return {
-        success: true,
-        ...result,
-      };
-    } catch (e) {
-      console.error('ORDER COUNTER UPLOAD FAILED', e);
-
-      return {
-        success: false,
-        error: e?.message || String(e),
-      };
-    }
-  }
+console.log(
+  'USER DATA PATH:',
+  app.getPath('userData')
 );
 
-// =====================================================
+
+function registerIpcHandlers() {
+ // =====================================================
 // PRINTER IPC
 // =====================================================
 
 ipcMain.handle(
   'printer:print',
   async (_event, payload) => {
-
     try {
-
       const {
         role,
         data,
         source,
       } = payload;
-
-
-      // ===============================================
-      // PRINT
-      // ===============================================
 
       const jobId =
         await printManager.enqueue(
@@ -145,24 +142,15 @@ ipcMain.handle(
           source || 'POS'
         );
 
-
-      // ===============================================
-      // UPDATE TABLE STATUS
-      // ONLY FOR BILL PRINT
-      // ===============================================
-
       if (
         role === 'BILL' &&
         data?.tableNo
       ) {
-
         tableRepo.updateTableStatus(
           data.tableNo,
           'PAYMENT_PENDING'
         );
-
       }
-
 
       return {
         success: true,
@@ -170,7 +158,6 @@ ipcMain.handle(
       };
 
     } catch (e) {
-
       console.error(
         'PRINTER PRINT FAILED',
         e
@@ -193,6 +180,7 @@ ipcMain.handle(
   }
 );
 
+
 // =====================================================
 // PRINTER SETTINGS
 // =====================================================
@@ -207,7 +195,9 @@ ipcMain.handle(
 ipcMain.handle(
   'printer-settings:save',
   async (_event, config) => {
-    printerSettingsRepo.saveConfig(config);
+    printerSettingsRepo.saveConfig(
+      config
+    );
 
     return {
       success: true,
@@ -228,24 +218,17 @@ ipcMain.handle(
         '[PREVIEW] Generating bill image...'
       );
 
-      // -------------------------------------------------
-      // IMPORTANT:
-      // Use the SAME formatter as actual IMAGE printing.
-      // -------------------------------------------------
-
       const {
         BillImageFormatter80,
-      } = require('../shared/printer/formatters/BillImageFormatter80.cjs');
+      } = require(
+        '../shared/printer/formatters/BillImageFormatter80.cjs'
+      );
 
       const formatter =
         new BillImageFormatter80();
 
       const pngBuffer =
         await formatter.format(data);
-
-      // -------------------------------------------------
-      // Save temporary preview PNG
-      // -------------------------------------------------
 
       const previewDir =
         path.join(
@@ -282,7 +265,6 @@ ipcMain.handle(
       };
 
     } catch (e) {
-
       console.error(
         '[PREVIEW] BILL IMAGE FAILED',
         e
@@ -298,6 +280,7 @@ ipcMain.handle(
   }
 );
 
+
 // =====================================================
 // OPEN BILL IMAGE
 // =====================================================
@@ -306,7 +289,6 @@ ipcMain.handle(
   'printer:open-file',
   async (_event, filePath) => {
     try {
-
       if (!filePath) {
         throw new Error(
           'Missing file path'
@@ -314,7 +296,9 @@ ipcMain.handle(
       }
 
       const errorMessage =
-        await shell.openPath(filePath);
+        await shell.openPath(
+          filePath
+        );
 
       if (errorMessage) {
         throw new Error(
@@ -327,7 +311,6 @@ ipcMain.handle(
       };
 
     } catch (e) {
-
       console.error(
         '[PREVIEW] OPEN FILE FAILED',
         e
@@ -343,17 +326,24 @@ ipcMain.handle(
   }
 );
 
+
 // =====================================================
-// SYNC DATA
+// USERS / OUTLET / TABLES
 // =====================================================
 
-ipcMain.handle('users:list', async () => {
-  return getAllUsers();
-});
+ipcMain.handle(
+  'users:list',
+  async () => {
+    return getAllUsers();
+  }
+);
 
-ipcMain.handle('outlet:get', async () => {
-  return getOutlet();
-});
+ipcMain.handle(
+  'outlet:get',
+  async () => {
+    return getOutlet();
+  }
+);
 
 ipcMain.handle(
   'tables:list',
@@ -362,263 +352,30 @@ ipcMain.handle(
   }
 );
 
+
 // =====================================================
-// REPOSITORIES
+// DEBUG
 // =====================================================
 
-
-const {
-  getAllCategories,
-} = require('./db/categoryRepo.cjs');
-
-const {
-  getAllProducts,
-  getProductsByCategory,
-  searchProducts,
-  searchExactCode,
-} = require('./db/productRepo.cjs');
-
-const kotRepo = require('./db/kotRepo.cjs');
-
-const {
-  createBillFromKitchen,
-  getBillableKotItems,
-} = require('./db/billingRepo.cjs');
-
-// OPTIONAL: only if these repos exist
-
-
+ipcMain.handle(
+  'debug:counts',
+  async () => {
+    return getDebugCounts();
+  }
+);
 
 
 // =====================================================
-// KOT IPC
+// KOT
 // =====================================================
-
-// ipcMain.handle(
-//   'pos:kot:insertBatch',
-//   async (_, batch) => {
-//     return kotRepo.insertKotBatch(batch);
-//   }
-// )
-
-// ipcMain.handle(
-//   'kot:insert',
-//   async (_e, items) => {
-//     await kotRepo.insertKotItems(items);
-
-//     return { success: true };
-//   }
-// );
 
 ipcMain.handle(
   'kot:create',
   async (_e, { batch, items }) => {
-
-    const result =
-      await kotRepo.createKot({
-        batch,
-        items,
-      });
-
-    return result;
-  }
-);
-
-// =====================================================
-// KOT HISTORY 
-// =====================================================
-
-
-
-ipcMain.handle(
-  'kot-history:create',
-  async (_event, data) => {
-
-    return kotHistoryRepo.createKotHistory(data);
-
-  }
-);
-
-ipcMain.handle(
-  'pos:getKotHistory',
-  async (_event, args = {}) => {
-
-    try {
-
-      return {
-        success: true,
-        data: kotHistoryRepo.getKotHistory(args),
-      };
-
-    } catch (error) {
-
-      console.error(
-        'GET KOT HISTORY FAILED',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error?.message ||
-          'Failed to load KOT history',
-      };
-    }
-  }
-);
-
-
-ipcMain.handle(
-  'pos:getKotHistoryDetail',
-  async (_event, kotHistoryId) => {
-
-    try {
-
-      return {
-        success: true,
-        data:
-          kotHistoryRepo.getKotHistoryDetail(
-            kotHistoryId
-          ),
-      };
-
-    } catch (error) {
-
-      console.error(
-        'GET KOT HISTORY DETAIL FAILED',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error?.message ||
-          'Failed to load KOT history detail',
-      };
-    }
-  }
-);
-
-
-
-ipcMain.handle(
-  'pos:getRecentKotHistoryItems',
-  async (_event, limit = 20) => {
-
-    try {
-
-      return {
-        success: true,
-
-        data:
-          kotHistoryRepo.getRecentKotHistoryItems(
-            limit
-          ),
-      };
-
-    } catch (error) {
-
-      console.error(
-        'GET RECENT KOT HISTORY ITEMS FAILED',
-        error
-      );
-
-      return {
-        success: false,
-
-        error:
-          error?.message ||
-          'Failed to load KOT history items',
-      };
-    }
-  }
-);
-
-
-ipcMain.handle(
-  'kotHistory:markTablePaid',
-  async (_event, args) => {
-
-    try {
-
-      console.log(
-        'IPC kotHistory:markTablePaid',
-        args
-      );
-
-
-      const result =
-        kotHistoryRepo.markTableHistoryPaid(
-          args
-        );
-
-
-      console.log(
-        'IPC kotHistory:markTablePaid RESULT:',
-        result
-      );
-
-
-      return result;
-
-    } catch (error) {
-
-      console.error(
-        'IPC KOT HISTORY PAID FAILED:',
-        error
-      );
-
-
-      return {
-        success: false,
-
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
-  }
-);
-
-// =====================================================
-// MARK KOT HISTORY PAID
-// =====================================================
-
-ipcMain.handle(
-  'kot-history:mark-paid',
-  async (_e, kotHistoryId) => {
-    console.log("call------------------------")
-    try {
-
-      if (!kotHistoryId) {
-        throw new Error(
-          'KOT history ID is required'
-        );
-      }
-
-      const result =
-        kotHistoryRepo.markKotHistoryPaid(
-          kotHistoryId
-        );
-
-      return result;
-
-    } catch (error) {
-
-      console.error(
-        'MARK KOT HISTORY PAID FAILED:',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
+    return kotRepo.createKot({
+      batch,
+      items,
+    });
   }
 );
 
@@ -666,32 +423,59 @@ ipcMain.handle(
   }
 );
 
+
 // =====================================================
 // KOT HISTORY
 // =====================================================
 
 ipcMain.handle(
-  'kot-history:list',
-  async (_event, options = {}) => {
+  'kot-history:create',
+  async (_event, data) => {
+    return kotHistoryRepo.createKotHistory(
+      data
+    );
+  }
+);
 
+ipcMain.handle(
+  'pos:getKotHistory',
+  async (_event, args = {}) => {
     try {
-
       return {
         success: true,
+        data:
+          kotHistoryRepo.getKotHistory(
+            args
+          ),
+      };
+    } catch (error) {
+      console.error(
+        'GET KOT HISTORY FAILED',
+        error
+      );
 
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to load KOT history',
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  'kot-history:list',
+  async (_event, options = {}) => {
+    try {
+      return {
+        success: true,
         data:
           kotHistoryRepo.getKotHistory(
             options
           ),
       };
-
     } catch (error) {
-
-      console.error(
-        'GET KOT HISTORY FAILED:',
-        error
-      );
-
       return {
         success: false,
         error:
@@ -702,30 +486,128 @@ ipcMain.handle(
   }
 );
 
-
-
 ipcMain.handle(
-  'kot-history:detail',
+  'pos:getKotHistoryDetail',
   async (_event, kotHistoryId) => {
-
     try {
-
       return {
         success: true,
-
         data:
           kotHistoryRepo.getKotHistoryDetail(
             kotHistoryId
           ),
       };
-
     } catch (error) {
-
       console.error(
-        'GET KOT HISTORY DETAIL FAILED:',
+        'GET KOT HISTORY DETAIL FAILED',
         error
       );
 
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to load KOT history detail',
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  'pos:getRecentKotHistoryItems',
+  async (_event, limit = 20) => {
+    try {
+      return {
+        success: true,
+        data:
+          kotHistoryRepo.getRecentKotHistoryItems(
+            limit
+          ),
+      };
+    } catch (error) {
+      console.error(
+        'GET RECENT KOT HISTORY ITEMS FAILED',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to load KOT history items',
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  'kotHistory:markTablePaid',
+  async (_event, args) => {
+    try {
+      return kotHistoryRepo.markTableHistoryPaid(
+        args
+      );
+    } catch (error) {
+      console.error(
+        'IPC KOT HISTORY PAID FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  'kot-history:mark-paid',
+  async (_e, kotHistoryId) => {
+    try {
+      if (!kotHistoryId) {
+        throw new Error(
+          'KOT history ID is required'
+        );
+      }
+
+      return kotHistoryRepo.markKotHistoryPaid(
+        kotHistoryId
+      );
+    } catch (error) {
+      console.error(
+        'MARK KOT HISTORY PAID FAILED:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
+
+
+
+ipcMain.handle(
+  'kot-history:detail',
+  async (_event, kotHistoryId) => {
+    try {
+      return {
+        success: true,
+        data:
+          kotHistoryRepo.getKotHistoryDetail(
+            kotHistoryId
+          ),
+      };
+    } catch (error) {
       return {
         success: false,
         error:
@@ -741,25 +623,14 @@ ipcMain.handle(
 // BILLING
 // =====================================================
 
-
-// =====================================================
-// INSERT BILL ITEMS
-// =====================================================
-
 ipcMain.handle(
   'bill-items:insert',
   async (_e, items) => {
-
     try {
-
       const result =
         await billItemRepo.insertBillItems(
           items
         );
-
-      // ===========================================
-      // BILL ITEMS HAVE CHANGED
-      // ===========================================
 
       tableRepo.refreshAllTableBillVisualStates();
 
@@ -767,14 +638,7 @@ ipcMain.handle(
         success: true,
         result,
       };
-
     } catch (error) {
-
-      console.error(
-        'BILL ITEMS INSERT FAILED:',
-        error
-      );
-
       return {
         success: false,
         error:
@@ -786,45 +650,22 @@ ipcMain.handle(
   }
 );
 
-
-// =====================================================
-// CREATE BILL
-// =====================================================
-
 ipcMain.handle(
   'bill:create',
   async (_event, input) => {
-
     try {
-
       const result =
         await createBillFromKitchen(
           input
         );
 
-      // ===========================================
-      // BILL CREATED SUCCESSFULLY
-      // ===========================================
-
       if (result?.success !== false) {
-
-        // Cart was changed/cleared
         tableRepo.refreshAllTableCartVisualStates();
-
-        // Bill state was changed
         tableRepo.refreshAllTableBillVisualStates();
-
       }
 
       return result;
-
     } catch (error) {
-
-      console.error(
-        'BILL CREATE FAILED:',
-        error
-      );
-
       return {
         success: false,
         error:
@@ -835,41 +676,21 @@ ipcMain.handle(
   }
 );
 
-
-// =====================================================
-// UPDATE BILL ITEM QUANTITY
-// =====================================================
-
 ipcMain.handle(
   'bill:update-item-quantity',
   async (_event, args) => {
-
     try {
-
       const result =
         await billRepo.updateBillItemQuantity(
           args
         );
 
-      // ===========================================
-      // BILL ITEM CHANGED
-      // ===========================================
-
       if (result?.success !== false) {
-
         tableRepo.refreshAllTableBillVisualStates();
-
       }
 
       return result;
-
     } catch (error) {
-
-      console.error(
-        'BILL UPDATE ITEM QUANTITY FAILED:',
-        error
-      );
-
       return {
         success: false,
         error:
@@ -881,41 +702,21 @@ ipcMain.handle(
   }
 );
 
-
-// =====================================================
-// DELETE BILL ITEM
-// =====================================================
-
 ipcMain.handle(
   'bill:delete-item',
   async (_event, args) => {
-
     try {
-
       const result =
         await billRepo.deleteBillItem(
           args
         );
 
-      // ===========================================
-      // BILL ITEM CHANGED
-      // ===========================================
-
       if (result?.success !== false) {
-
         tableRepo.refreshAllTableBillVisualStates();
-
       }
 
       return result;
-
     } catch (error) {
-
-      console.error(
-        'BILL DELETE ITEM FAILED:',
-        error
-      );
-
       return {
         success: false,
         error:
@@ -927,26 +728,14 @@ ipcMain.handle(
   }
 );
 
-
-// =====================================================
-// LIST OPEN BILL ITEMS
-// =====================================================
-
 ipcMain.handle(
   'bill-items:list',
   async (_e, tableNo) => {
-
     return billItemRepo.getOpenBillItems(
       tableNo
     );
-
   }
 );
-
-
-// =====================================================
-// MARK BILL ITEMS AS BILLED
-// =====================================================
 
 ipcMain.handle(
   'bill-items:mark-billed',
@@ -956,7 +745,6 @@ ipcMain.handle(
     billId,
     billNo
   ) => {
-
     const result =
       await billItemRepo.markBillItemsBilled(
         tableNo,
@@ -964,25 +752,13 @@ ipcMain.handle(
         billNo
       );
 
-    // ===========================================
-    // IMPORTANT
-    // Items are no longer OPEN
-    // ===========================================
-
     if (result?.success !== false) {
-
       tableRepo.refreshAllTableBillVisualStates();
-
     }
 
     return result;
-
   }
 );
-
-// -------------------------------
-// KOT 
-// -------------------------------
 
 ipcMain.handle(
   'clear-kot-by-table',
@@ -993,25 +769,193 @@ ipcMain.handle(
       )
       .run(tableNo);
 
-    return { success: true };
+    return {
+      success: true,
+    };
   }
 );
 
 ipcMain.handle(
   'bill:get-kot-items',
   async (_event, tableNo) => {
-    try {
-      return getBillableKotItems(
+    return getBillableKotItems(
+      tableNo
+    );
+  }
+);
+
+
+// =====================================================
+// CART
+// =====================================================
+
+ipcMain.handle(
+  'cart:list',
+  async (_e, tableNo) => {
+    return cartRepo.getCartItems(
+      tableNo
+    );
+  }
+);
+
+ipcMain.handle(
+  'cart:add',
+  async (_e, item, tableNo) => {
+    const result =
+      await cartRepo.addCartItem(
+        item,
         tableNo
       );
-    } catch (error) {
-      console.error(
-        'GET BILL ITEMS FAILED:',
-        error
+
+    tableRepo.refreshAllTableCartVisualStates();
+
+    return result;
+  }
+);
+
+ipcMain.handle(
+  'cart:remove',
+  async (
+    _e,
+    uniqueKey,
+    tableNo,
+    removeAll
+  ) => {
+    const result =
+      cartRepo.removeCartItem(
+        uniqueKey,
+        tableNo,
+        removeAll
       );
 
-      throw error;
+    if (result?.success !== false) {
+      tableRepo.refreshAllTableCartVisualStates();
     }
+
+    return result;
+  }
+);
+
+ipcMain.handle(
+  'cart:clear',
+  async (_e, tableNo) => {
+    const result =
+      cartRepo.clearCart(
+        tableNo
+      );
+
+    if (result?.success !== false) {
+      tableRepo.refreshAllTableCartVisualStates();
+    }
+
+    return result;
+  }
+);
+
+ipcMain.handle(
+  'cart:update-note',
+  async (
+    _e,
+    itemId,
+    note,
+    tableNo
+  ) => {
+    const result =
+      cartRepo.updateCartItemNote(
+        itemId,
+        note,
+        tableNo
+      );
+
+    if (result?.success !== false) {
+      tableRepo.refreshAllTableCartVisualStates();
+    }
+
+    return result;
+  }
+);
+
+
+// =====================================================
+// SYNC
+// =====================================================
+
+ipcMain.handle(
+  'sync:all',
+  async () => {
+    return syncAll();
+  }
+);
+
+
+// =====================================================
+// CATEGORIES
+// =====================================================
+
+ipcMain.handle(
+  'categories:list',
+  async () => {
+    return getAllCategories();
+  }
+);
+
+
+// =====================================================
+// PRODUCTS
+// =====================================================
+
+ipcMain.handle(
+  'products:list',
+  async () => {
+    return getAllProducts();
+  }
+);
+
+ipcMain.handle(
+  'products:by-category',
+  async (_e, categoryId) => {
+    return getProductsByCategory(
+      categoryId
+    );
+  }
+);
+
+ipcMain.handle(
+  'products:search',
+  async (_e, query, foodType) => {
+    return searchProducts(
+      query,
+      foodType
+    );
+  }
+);
+
+ipcMain.handle(
+  'products:search-code',
+  async (_e, code, foodType) => {
+    return searchExactCode(
+      code,
+      foodType
+    );
+  }
+);
+
+
+// =====================================================
+// MODIFIERS
+// =====================================================
+
+ipcMain.handle(
+  'modifier-groups:list',
+  async () => {
+    return getModifierGroups();
+  }
+);
+
+ipcMain.handle(
+  'product-modifiers:list',
+  async () => {
+    return getProductModifiers();
   }
 );
 
@@ -1030,409 +974,38 @@ ipcMain.handle(
 ipcMain.handle(
   'orders:bussiness',
   async (_e, date) => {
-    return orderRepo.getOrdersByBusinessDate(date);
+    return orderRepo.getOrdersByBusinessDate(
+      date
+    );
   }
 );
 
 ipcMain.handle(
   'orders:realDate',
   async (_e, date) => {
-    return orderRepo.getOrdersByRealDate(date);
+    return orderRepo.getOrdersByRealDate(
+      date
+    );
   }
 );
 
 ipcMain.handle(
   'orders:get',
   async (_e, orderId) => {
-    return orderRepo.getOrderById(orderId);
+    return orderRepo.getOrderById(
+      orderId
+    );
   }
 );
 
 ipcMain.handle(
   'orders:items',
   async (_e, orderId) => {
-    return orderRepo.getOrderItems(orderId);
+    return orderRepo.getOrderItems(
+      orderId
+    );
   }
 );
-// =====================================================
-// WINDOW
-// =====================================================
-
-function createWindow() {
-  const preloadPath = path.resolve(
-    __dirname,
-    'preload.cjs'
-  );
-
-  console.log(
-    'PRELOAD =>',
-    preloadPath
-  );
-
-  const isDev =
-    process.env.NODE_ENV ===
-    'development';
-
-  const win = new BrowserWindow({
-    width: 1400,
-    height: 900,
-
-    // Show after maximize
-    show: false,
-
-    webPreferences: {
-      preload: preloadPath,
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: false,
-    },
-  });
-
-  // Open maximized
-  win.maximize();
-
-  // Show after maximize
-  win.once('ready-to-show', () => {
-    win.show();
-  });
-
-  // DevTools only in development
-  if (isDev) {
-    win.webContents.openDevTools();
-  }
-
-  win.loadURL('http://localhost:3000');
-
-  return win;
-}
-
-// =====================================================
-// APP READY
-// =====================================================
-
-app.whenReady().then(() => {
-  // -------------------------------
-  // DEBUG
-  // -------------------------------
-
-  ipcMain.handle(
-    'debug:counts',
-    async () => {
-      return getDebugCounts();
-    }
-  );
-
-  // -------------------------------
-  // CART
-  // -------------------------------
-
- // =====================================================
-// CART LIST
-// =====================================================
-
-ipcMain.handle(
-  'cart:list',
-  async (_e, partition) => {
-
-    try {
-
-      return await cartRepo.getCartItems(
-        partition
-      );
-
-    } catch (error) {
-
-      console.error(
-        'cart:list failed',
-        error
-      );
-
-      throw error;
-    }
-
-  }
-);
-
-
-// =====================================================
-// CART ADD
-// =====================================================
-
-ipcMain.handle(
-  'cart:add',
-  async (
-    _e,
-    item,
-    partition
-  ) => {
-
-    try {
-
-      const result =
-        await cartRepo.addCartItem(
-          item,
-          partition
-        );
-
-
-      tableRepo.refreshAllTableCartVisualStates();
-
-
-      return result;
-
-    } catch (error) {
-
-      console.error(
-        'cart:add failed',
-        error
-      );
-
-      throw error;
-
-    }
-
-  }
-);
-
-
-// =====================================================
-// CART REMOVE
-// =====================================================
-
-ipcMain.handle(
-  'cart:remove',
-  async (
-    _e,
-    uniqueKey,
-    partition,
-    removeAll
-  ) => {
-
-    try {
-
-      const result =
-        await cartRepo.removeCartItem(
-          uniqueKey,
-          partition,
-          removeAll
-        );
-
-
-      if (result?.success !== false) {
-
-        tableRepo.refreshAllTableCartVisualStates();
-
-      }
-
-
-      return result;
-
-    } catch (error) {
-
-      console.error(
-        'cart:remove failed',
-        error
-      );
-
-      throw error;
-
-    }
-
-  }
-);
-
-
-// =====================================================
-// CART CLEAR
-// =====================================================
-
-ipcMain.handle(
-  'cart:clear',
-  async (
-    _e,
-    partition
-  ) => {
-
-    try {
-
-      const result =
-        await cartRepo.clearCart(
-          partition
-        );
-
-
-      if (result?.success !== false) {
-
-        tableRepo.refreshAllTableCartVisualStates();
-
-      }
-
-
-      return result;
-
-    } catch (error) {
-
-      console.error(
-        'cart:clear failed',
-        error
-      );
-
-      throw error;
-
-    }
-
-  }
-);
-
-
-// =====================================================
-// CART UPDATE NOTE
-// =====================================================
-
-ipcMain.handle(
-  'cart:update-note',
-  async (
-    _e,
-    itemId,
-    note,
-    partition
-  ) => {
-
-    try {
-
-      const result =
-        await cartRepo.updateCartItemNote(
-          itemId,
-          note,
-          partition
-        );
-
-
-      if (result?.success !== false) {
-
-        tableRepo.refreshAllTableCartVisualStates();
-
-      }
-
-
-      return result;
-
-    } catch (error) {
-
-      console.error(
-        'cart:update-note failed',
-        error
-      );
-
-      throw error;
-
-    }
-
-  }
-);
-
-
-// =====================================================
-// SYNC
-// =====================================================
-
-ipcMain.handle(
-  'sync:all',
-  async () => {
-
-    return syncAll();
-
-  }
-);
-  // -------------------------------
-  // CATEGORIES
-  // -------------------------------
-
-  ipcMain.handle(
-    'categories:list',
-    async () => getAllCategories()
-  );
-
-  // -------------------------------
-  // PRODUCTS
-  // -------------------------------
-
-  ipcMain.handle(
-    'products:list',
-    async () => getAllProducts()
-  );
-
-  ipcMain.handle(
-    'products:by-category',
-    async (_e, categoryId) =>
-      getProductsByCategory(categoryId)
-  );
-
-  ipcMain.handle(
-    'products:search',
-    async (_e, query, foodType) =>
-      searchProducts(
-        query,
-        foodType
-      )
-  );
-
-  ipcMain.handle(
-    'products:search-code',
-    async (_e, code, foodType) =>
-      searchExactCode(
-        code,
-        foodType
-      )
-  );
-
-  // -------------------------------
-  // MODIFIERS
-  // -------------------------------
-
-  ipcMain.handle(
-    'modifier-groups:list',
-    async () => getModifierGroups()
-  );
-
-
-  ipcMain.handle(
-    'product-modifiers:list',
-    async () => getProductModifiers()
-  );
-
-  // -------------------------------
-  // CREATE WINDOW
-  // -------------------------------
-
-
-
-  const win = createWindow();
-
-
-  // Upload local counter every 5 minutes
-  setInterval(() => {
-    uploadOrderCounter().catch(console.error);
-  }, 5 * 60 * 1000);
-
-  // F12 = Toggle DevTools
-  globalShortcut.register(
-    'F12',
-    () => {
-      win.webContents.toggleDevTools();
-    }
-  );
-
-  // Ctrl+Shift+I = Toggle DevTools
-  globalShortcut.register(
-    'CommandOrControl+Shift+I',
-    () => {
-      win.webContents.toggleDevTools();
-    }
-  );
-});
-
-
 
 
 // =====================================================
@@ -1442,23 +1015,13 @@ ipcMain.handle(
 ipcMain.handle(
   'businessDay:getCurrent',
   async () => {
-
     try {
-
       return {
         success: true,
         data:
-          businessDayRepo
-            .getCurrentBusinessDay(),
+          businessDayRepo.getCurrentBusinessDay(),
       };
-
     } catch (e) {
-
-      console.error(
-        'GET CURRENT BUSINESS DAY FAILED',
-        e
-      );
-
       return {
         success: false,
         error:
@@ -1470,46 +1033,6 @@ ipcMain.handle(
 );
 
 
-// =====================================================
-// DAY CLOSING SUMMARY
-// =====================================================
-
-ipcMain.handle(
-  'dayClosing:getSummary',
-  async (
-    _event,
-    businessDate
-  ) => {
-
-    try {
-
-      const summary =
-        dayClosingRepo
-          .getSummary(
-            businessDate
-          );
-
-      return {
-        success: true,
-        data: summary,
-      };
-
-    } catch (e) {
-
-      console.error(
-        'GET DAY CLOSING SUMMARY FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
 
 
 // =====================================================
@@ -1519,25 +1042,15 @@ ipcMain.handle(
 ipcMain.handle(
   'dayClosing:getHistory',
   async () => {
-
     try {
-
       const history =
-        dayClosingRepo
-          .getHistory();
+        dayClosingRepo.getHistory();
 
       return {
         success: true,
         data: history,
       };
-
     } catch (e) {
-
-      console.error(
-        'GET DAY CLOSING HISTORY FAILED',
-        e
-      );
-
       return {
         success: false,
         error:
@@ -1547,86 +1060,6 @@ ipcMain.handle(
     }
   }
 );
-
-
-// =====================================================
-// CLOSE BUSINESS DAY
-// =====================================================
-
-ipcMain.handle(
-  'dayClosing:close',
-  async (
-    _event,
-    data
-  ) => {
-
-    try {
-
-      console.log(
-        '===================================='
-      );
-
-      console.log(
-        'DAY CLOSING REQUEST'
-      );
-
-      console.log(
-        'DATA:',
-        data
-      );
-
-      console.log(
-        '===================================='
-      );
-
-
-      const result =
-        dayClosingRepo
-          .closeBusinessDay({
-            actualCash:
-              Number(
-                data?.actualCash || 0
-              ),
-
-            notes:
-              data?.notes || '',
-
-            closedById:
-              data?.closedById || '',
-
-            closedByName:
-              data?.closedByName || '',
-          });
-
-
-      console.log(
-        'DAY CLOSED SUCCESSFULLY:',
-        result
-      );
-
-
-      return {
-        success: true,
-        data: result,
-      };
-
-    } catch (e) {
-
-      console.error(
-        'DAY CLOSING FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
-
 
 
 
@@ -1634,16 +1067,16 @@ ipcMain.handle(
 // =====================================================
 // SALE REPORT
 // =====================================================
+
 ipcMain.handle(
   'saleReport:getReport',
   async (_event, businessDate) => {
-
     try {
-
       if (!businessDate) {
         return {
           success: false,
-          error: 'Business date is required',
+          error:
+            'Business date is required',
         };
       }
 
@@ -1656,14 +1089,7 @@ ipcMain.handle(
         success: true,
         data: report,
       };
-
     } catch (e) {
-
-      console.error(
-        'GET SALES REPORT FAILED',
-        e
-      );
-
       return {
         success: false,
         error:
@@ -1676,65 +1102,34 @@ ipcMain.handle(
 
 
 // =====================================================
-// GENERATE POS ORDER NUMBER
-// TAKEAWAY -> TW1, TW2...
-// DELIVERY -> DL1, DL2...
+// UPLOAD DATA
 // =====================================================
+
+
 
 ipcMain.handle(
-  'pos-order:generate-number',
-  async (_e, orderType) => {
-
+  'orderCounter:upload',
+  async () => {
     try {
+      const result =
+        await uploadOrderCounter();
 
-      const orderNumber =
-        orderRepo.generateNextPosOrderNumber(
-          orderType
-        );
-
-      return orderNumber;
-
-    } catch (error) {
-
+      return {
+        success: true,
+        ...result,
+      };
+    } catch (e) {
       console.error(
-        'pos-order:generate-number failed',
-        error
+        'ORDER COUNTER UPLOAD FAILED',
+        e
       );
 
-      throw error;
-    }
-  }
-);
-
-
-// =====================================================
-// GET TODAY'S POS ORDER NUMBERS
-//
-// TAKEAWAY:
-//   TW1, TW2, TW3...
-//
-// DELIVERY:
-//   DL1, DL2, DL3...
-// =====================================================
-
-ipcMain.handle(
-  'pos-order:list',
-  async (_e, orderType) => {
-
-    try {
-
-      return await orderRepo.getTodayPosOrderNumbers(
-        orderType
-      );
-
-    } catch (error) {
-
-      console.error(
-        'pos-order:list failed',
-        error
-      );
-
-      throw error;
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
     }
   }
 );
@@ -1808,15 +1203,297 @@ ipcMain.handle(
   }
 );
 
-// =============================================
+ 
+}
+
+
+
+// =====================================================
+// NEXT.JS PRODUCTION SERVER
+// =====================================================
+
+let nextServer = null;
+
+ 
+function startNextServer() {
+  if (!app.isPackaged) {
+    console.log(
+      'Development mode: Next.js runs on localhost:3000'
+    );
+    return;
+  }
+
+  // =================================================
+  // Next standalone is unpacked from app.asar
+  // =================================================
+
+  const standalonePath = path.join(
+    process.resourcesPath,
+    'app.asar.unpacked',
+    '.next',
+    'standalone'
+  );
+
+  
+
+  const serverPath = path.join(
+    standalonePath,
+    'server.js'
+  );
+
+  console.log(
+    'NEXT SERVER:',
+    serverPath
+  );
+
+  console.log(
+    'NEXT SERVER EXISTS:',
+    fs.existsSync(serverPath)
+  );
+
+  if (!fs.existsSync(serverPath)) {
+    throw new Error(
+      `Next.js server not found: ${serverPath}`
+    );
+  }
+
+  // =================================================
+  // Use the current Electron executable as Node
+  // =================================================
+
+  const nodePath = process.execPath;
+
+  console.log(
+    'NEXT NODE PATH:',
+    nodePath
+  );
+
+  console.log(
+    'NEXT NODE EXISTS:',
+    fs.existsSync(nodePath)
+  );
+
+  console.log(
+    'NEXT WORKING DIRECTORY:',
+    standalonePath
+  );
+
+  console.log(
+    'NEXT WORKING DIRECTORY EXISTS:',
+    fs.existsSync(standalonePath)
+  );
+
+  console.log(
+    'STARTING NEXT SERVER'
+  );
+
+  nextServer = spawn(
+    nodePath,
+    [serverPath],
+    {
+      cwd: standalonePath,
+
+      env: {
+        ...process.env,
+
+        ELECTRON_RUN_AS_NODE: '1',
+
+        NODE_ENV: 'production',
+        PORT: '3000',
+        HOSTNAME: '127.0.0.1',
+      },
+
+      stdio: 'inherit',
+      windowsHide: true,
+    }
+  );
+
+  nextServer.on('error', (error) => {
+    console.error(
+      'NEXT SERVER SPAWN FAILED:',
+      error
+    );
+  });
+
+  nextServer.on('exit', (code, signal) => {
+    console.log(
+      'NEXT SERVER EXITED:',
+      {
+        code,
+        signal,
+      }
+    );
+
+    nextServer = null;
+  });
+}
+
+
+function stopNextServer() {
+  if (!nextServer) {
+    return;
+  }
+
+  console.log(
+    'Stopping Next.js production server...'
+  );
+
+  try {
+    nextServer.kill();
+  } catch (error) {
+    console.error(
+      'Failed to stop Next.js server:',
+      error
+    );
+  }
+
+  nextServer = null;
+}
+// =====================================================
+// WINDOW
+// =====================================================
+
+function createWindow() {
+  const preloadPath = path.resolve(
+    __dirname,
+    'preload.cjs'
+  );
+
+  console.log(
+    'PRELOAD =>',
+    preloadPath
+  );
+
+  const isDev = !app.isPackaged;
+
+  const win = new BrowserWindow({
+    width: 1400,
+    height: 900,
+
+    show: false,
+
+    webPreferences: {
+      preload: preloadPath,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+
+  win.maximize();
+
+  win.once('ready-to-show', () => {
+    win.show();
+  });
+
+  if (isDev) {
+    win.webContents.openDevTools();
+  }
+
+  if (isDev) {
+    // Development
+    win.loadURL(
+      'http://localhost:3000'
+    );
+  } else {
+    // Production
+    win.loadURL(
+      'http://127.0.0.1:3000'
+    );
+  }
+
+  return win;
+}
+
+// =====================================================
+// APP READY
+// =====================================================
+
+app.whenReady().then(async () => {
+
+  // ===================================================
+  // INITIALIZE DATABASE FIRST
+  // ===================================================
+
+  try {
+    initDb();
+
+    console.log("DATABASE INITIALIZED");
+
+    console.log(
+      "DATABASE COUNTS:",
+      getDebugCounts()
+    );
+
+  } catch (error) {
+    console.error(
+      "DATABASE INITIALIZATION FAILED:",
+      error
+    );
+
+    app.quit();
+    return;
+  }
+
+    registerIpcHandlers();
+
+  // ===================================================
+  // START NEXT.JS IN PRODUCTION
+  // ===================================================
+
+  if (app.isPackaged) {
+    startNextServer();
+
+    await new Promise(
+      resolve => setTimeout(resolve, 1500)
+    );
+  }
+
+  // ===================================================
+  // CREATE WINDOW
+  // ===================================================
+
+  const win = createWindow();
+
+
+  // =============================================
   // WAITER LAN SERVER
   // =============================================
 
   createWaiterLanServer();
 
-  app.on('before-quit', () => {
-  stopWaiterLanServer();
+  // ===================================================
+  // UPLOAD LOCAL COUNTER EVERY 5 MINUTES
+  // ===================================================
+
+  setInterval(() => {
+    uploadOrderCounter().catch(console.error);
+  }, 5 * 60 * 1000);
+
+  // ===================================================
+  // DEVTOOLS SHORTCUTS
+  // ===================================================
+
+  globalShortcut.register(
+    "F12",
+    () => {
+      win.webContents.toggleDevTools();
+    }
+  );
+
+  globalShortcut.register(
+    "CommandOrControl+Shift+I",
+    () => {
+      win.webContents.toggleDevTools();
+    }
+  );
+
 });
+
+
+
+
+
 // =====================================================
 // CLEANUP
 // =====================================================
@@ -1831,6 +1508,39 @@ app.on(
     }
   }
 );
+
+// app.on('before-quit', () => {
+//   stopNextServer();
+// });
+
+// app.on('before-quit', async () => {
+//   try {
+//     await uploadOrderCounter();
+//   } catch (e) {
+//     console.error(
+//       'Failed to upload order counter on quit',
+//       e
+//     );
+//   }
+// });
+
+//   app.on('before-quit', () => {
+//   stopWaiterLanServer();
+// });
+
+app.on('before-quit', async () => {
+  try {
+    await uploadOrderCounter();
+  } catch (e) {
+    console.error(
+      'Failed to upload order counter on quit',
+      e
+    );
+  }
+
+  stopWaiterLanServer();
+  stopNextServer();
+});
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();

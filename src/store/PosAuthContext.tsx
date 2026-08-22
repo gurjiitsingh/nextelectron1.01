@@ -117,7 +117,7 @@ export function PosAuthProvider({
       // LOGIN SUCCESS
       // ===============================================
 
-      setCurrentUser(result.user);
+    setCurrentUser(result.user ?? null);
 
       return {
         success: true,

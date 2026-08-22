@@ -1,4 +1,4 @@
-const { initDb } = require('./initDb.cjs');
+
 const { db } = require('./sqlite.cjs');
 
 // =====================================================
@@ -12,7 +12,7 @@ const { db } = require('./sqlite.cjs');
 //   ).all()
 // );
 
-initDb();
+
 
 // =====================================================
 // ADD CART ITEM

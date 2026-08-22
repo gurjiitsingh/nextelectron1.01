@@ -1,8 +1,13 @@
 export const posApi = {
+
   addCartItem: (
     item: any,
     tableNo: string
-  ) => window.posApi.addCartItem(item, tableNo),
+  ) =>
+    window.posApi.addCartItem(
+      item,
+      tableNo
+    ),
 
   getCartItems: (
     tableNo?: string
@@ -29,5 +34,22 @@ export const posApi = {
       tableNo ?? 'T1'
     ),
 
-  syncAll: () => window.posApi.syncAll(),
+  // =====================================================
+  // UPDATE CART ITEM NOTE
+  // =====================================================
+
+  updateCartItemNote: (
+    itemId: number,
+    note: string,
+    tableNo: string
+  ) =>
+    window.posApi.updateCartItemNote(
+      itemId,
+      note,
+      tableNo
+    ),
+
+  syncAll: () =>
+    window.posApi.syncAll(),
+
 };

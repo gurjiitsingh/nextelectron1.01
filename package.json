@@ -10,45 +10,57 @@
     "lint": "eslint",
     "electron": "electron .",
     "electron-dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron-build": "next build && electron-builder",
-    "electron-dist": "next build && electron-builder --win"
+  "electron-build": "next build && node scripts/prepare-next-standalone.cjs && electron-builder",
+"electron-dist": "next build && node scripts/prepare-next-standalone.cjs && electron-builder --win"
   },
-  "build": {
-    "appId": "com.pos.desktop",
-    "productName": "POS",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      ".next/**/*",
-      "public/**/*",
-      "electron/**/*",
-      "shared/**/*",
-      "package.json"
-    ],
-    "asar": true,
-    "asarUnpack": [
-      "**/node_modules/better-sqlite3/**/*"
-    ],
-    "npmRebuild": true,
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "POS"
-    }
+"build": {
+  "appId": "com.pos.desktop",
+  "productName": "POS",
+
+  "directories": {
+    "output": "dist"
   },
+
+  "files": [
+    ".next/standalone/**/*",
+    ".next/static/**/*",
+    "public/**/*",
+    "electron/**/*",
+    "shared/**/*",
+    "package.json",
+
+    "!.next/standalone/dist/**/*",
+    "!dist/**/*"
+  ],
+
+  "asar": true,
+
+"asarUnpack": [
+  "**/node_modules/better-sqlite3/**/*",
+  ".next/standalone/**/*"
+],
+
+  "npmRebuild": true,
+
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ]
+  },
+
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "POS"
+  }
+},
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
     "@paypal/react-paypal-js": "^8.8.2",

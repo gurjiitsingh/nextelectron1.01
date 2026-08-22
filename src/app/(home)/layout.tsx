@@ -56,7 +56,7 @@ export default function RootLayout({
                       POS AUTHENTICATION BOUNDARY
                   ================================================= */}
 
-                  <PosAuthGate>
+                  {/* <PosAuthGate> */}
 
                     <div
                       className="
@@ -103,7 +103,7 @@ export default function RootLayout({
 
                     </div>
 
-                  </PosAuthGate>
+                  {/* </PosAuthGate> */}
 
 
                 </Providers>

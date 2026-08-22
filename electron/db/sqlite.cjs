@@ -1,35 +1,26 @@
+const { app } = require('electron');
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-// Database file path
-const dbPath = path.join(
-  process.cwd(),
-  'pos-local.db'
-);
+const userDataPath = app.getPath('userData');
 
+// Make sure the directory exists
+fs.mkdirSync(userDataPath, { recursive: true });
 
+const dbPath = path.join(userDataPath, 'pos.db');
 
-console.log(
-  '===================================='
-);
+console.log('====================================');
+console.log('SQLITE DATABASE PATH:');
+console.log(dbPath);
+console.log('====================================');
 
-console.log(
-  'SQLITE DATABASE PATH:',
-  dbPath
-);
-
-console.log(
-  '===================================='
-);
-
- 
-
-// Create database connection
 const db = new Database(dbPath);
 
-// Optional pragmas
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+
+
 
 // =====================================================
 // DEBUG COUNTS

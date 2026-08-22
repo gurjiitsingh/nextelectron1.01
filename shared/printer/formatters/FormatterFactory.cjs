@@ -1,7 +1,7 @@
 const {
   PrinterPaperSize,
   PrinterRole,
-} = require('../types.js');
+} = require('../types.ts');
 
 const {
   KitchenFormatter58,
