@@ -649,11 +649,10 @@ async function saveItemNote(
           shrink-0
           border-b
           ${background.border}
-          bg-zinc-600
+         
           px-4
           py-3
-          m-2
-          rounded-lg
+        
         `}
       >
 

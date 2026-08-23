@@ -1,28 +1,25 @@
-
 const crypto = require('crypto');
-const { db } = require('./sqlite.cjs');
-const { insertOrder } = require('./orderRepo.cjs');
+
+const { db } =
+  require('./sqlite.cjs');
+
 const businessDayRepo =
   require('./businessDayRepository.cjs');
+
 const {
   getOrCreateOrderNo,
   attachOrderId,
   clearMapping,
 } = require('../lib/orderSequenceRepository.cjs');
 
-const kotHistoryRepo =
-  require('./kotHistoryRepository.cjs');
-
-// const {
-//   getOrCreateOrderNo,
-//   attachOrderId,
-//   clearMapping,
-//   moveTableMapping,
-// } = require('../lib/orderSequence.cjs');
+const {
+  calculateBillAndroid,
+} = require('./billCalculation.cjs');
 
 const {
   TERMINAL_CODE,
 } = require('../lib/orderSequence.cjs');
+
 
 // =====================================================
 // HELPERS
@@ -34,21 +31,10 @@ function uuid() {
 
 
 // =====================================================
-// GET BILLABLE KOT ITEMS
-// =====================================================
-//
-// We consider both PENDING and DONE as billable because
-// the KOT has already been sent to the kitchen.
-//
-// Later, if your kitchen flow requires only DONE items,
-// change this to:
-//
-// WHERE tableNo = ? AND status = 'DONE'
-//
+// GET BILLABLE BILL ITEMS
 // =====================================================
 
 function getBillableKotItems(tableNo) {
-
 
   if (!tableNo) {
     return [];
@@ -62,9 +48,6 @@ function getBillableKotItems(tableNo) {
       AND status = 'OPEN'
     ORDER BY createdAt ASC
   `).all(tableNo);
-
-
-  return items;
 }
 
 
@@ -75,6 +58,7 @@ function getBillableKotItems(tableNo) {
 async function createBillFromKitchen(input) {
 
   const {
+
     // ===================================================
     // CORE
     // ===================================================
@@ -173,7 +157,7 @@ async function createBillFromKitchen(input) {
 
     currency = '₹',
 
-  } = input;
+  } = input || {};
 
 
   // ===================================================
@@ -188,7 +172,7 @@ async function createBillFromKitchen(input) {
 
 
   // ===================================================
-  // READ BILLABLE KOT ITEMS
+  // READ BILLABLE ITEMS
   // ===================================================
 
   const kotItems =
@@ -236,311 +220,327 @@ async function createBillFromKitchen(input) {
 
 
   // ===================================================
-  // CALCULATE ORDER ITEMS
+  // PREPARE CALCULATION ITEMS
   // ===================================================
 
-  let itemTotal = 0;
+// =====================================================
+// CALCULATE ORDER ITEMS
+// Android-compatible calculation
+// =====================================================
 
-  let itemTax = 0;
+const calculationItems =
+  kotItems.map((kot) => ({
+    productId:
+      kot.productId || '',
+
+    name:
+      kot.name || '',
+
+    quantity:
+      Number(kot.quantity || 0),
+
+    basePrice:
+      Number(kot.basePrice || 0),
+
+    taxRate:
+      Number(kot.taxRate || 0),
+
+    taxType:
+      (
+        kot.taxType || 'exclusive'
+      ).toLowerCase() === 'inclusive'
+        ? 'inclusive'
+        : 'exclusive',
+  }));
 
 
-  const orderItems =
-    kotItems.map((kot) => {
+// =====================================================
+// SAFE DISCOUNT / DELIVERY
+// =====================================================
 
-      // -----------------------------------------------
-      // QUANTITY
-      // -----------------------------------------------
+const safeDiscountInput =
+  Math.max(
+    0,
+    Number(discountTotal || 0)
+  );
 
-      const quantity =
+const safeDeliveryFee =
+  Math.max(
+    0,
+    Number(deliveryFee || 0)
+  );
+
+
+// =====================================================
+// DELIVERY TAX PERCENT
+// =====================================================
+
+let deliveryTaxPercent = 0;
+
+if (
+  safeDeliveryFee > 0 &&
+  Number(deliveryTax || 0) > 0
+) {
+  deliveryTaxPercent =
+    (
+      Number(deliveryTax) /
+      safeDeliveryFee
+    ) * 100;
+}
+
+
+// =====================================================
+// ANDROID BILL CALCULATION
+// =====================================================
+
+const calculation =
+  calculateBillAndroid({
+
+    items:
+      calculationItems,
+
+    taxMode:
+      'PER_ITEM',
+
+    discountFlat:
+      safeDiscountInput,
+
+    discountPercent:
+      0,
+
+    deliveryFee:
+      safeDeliveryFee,
+
+    deliveryTaxPercent:
+      deliveryTaxPercent,
+
+  });
+
+
+// =====================================================
+// FINAL BILL TOTALS
+// =====================================================
+
+const itemTotal =
+  calculation.itemSubtotalPaise / 100;
+
+const itemTax =
+  (
+    calculation.exclusiveTaxPaise +
+    calculation.inclusiveTaxPaise
+  ) / 100;
+
+const taxTotal =
+  calculation.totalTaxPaise / 100;
+
+const safeDeliveryTax =
+  calculation.deliveryTaxPaise / 100;
+
+const grandTotal =
+  calculation.grandTotalPaise / 100;
+
+const safeDiscount =
+  calculation.discountPaise / 100;
+
+
+// =====================================================
+// CREATE ORDER ITEMS
+// =====================================================
+//
+// IMPORTANT:
+// Store the ITEM PRICE separately from the tax.
+//
+// taxAmountPerItem = tax only
+// taxTotal         = tax only
+//
+// finalPricePerItem = actual item selling/base amount
+// finalTotal        = item amount without separately
+//                    adding tax.
+//
+// Tax is shown at bill summary level.
+//
+
+const orderItems =
+  kotItems.map((kot, index) => {
+
+    const calculatedItem =
+      calculation.items?.[index] || null;
+
+    const quantity =
+      Number(kot.quantity || 0);
+
+    const basePrice =
+      Number(kot.basePrice || 0);
+
+    const taxRate =
+      Number(kot.taxRate || 0);
+
+    const taxType =
+      (
+        kot.taxType || 'exclusive'
+      ).toLowerCase() === 'inclusive'
+        ? 'inclusive'
+        : 'exclusive';
+
+
+    // -----------------------------------------------
+    // TAX CALCULATED FOR THIS ITEM
+    // -----------------------------------------------
+
+    const itemTaxAmount =
+      calculatedItem
+        ? Number(
+            calculatedItem.taxPaise || 0
+          ) / 100
+        : 0;
+
+
+    // -----------------------------------------------
+    // ITEM AMOUNT
+    // -----------------------------------------------
+
+    const itemSubtotal =
+      calculatedItem
+        ? Number(
+            calculatedItem.subtotalPaise || 0
+          ) / 100
+        : basePrice * quantity;
+
+
+    // -----------------------------------------------
+    // PRICE TO SAVE
+    // -----------------------------------------------
+    //
+    // For EXCLUSIVE:
+    // basePrice is already before tax.
+    //
+    // For INCLUSIVE:
+    // basePrice contains GST.
+    //
+    // Therefore don't blindly subtract tax here.
+    // Preserve the actual selling price.
+    //
+
+    const finalPricePerItem =
+      basePrice;
+
+
+    const finalTotal =
+      itemSubtotal;
+
+
+    return {
+
+      id:
+        uuid(),
+
+      categoryName:
+        kot.categoryName || '',
+
+      productMode:
+        kot.productMode || '',
+
+      currentStock:
         Number(
-          kot.quantity || 0
-        );
+          kot.currentStock || 0
+        ),
 
+      orderMasterId:
+        orderId,
 
-      // -----------------------------------------------
-      // BASE PRICE
-      // -----------------------------------------------
+      productId:
+        kot.productId || '',
 
-      const basePrice =
-        Number(
-          kot.basePrice || 0
-        );
+      createdById:
+        createdById || '',
 
+      createdByName:
+        createdByName || '',
 
-      // -----------------------------------------------
-      // MODIFIER PRICE
-      // -----------------------------------------------
+      name:
+        kot.name || '',
 
-      const modifierPrice =
-        Number(
-          kot.modifierTotal || 0
-        );
+      categoryId:
+        kot.categoryId || null,
 
+      parentId:
+        kot.parentId || null,
 
-      // -----------------------------------------------
-      // PRICE BEFORE TAX
-      // -----------------------------------------------
+      isVariant:
+        kot.isVariant ? 1 : 0,
 
-      const priceBeforeTax =
-        basePrice +
-        modifierPrice;
+      // ---------------------------------------------
+      // PRICE
+      // ---------------------------------------------
 
-
-      // -----------------------------------------------
-      // ITEM SUBTOTAL
-      // -----------------------------------------------
-
-      const itemSubtotal =
-        priceBeforeTax *
-        quantity;
-
-
-      // -----------------------------------------------
-      // TAX
-      // -----------------------------------------------
-
-      const taxRate =
-        Number(
-          kot.taxRate || 0
-        );
-
-
-      const taxType =
-        kot.taxType ||
-        'exclusive';
-
-
-      let taxAmountPerItem = 0;
-
-
-      if (
-        taxType.toLowerCase() ===
-        'exclusive'
-      ) {
-
-        taxAmountPerItem =
-          priceBeforeTax *
-          (taxRate / 100);
-
-      }
-
-
-      const taxTotal =
-        taxAmountPerItem *
-        quantity;
-
-
-      // -----------------------------------------------
-      // FINAL PRICE
-      // -----------------------------------------------
-
-      const finalPricePerItem =
-        priceBeforeTax +
-        taxAmountPerItem;
-
-
-      const finalTotal =
-        finalPricePerItem *
-        quantity;
-
-
-      // -----------------------------------------------
-      // MASTER TOTALS
-      // -----------------------------------------------
-
-      itemTotal +=
-        itemSubtotal;
-
-      itemTax +=
-        taxTotal;
-
-
-      // -----------------------------------------------
-      // RETURN ORDER ITEM
-      // -----------------------------------------------
-
-      return {
-
-        id:
-          uuid(),
-
-
-        categoryName:
-          kot.categoryName ||
-          '',
-
-
-        productMode:
-          kot.productMode ||
-          'raw_stock',
-
-
-        currentStock:
-          Number(
-            kot.currentStock || 0
-          ),
-
-
-        orderMasterId:
-          orderId,
-
-
-        productId:
-          kot.productId ||
-          '',
-
-
-        createdById:
-          kot.createdById ||
-          createdById ||
-          '',
-
-
-        createdByName:
-          kot.createdByName ||
-          createdByName ||
-          '',
-
-
-        name:
-          kot.name ||
-          '',
-
-
-        categoryId:
-          kot.categoryId ||
-          '',
-
-
-        parentId:
-          kot.parentId ||
-          null,
-
-
-        isVariant:
-          kot.isVariant
-            ? 1
-            : 0,
-
-
+      basePrice:
         basePrice,
 
-
+      quantity:
         quantity,
 
-
+      itemSubtotal:
         itemSubtotal,
 
-
+      currency:
         currency,
 
-
+      paymentStatus:
         paymentStatus,
 
+      // ---------------------------------------------
+      // TAX
+      // ---------------------------------------------
 
+      taxRate:
         taxRate,
 
-
+      taxType:
         taxType,
 
+      taxAmountPerItem:
+        itemTaxAmount,
 
-        taxAmountPerItem,
+      taxTotal:
+        itemTaxAmount,
 
+      // ---------------------------------------------
+      // EXTRA
+      // ---------------------------------------------
 
-        taxTotal,
+      note:
+        kot.note || '',
 
+      modifiersJson:
+        kot.modifiersJson || '[]',
 
-        note:
-          kot.note ||
-          '',
+      modifierPrice:
+        Number(
+          kot.modifierPrice || 0
+        ),
 
+      modifierSummary:
+        kot.modifierSummary || '',
 
-        modifiersJson:
-          kot.modifiersJson ||
-          '',
+      // ---------------------------------------------
+      // FINAL ITEM PRICE
+      // ---------------------------------------------
 
-
-        modifierPrice,
-
-
-        modifierSummary:
-          kot.modifierSummary ||
-          '',
-
-
+      finalPricePerItem:
         finalPricePerItem,
 
-
+      finalTotal:
         finalTotal,
 
+      source:
+        'POS',
 
-        source:
-          kot.source ||
-          'POS',
+      createdAt:
+        now,
 
+    };
 
-        createdAt:
-          kot.createdAt ||
-          now,
-
-      };
-
-    });
-
-
-  // ===================================================
-  // SAFE AMOUNTS
-  // ===================================================
-
-  const safeDiscount =
-    Math.max(
-      0,
-      Number(
-        discountTotal || 0
-      )
-    );
-
-
-  const safeDeliveryFee =
-    Math.max(
-      0,
-      Number(
-        deliveryFee || 0
-      )
-    );
-
-
-  const safeDeliveryTax =
-    Math.max(
-      0,
-      Number(
-        deliveryTax || 0
-      )
-    );
-
-
-  // ===================================================
-  // TOTAL TAX
-  // ===================================================
-
-  const taxTotal =
-    itemTax +
-    safeDeliveryTax;
-
-
-  // ===================================================
-  // GRAND TOTAL
-  // ===================================================
-
-  const grandTotal =
-    Math.max(
-      0,
-
-      itemTotal +
-      taxTotal +
-      safeDeliveryFee -
-      safeDiscount
-    );
+  });
 
 
   // ===================================================
@@ -550,9 +550,7 @@ async function createBillFromKitchen(input) {
   const safePaidAmount =
     Math.max(
       0,
-      Number(
-        paidAmount || 0
-      )
+      Number(paidAmount || 0)
     );
 
 
@@ -563,7 +561,6 @@ async function createBillFromKitchen(input) {
   const dueAmount =
     Math.max(
       0,
-
       grandTotal -
       safePaidAmount
     );
@@ -578,15 +575,11 @@ async function createBillFromKitchen(input) {
 
 
   if (
-    !Array.isArray(
-      finalPayments
-    ) ||
+    !Array.isArray(finalPayments) ||
     finalPayments.length === 0
   ) {
 
-    if (
-      safePaidAmount > 0
-    ) {
+    if (safePaidAmount > 0) {
 
       finalPayments = [
         {
@@ -636,11 +629,9 @@ async function createBillFromKitchen(input) {
   }
 
 
-  // IMPORTANT:
-  // Use actual active business day.
-  //
-  // Do not trust the UI's businessDate
-  // when a business-day system exists.
+  // ===================================================
+  // ACTIVE BUSINESS DATE
+  // ===================================================
 
   const finalBusinessDate =
     currentBusinessDay.businessDate;
@@ -663,7 +654,7 @@ async function createBillFromKitchen(input) {
 
 
   // ===================================================
-  // TRANSACTION
+  // DATABASE TRANSACTION
   // ===================================================
 
   const transaction =
@@ -825,8 +816,7 @@ async function createBillFromKitchen(input) {
           tableNo,
 
         tableName:
-          tableName ||
-          '',
+          tableName || '',
 
 
         // ---------------------------------------------
@@ -834,12 +824,10 @@ async function createBillFromKitchen(input) {
         // ---------------------------------------------
 
         saleType:
-          saleType ||
-          '',
+          saleType || '',
 
         reason:
-          reason ||
-          '',
+          reason || '',
 
 
         // ---------------------------------------------
@@ -847,16 +835,13 @@ async function createBillFromKitchen(input) {
         // ---------------------------------------------
 
         customerName:
-          customerName ||
-          'Customer',
+          customerName || 'Customer',
 
         customerPhone:
-          customerPhone ||
-          '',
+          customerPhone || '',
 
         customerId:
-          customerId ||
-          null,
+          customerId || null,
 
 
         // ---------------------------------------------
@@ -864,12 +849,10 @@ async function createBillFromKitchen(input) {
         // ---------------------------------------------
 
         createdById:
-          createdById ||
-          '',
+          createdById || '',
 
         createdByName:
-          createdByName ||
-          '',
+          createdByName || '',
 
         finalizedById:
           finalizedById ||
@@ -887,28 +870,22 @@ async function createBillFromKitchen(input) {
         // ---------------------------------------------
 
         dAddressLine1:
-          dAddressLine1 ||
-          '',
+          dAddressLine1 || '',
 
         dAddressLine2:
-          dAddressLine2 ||
-          '',
+          dAddressLine2 || '',
 
         dCity:
-          dCity ||
-          '',
+          dCity || '',
 
         dState:
-          dState ||
-          '',
+          dState || '',
 
         dZipcode:
-          dZipcode ||
-          '',
+          dZipcode || '',
 
         dLandmark:
-          dLandmark ||
-          '',
+          dLandmark || '',
 
 
         // ---------------------------------------------
@@ -989,7 +966,6 @@ async function createBillFromKitchen(input) {
         realDate:
           realDate,
 
-
         createdAt:
           now,
 
@@ -1013,8 +989,7 @@ async function createBillFromKitchen(input) {
         // ---------------------------------------------
 
         notes:
-          notes ||
-          '',
+          notes || '',
 
       });
 
@@ -1126,8 +1101,7 @@ async function createBillFromKitchen(input) {
 
 
       for (
-        const item
-        of orderItems
+        const item of orderItems
       ) {
 
         insertItem.run(item);
@@ -1204,8 +1178,7 @@ async function createBillFromKitchen(input) {
 
 
       for (
-        const payment
-        of finalPayments
+        const payment of finalPayments
       ) {
 
         const amount =
@@ -1214,9 +1187,7 @@ async function createBillFromKitchen(input) {
           );
 
 
-        if (
-          amount <= 0
-        ) {
+        if (amount <= 0) {
           continue;
         }
 
@@ -1383,7 +1354,7 @@ async function createBillFromKitchen(input) {
 
 
   // ===================================================
-  // DEBUG VERIFY ORDER WAS SAVED
+  // DEBUG VERIFY ORDER
   // ===================================================
 
   const savedOrder =
@@ -1470,6 +1441,36 @@ async function createBillFromKitchen(input) {
   );
 
   console.log(
+    'ITEM TOTAL:',
+    itemTotal
+  );
+
+  console.log(
+    'ITEM TAX:',
+    itemTax
+  );
+
+  console.log(
+    'TAX TOTAL:',
+    taxTotal
+  );
+
+  console.log(
+    'DISCOUNT:',
+    safeDiscount
+  );
+
+  console.log(
+    'DELIVERY FEE:',
+    safeDeliveryFee
+  );
+
+  console.log(
+    'DELIVERY TAX:',
+    safeDeliveryTax
+  );
+
+  console.log(
     'GRAND TOTAL:',
     grandTotal
   );
@@ -1494,63 +1495,48 @@ async function createBillFromKitchen(input) {
       true,
 
     orderId:
-
       orderId,
 
     srno:
-
       srno,
 
     tableNo:
-
       tableNo,
 
     itemCount:
-
       orderItems.length,
 
     itemTotal:
-
       itemTotal,
 
     itemTax:
-
       itemTax,
 
     taxTotal:
-
       taxTotal,
 
     discountTotal:
-
       safeDiscount,
 
     deliveryFee:
-
       safeDeliveryFee,
 
     deliveryTax:
-
       safeDeliveryTax,
 
     grandTotal:
-
       grandTotal,
 
     paidAmount:
-
       safePaidAmount,
 
     dueAmount:
-
       dueAmount,
 
     paymentStatus:
-
       paymentStatus,
 
     businessDate:
-
       finalBusinessDate,
 
   };
@@ -1566,4 +1552,3 @@ module.exports = {
   createBillFromKitchen,
   getBillableKotItems,
 };
-

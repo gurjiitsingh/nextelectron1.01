@@ -112,10 +112,19 @@ const {
 } = require("./db/firebaseConfigRepo.cjs");
 
 const {
+  syncPendingOrders,
+} = require('./sync/orderSyncRepository.cjs');
+
+const {
   PrinterSettingsRepository,
 } = require(
   '../shared/printer/PrinterSettingsRepository.cjs'
 );
+
+const {
+  registerPosTerminal,
+  getLocalIPAddress,
+} = require('./sync/posTerminalRepository.cjs');
 
 const printerSettingsRepo =
   new PrinterSettingsRepository();
@@ -130,6 +139,117 @@ console.log(
 
 
 function registerIpcHandlers() {
+
+
+
+  // =====================================================
+// GENERATE POS ORDER NUMBER
+// TAKEAWAY -> TW1, TW2...
+// DELIVERY -> DL1, DL2...
+// =====================================================
+
+ipcMain.handle(
+  'pos-order:generate-number',
+  async (_e, orderType) => {
+
+    try {
+
+      const orderNumber =
+        orderRepo.generateNextPosOrderNumber(
+          orderType
+        );
+
+      return orderNumber;
+
+    } catch (error) {
+
+      console.error(
+        'pos-order:generate-number failed',
+        error
+      );
+
+      throw error;
+    }
+  }
+);
+
+
+// =====================================================
+// GET TODAY'S POS ORDER NUMBERS
+//
+// TAKEAWAY:
+//   TW1, TW2, TW3...
+//
+// DELIVERY:
+//   DL1, DL2, DL3...
+// =====================================================
+
+ipcMain.handle(
+  'pos-order:list',
+  async (_e, orderType) => {
+
+    try {
+
+      return await orderRepo.getTodayPosOrderNumbers(
+        orderType
+      );
+
+    } catch (error) {
+
+      console.error(
+        'pos-order:list failed',
+        error
+      );
+
+      throw error;
+    }
+  }
+);
+
+
+// =====================================================
+// DAY CLOSING SUMMARY
+// =====================================================
+
+ipcMain.handle(
+  'dayClosing:getSummary',
+  async (
+    _event,
+    businessDate
+  ) => {
+
+    try {
+
+      const summary =
+        dayClosingRepo
+          .getSummary(
+            businessDate
+          );
+
+      return {
+        success: true,
+        data: summary,
+      };
+
+    } catch (e) {
+
+      console.error(
+        'GET DAY CLOSING SUMMARY FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
+
+
+
  // =====================================================
 // PRINTER IPC
 // =====================================================
@@ -215,6 +335,33 @@ ipcMain.handle(
 );
 
 
+
+
+// =====================================================
+// IP
+// =====================================================
+ipcMain.handle(
+  'posTerminal:register',
+  async () => {
+
+    return await registerPosTerminal();
+
+  }
+);
+
+
+ipcMain.handle(
+  'posTerminal:getIPAddress',
+  async () => {
+
+    return {
+      success: true,
+      ipAddress:
+        getLocalIPAddress(),
+    };
+
+  }
+);
 // =====================================================
 // BILL IMAGE PREVIEW IPC
 // =====================================================
@@ -1013,6 +1160,41 @@ ipcMain.handle(
     return orderRepo.getOrderItems(
       orderId
     );
+  }
+);
+
+
+// =====================================================
+// ORDER SYNC IPC
+// =====================================================
+
+ipcMain.handle(
+  'orders:upload',
+  async () => {
+
+    try {
+
+      const result =
+        await syncPendingOrders();
+
+      console.log(
+        '[IPC] ORDER UPLOAD RESULT',
+        result
+      );
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        '[IPC] ORDER UPLOAD FAILED',
+        error
+      );
+
+      throw error;
+
+    }
+
   }
 );
 

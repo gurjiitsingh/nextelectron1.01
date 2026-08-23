@@ -263,7 +263,7 @@ export default function OrderDetailContent() {
     );
 
   }
-
+console.log("Order------------------",order)
 
   // =====================================================
   // LOADING
@@ -1031,6 +1031,17 @@ export default function OrderDetailContent() {
 
 
             <div className="flex justify-between">
+
+              <span className="opacity-50">
+                Delivery Fee
+              </span>
+
+              <span>
+                ₹{money(order.deliveryFee)}
+              </span>
+
+            </div>
+               <div className="flex justify-between">
 
               <span className="opacity-50">
                 Discount

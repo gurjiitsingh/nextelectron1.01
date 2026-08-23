@@ -484,6 +484,24 @@ export const SideCart = () => {
                 Settings
               </div>
 
+               <Link
+                href="/settings"
+                onClick={handleLinkClick}
+                className={sidebarLinkClass("/settings")}
+                style={{
+                  color: isActive("/settings")
+                    ? theme.primary
+                    : background.text === "text-white"
+                      ? "#FFFFFF"
+                      : "#334155",
+                  fontWeight: isActive("/settings")
+                    ? 700
+                    : 500,
+                }}
+              >
+                All Setting
+              </Link>
+
               <Link
                 href="/settings/theme"
                 onClick={handleLinkClick}

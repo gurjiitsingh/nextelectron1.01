@@ -193,6 +193,16 @@ declare global {
         error?: string;
       }>;
 
+         syncAll:
+      () => Promise<any>;
+
+    uploadOrders:
+      () => Promise<{
+        success: boolean;
+        synced: number;
+        pending: number;
+      }>;
+
 
       // =====================================================
       // PRINTER SETTINGS

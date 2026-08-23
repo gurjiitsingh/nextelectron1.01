@@ -365,6 +365,11 @@ getOrderItems: (orderId) =>
     orderId
   ),
 
+
+  uploadOrders: () =>
+  ipcRenderer.invoke(
+    'orders:upload'
+  ),
   // =====================================================
   // ORDER COUNTER
   // =====================================================
@@ -388,6 +393,20 @@ getOrderItems: (orderId) =>
     ipcRenderer.invoke(
       'printer:queue-length'
     ),
+
+  // =====================================================
+  // IP
+  // =====================================================
+
+    registerPosTerminal: () =>
+  ipcRenderer.invoke(
+    'posTerminal:register'
+  ),
+
+getPosIPAddress: () =>
+  ipcRenderer.invoke(
+    'posTerminal:getIPAddress'
+  ),
 
   // =====================================================
   // BILL IMAGE PREVIEW
