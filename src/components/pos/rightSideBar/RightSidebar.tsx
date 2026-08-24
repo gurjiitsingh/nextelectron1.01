@@ -36,7 +36,7 @@ export default function RightSideBar() {
       `}
     >
 
-      <div className="min-h-0 flex-1 overflow-hidden bg-red-500">
+      <div className="min-h-0 flex-1 overflow-hidden ">
 
         {rightSidebarView === 'cart' && (
           <CartPanel />

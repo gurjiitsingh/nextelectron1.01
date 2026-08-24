@@ -17,7 +17,7 @@ export default function TestPage() {
        {/* <pre>{JSON.stringify(users, null, 2)}</pre>
       <pre>{JSON.stringify(outlet, null, 2)}</pre> */}
 
-      <div className="rounded-xl border bg-white p-5">
+      <div className="w-full">
 
         <PosThemeSelector />
 

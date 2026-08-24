@@ -163,10 +163,10 @@ export default function SettingsPage() {
     // =================================================
 
     {
-      title: 'Business Settings',
+      title: 'Init',
       description:
-        'Manage outlet information, contact details and business configuration.',
-      href: '/settings/business',
+        'First time setting.',
+      href: '/settings/init',
 
       icon: (
         <svg

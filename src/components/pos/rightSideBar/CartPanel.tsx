@@ -1108,10 +1108,10 @@ async function saveItemNote(
                   : theme.primary,
 
               color:
-                '#FFFFFF',
+                '#7f7a7a',
             }}
             className="
-              h-9
+              h-8
               text-xs
               font-semibold
               transition-all

@@ -28,13 +28,13 @@ export default function PosSidebarCategories() {
   const [displayCategory, setDisplayCategory] =
     useState<string | null>(null);
 
-const {
-  productCategoryIdG,
-  setProductCategoryIdG,
-  setProductToSearchQuery,
-  setDisablePickupCatDiscountIds,
-  settings,
-} = UseSiteContext();
+  const {
+    productCategoryIdG,
+    setProductCategoryIdG,
+    setProductToSearchQuery,
+    setDisablePickupCatDiscountIds,
+    settings,
+  } = UseSiteContext();
 
   // =====================================================
   // POS THEME
@@ -123,22 +123,25 @@ const {
       <button
         key={id}
         type="button"
-    onClick={() => {
-  setProductToSearchQuery("");
-  setProductCategoryIdG(id);
-  setDisplayCategory(id);
-}}
+        onClick={() => {
+          setProductToSearchQuery("");
+          setProductCategoryIdG(id);
+          setDisplayCategory(id);
+        }}
         className={`
           w-full
           h-11
           px-3
+          mb-1
           flex
           items-center
           gap-2
           text-left
           text-sm
-          border-b
-          border-zinc-600
+          rounded-xl
+          border 
+           ${background.categorySidebarBg}
+          ${background.categorySidebarBorder}
           transition-all
           duration-100
           outline-none
@@ -146,7 +149,11 @@ const {
           ${
             active
               ? "text-white"
-              : `${background.text} opacity-60 hover:bg-black/10`
+              : `
+                  ${background.categorySidebarText}
+                  ${background.categorySidebarHover}
+                  opacity-60
+                `
           }
         `}
         style={
@@ -187,8 +194,8 @@ const {
       className={`
         h-full
         w-full
-        bg-zinc-500
-        ${background.text}
+       
+        ${background.categorySidebarText}
         flex
         flex-col
       `}

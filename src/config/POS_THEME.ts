@@ -13,13 +13,16 @@ export type PosBackground =
   | 'dark'
   | 'blue';
 
-
 // =====================================================
 // BACKGROUND CONFIG TYPE
 // =====================================================
 
 export type PosBackgroundConfig = {
   name: string;
+
+  // ===================================================
+  // MAIN BACKGROUND
+  // ===================================================
 
   // Tailwind background class
   className: string;
@@ -39,6 +42,11 @@ export type PosBackgroundConfig = {
   // Text color used on light surfaces
   surfaceText: string;
 
+
+  // ===================================================
+  // GENERAL UI
+  // ===================================================
+
   // Normal UI border
   border: string;
 
@@ -50,8 +58,49 @@ export type PosBackgroundConfig = {
 
   // Actual CSS line/separator color
   line: string;
+
+
+  // ===================================================
+  // TOPBAR
+  // ===================================================
+
+  // Topbar background
+  topbarBg: string;
+
+  // Topbar main text
+  topbarText: string;
+
+  // Topbar muted/secondary text
+  topbarMutedText: string;
+
+  // Topbar bottom border
+  topbarBorder: string;
+
+
+  // ===================================================
+  // CATEGORY SIDEBAR
+  // ===================================================
+
+  // Category sidebar background
+  categorySidebarBg: string;
+
+  // Normal category text
+  categorySidebarText: string;
+
+  // Muted/secondary category text
+  categorySidebarMutedText: string;
+
+  // Category separator/border
+  categorySidebarBorder: string;
+
+  // Category hover background
+  categorySidebarHover: string;
 };
 
+
+// =====================================================
+// POS BACKGROUNDS
+// =====================================================
 
 // =====================================================
 // POS BACKGROUNDS
@@ -69,30 +118,46 @@ export const POS_BACKGROUNDS: Record<
   white: {
     name: 'White',
 
+    // =================================================
+    // MAIN POS BACKGROUND
+    // =================================================
+
     className: 'bg-white',
 
-    // Main text
     text: 'text-slate-800',
     textColor: '#1E293B',
 
-    // Secondary text
     mutedText: 'text-slate-500',
     mutedTextColor: '#64748B',
 
-    // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
-    // Normal UI border
     border: 'border-slate-200',
-
-    // Softer item/card border
     itemBorder: 'border-slate-200/60',
-
-    // Row separator
     divide: 'divide-slate-100',
 
-    // CSS line color
     line: '#E2E8F0',
+
+    // =================================================
+    // TOPBAR
+    // Slightly darker than main white
+    // =================================================
+
+    topbarBg: 'bg-slate-100',
+    topbarText: 'text-slate-800',
+    topbarMutedText: 'text-slate-500',
+    topbarBorder: 'border-slate-200',
+
+    // =================================================
+    // CATEGORY SIDEBAR
+    // Very slightly different from main background
+    // =================================================
+
+    categorySidebarBg: 'bg-zinc-300',
+    categorySidebarText: 'text-slate-800',
+    categorySidebarMutedText: 'text-slate-500',
+    categorySidebarBorder: 'border-slate-200',
+    categorySidebarHover: 'hover:bg-slate-100',
   },
 
 
@@ -103,30 +168,95 @@ export const POS_BACKGROUNDS: Record<
   softSlate: {
     name: 'Soft Slate',
 
+    // =================================================
+    // MAIN POS BACKGROUND
+    // =================================================
+
     className: 'bg-zinc-300',
 
-    // Main text
     text: 'text-slate-800',
     textColor: '#1E293B',
 
-    // Secondary text
     mutedText: 'text-slate-500',
-    mutedTextColor: '#464b53',
+    mutedTextColor: '#464B53',
 
-    // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
-    // Normal UI border
     border: 'border-slate-200/60',
-
-    // Softer item/card border
     itemBorder: 'border-slate-300/60',
-
-    // Row separator
     divide: 'divide-slate-200',
 
-    // CSS line color
     line: '#CBD5E1',
+
+    // =================================================
+    // TOPBAR
+    // Slightly darker
+    // =================================================
+
+    topbarBg: 'bg-zinc-200',
+    topbarText: 'text-slate-800',
+    topbarMutedText: 'text-slate-600',
+    topbarBorder: 'border-zinc-400',
+
+    // =================================================
+    // CATEGORY SIDEBAR
+    // Slightly darker than main POS
+    // =================================================
+
+    categorySidebarBg: 'bg-zinc-400',
+    categorySidebarText: 'text-slate-900',
+    categorySidebarMutedText: 'text-slate-600',
+    categorySidebarBorder: 'border-zinc-400',
+    categorySidebarHover: 'hover:bg-zinc-200',
+  },
+
+    // ===================================================
+  // BLUE
+  // ===================================================
+
+  blue: {
+    name: 'Blue',
+
+    // =================================================
+    // MAIN POS BACKGROUND
+    // =================================================
+
+    className: 'bg-[#5C6A83]',
+
+    text: 'text-white',
+    textColor: '#FFFFFF',
+
+    mutedText: 'text-[#C7D2E3]',
+    mutedTextColor: '#D6E2F2',
+
+    surfaceText: 'text-slate-800',
+
+    border: 'border-[#555]',
+    itemBorder: 'border-[#5878AA]',
+    divide: 'divide-[#6F8FBE]',
+
+    line: '#828E9F',
+
+    // =================================================
+    // TOPBAR
+    // Slightly darker / stronger
+    // =================================================
+
+    topbarBg: 'bg-[#4F5D75]',
+    topbarText: 'text-white',
+    topbarMutedText: 'text-[#C7D2E3]',
+    topbarBorder: 'border-[#6F7D94]',
+
+    // =================================================
+    // CATEGORY SIDEBAR
+    // Slightly darker than main
+    // =================================================
+
+    categorySidebarBg: 'bg-[#4F5D75]',
+    categorySidebarText: 'text-white',
+    categorySidebarMutedText: 'text-[#C7D2E3]',
+    categorySidebarBorder: 'border-[#687891]',
+    categorySidebarHover: 'hover:bg-[#61728C]',
   },
 
 
@@ -137,30 +267,46 @@ export const POS_BACKGROUNDS: Record<
   darkSlate: {
     name: 'Dark Slate',
 
+    // =================================================
+    // MAIN POS BACKGROUND
+    // =================================================
+
     className: 'bg-slate-700',
 
-    // Main text
     text: 'text-white',
     textColor: '#FFFFFF',
 
-    // Secondary text
     mutedText: 'text-slate-200',
     mutedTextColor: '#E2E8F0',
 
-    // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
-    // Normal UI border
     border: 'border-slate-500/50',
-
-    // Softer item/card border
     itemBorder: 'border-slate-500/30',
-
-    // Row separator
     divide: 'divide-slate-500/30',
 
-    // CSS line color
     line: '#64748B',
+
+    // =================================================
+    // TOPBAR
+    // Slightly darker than main POS
+    // =================================================
+
+    topbarBg: 'bg-slate-800',
+    topbarText: 'text-white',
+    topbarMutedText: 'text-slate-300',
+    topbarBorder: 'border-slate-600',
+
+    // =================================================
+    // CATEGORY SIDEBAR
+    // Slightly lighter than topbar
+    // =================================================
+
+    categorySidebarBg: 'bg-slate-800',
+    categorySidebarText: 'text-white',
+    categorySidebarMutedText: 'text-slate-200',
+    categorySidebarBorder: 'border-slate-500',
+    categorySidebarHover: 'hover:bg-slate-600',
   },
 
 
@@ -171,30 +317,46 @@ export const POS_BACKGROUNDS: Record<
   black: {
     name: 'Black',
 
+    // =================================================
+    // MAIN POS BACKGROUND
+    // =================================================
+
     className: 'bg-black',
 
-    // Main text
     text: 'text-white',
     textColor: '#FFFFFF',
 
-    // Secondary text
     mutedText: 'text-slate-300',
     mutedTextColor: '#CBD5E1',
 
-    // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
-    // Normal UI border
     border: 'border-slate-700',
-
-    // Softer item/card border
     itemBorder: 'border-slate-800',
-
-    // Row separator
     divide: 'divide-slate-800',
 
-    // CSS line color
     line: '#334155',
+
+    // =================================================
+    // TOPBAR
+    // Darkest surface
+    // =================================================
+
+    topbarBg: 'bg-zinc-700',
+    topbarText: 'text-white',
+    topbarMutedText: 'text-slate-300',
+    topbarBorder: 'border-slate-800',
+
+    // =================================================
+    // CATEGORY SIDEBAR
+    // Slightly above pure black
+    // =================================================
+
+    categorySidebarBg: 'bg-zinc-700',
+    categorySidebarText: 'text-white',
+    categorySidebarMutedText: 'text-slate-300',
+    categorySidebarBorder: 'border-slate-400',
+    categorySidebarHover: 'hover:bg-slate-900',
   },
 
 
@@ -205,67 +367,52 @@ export const POS_BACKGROUNDS: Record<
   dark: {
     name: 'Dark',
 
+    // =================================================
+    // MAIN POS BACKGROUND
+    // =================================================
+
     className: 'bg-slate-800',
 
-    // Main text
     text: 'text-white',
     textColor: '#FFFFFF',
 
-    // Secondary text
     mutedText: 'text-slate-300',
     mutedTextColor: '#CBD5E1',
 
-    // Text used on light surfaces
     surfaceText: 'text-slate-800',
 
-    // Normal UI border
     border: 'border-slate-600',
-
-    // Softer item/card border
     itemBorder: 'border-slate-700',
-
-    // Row separator
     divide: 'divide-slate-700',
 
-    // CSS line color
     line: '#475569',
+
+    // =================================================
+    // TOPBAR
+    // Slightly darker
+    // =================================================
+
+    topbarBg: 'bg-slate-900',
+    topbarText: 'text-white',
+    topbarMutedText: 'text-slate-300',
+    topbarBorder: 'border-slate-700',
+
+    // =================================================
+    // CATEGORY SIDEBAR
+    // Slightly different from main
+    // =================================================
+
+    categorySidebarBg: 'bg-slate-750',
+    categorySidebarText: 'text-white',
+    categorySidebarMutedText: 'text-slate-300',
+    categorySidebarBorder: 'border-slate-600',
+    categorySidebarHover: 'hover:bg-slate-700',
   },
 
 
-  // ===================================================
-  // BLUE
-  // ===================================================
 
-  blue: {
-    name: 'Blue',
-
-    // Main background
-    className: 'bg-[#5C6A83]',
-
-    // Main text
-    text: 'text-white',
-    textColor: '#FFFFFF',
-
-    // Clearly visible secondary text
-    mutedText: 'text-[#C7D2E3]',
-    mutedTextColor: '#D6E2F2',
-
-    // Text used on light surfaces
-    surfaceText: 'text-slate-800',
-
-    // Normal UI border
-    border: 'border-[#555]',
-
-    // Softer item/card border
-    itemBorder: 'border-[#5878AA]',
-
-    // Row separator
-    divide: 'divide-[#6F8FBE]',
-
-    // Clearly visible CSS line
-    line: '#828e9f',
-  },
 };
+
 
 
 // =====================================================
@@ -275,7 +422,9 @@ export const POS_BACKGROUNDS: Record<
 export type PosThemeName =
   | 'blue'
   | 'orange'
-  | 'teal';
+  | 'teal'
+  | 'cyan'
+  | 'amber';
 
 
 // =====================================================
@@ -327,9 +476,9 @@ export const POS_THEMES: Record<
 
     primaryText: '#315FCF',
 
-    inactive: '#6f86bd',
+    inactive: '#6F86BD',
   },
-// 
+
 
   // ===================================================
   // ORANGE
@@ -346,7 +495,7 @@ export const POS_THEMES: Record<
 
     primaryText: '#C96F25',
 
-    inactive: '#4c4c4cb8',
+    inactive: '#4C4C4CB8',
   },
 
 
@@ -365,6 +514,44 @@ export const POS_THEMES: Record<
 
     primaryText: '#287F7A',
 
-    inactive: '#68827f',
+    inactive: '#68827F',
+  },
+
+
+  // ===================================================
+  // CYAN
+  // ===================================================
+
+  cyan: {
+    primary: '#22B8CF',
+
+    primaryHover: '#18A7BD',
+
+    primaryLight: '#ECFBFE',
+
+    primarySelected: '#D8F6FA',
+
+    primaryText: '#14869A',
+
+    inactive: '#668C94',
+  },
+
+
+  // ===================================================
+  // AMBER
+  // ===================================================
+
+  amber: {
+    primary: '#F59E0B',
+
+    primaryHover: '#D97706',
+
+    primaryLight: '#FFF8E7',
+
+    primarySelected: '#FDECC8',
+
+    primaryText: '#B45309',
+
+    inactive: '#8A7654',
   },
 };
