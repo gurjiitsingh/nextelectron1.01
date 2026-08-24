@@ -2,7 +2,6 @@ const os = require('os');
 
 const {
   doc,
-  getDoc,
   setDoc,
 } = require('firebase/firestore');
 
@@ -19,7 +18,7 @@ const {
 // CONFIG
 // =====================================================
 
-const POS_PORT = 8787;
+const POS_PORT = 2345;
 
 
 // =====================================================
@@ -144,13 +143,11 @@ async function registerPosTerminal() {
   //
   // Keep this stable.
   //
-  // Do NOT generate a new ID every registration.
-  //
-  // Later we can make this a real machine/device ID.
+  // Later this can become a real machine/device ID.
   //
 
   const terminalId =
-    'POS-01';
+    'POS-02';
 
 
   // ===================================================
@@ -195,48 +192,24 @@ async function registerPosTerminal() {
 
 
   // ===================================================
-  // CHECK OUTLET EXISTS
+  // FIRESTORE POS TERMINAL
   // ===================================================
   //
-  // We still verify the outlet because the terminal
-  // belongs to this outlet.
-  //
-
-  const outletRef =
-    doc(
-      firestore,
-      'outlet',
-      outlet.outletId
-    );
-
-
-  const outletSnapshot =
-    await getDoc(outletRef);
-
-
-  if (!outletSnapshot.exists()) {
-
-    throw new Error(
-      `Firestore outlet ${outlet.outletId} not found.`
-    );
-
-  }
-
-
-  // ===================================================
-  // POS TERMINAL DOCUMENT
-  // ===================================================
-  //
-  // New structure:
+  // Structure:
   //
   // posTerminals
-  //   └── POS-01
+  //   └── POS-02
   //
-  //     outletId
-  //     ownerId
-  //     ipAddress
-  //     port
-  //     ...
+  //       terminalId
+  //       terminalName
+  //       outletId
+  //       ownerId
+  //       ipAddress
+  //       port
+  //       deviceType
+  //       isActive
+  //       lastSeenAt
+  //       updatedAt
   //
 
   const terminalRef =
@@ -255,8 +228,7 @@ async function registerPosTerminal() {
     terminalRef,
     terminal,
     {
-      merge:
-        true,
+      merge: true,
     }
   );
 

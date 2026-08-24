@@ -40,7 +40,7 @@ export default function PosNetworkSettingsPage() {
   const [
     port,
     setPort,
-  ] = useState(8787);
+  ] = useState(2345);
 
 
   const [
@@ -346,8 +346,8 @@ export default function PosNetworkSettingsPage() {
                   text-slate-500
                 "
               >
-                Configure this desktop POS for
-                Waiter connections.
+                Configure this desktop POS
+                 {/* for Waiter connections. */}
               </p>
 
             </div>
@@ -387,7 +387,8 @@ export default function PosNetworkSettingsPage() {
                 text-slate-900
               "
             >
-              Desktop POS Connection
+              Desktop POS 
+              {/* Connection */}
             </h2>
 
             <p
@@ -397,9 +398,10 @@ export default function PosNetworkSettingsPage() {
                 text-slate-500
               "
             >
-              Waiter devices use this information
+              {/* Waiter devices use this information
               to connect to this POS over the local
-              restaurant network.
+              restaurant network. */}
+              For Printer and netwrok discovery
             </p>
 
           </div>
@@ -517,7 +519,7 @@ export default function PosNetworkSettingsPage() {
               "
             >
 
-              <p
+              {/* <p
                 className="
                   text-[11px]
                   font-medium
@@ -527,7 +529,7 @@ export default function PosNetworkSettingsPage() {
                 "
               >
                 Waiter Connection
-              </p>
+              </p> */}
 
 
               <p
@@ -685,12 +687,14 @@ export default function PosNetworkSettingsPage() {
             >
               Note:
             </span>{' '}
-
+{/* 
             The IP address can change when the
             restaurant router assigns a new address.
-            Use "Register POS" after a network change
-            so Waiter devices receive the latest
-            address.
+            Use  */}
+            "Register POS" after a network change
+
+            {/* so Waiter devices receive the latest
+            address. */}
 
           </p>
 

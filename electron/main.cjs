@@ -17,6 +17,8 @@ const { syncAll } = require('./sync/syncAll.cjs');
 
 const billRepo = require('./db/billItemRepo.cjs');
 
+//const { broadcastLanEvent } = require("./lan/lanBroadcaster.cjs");
+
 const {
   createWaiterLanServer,
   stopWaiterLanServer,
@@ -139,6 +141,7 @@ console.log(
 
 
 function registerIpcHandlers() {
+
 
 
 
@@ -810,6 +813,11 @@ ipcMain.handle(
   'bill:create',
   async (_event, input) => {
     try {
+
+    //       broadcastLanEvent({
+    //   type: "TEST",
+    //   message: "OK"
+    // });
       const result =
         await createBillFromKitchen(
           input
@@ -1663,6 +1671,9 @@ function createWindow() {
 // =====================================================
 
 app.whenReady().then(async () => {
+
+
+
 
   // ===================================================
   // INITIALIZE DATABASE FIRST

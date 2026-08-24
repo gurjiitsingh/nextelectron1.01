@@ -66,7 +66,7 @@ export default function SettingsPage() {
       title: 'Printers',
       description:
         'Configure bill, kitchen and other POS printers.',
-      href: '/settings/printers',
+      href: '/settings/printer',
 
       icon: (
         <svg
@@ -101,7 +101,7 @@ export default function SettingsPage() {
       title: 'Data Sync',
       description:
         'Download cloud data and upload pending POS orders.',
-      href: '/settings/sync',
+      href: '/sync',
 
       icon: (
         <svg
@@ -121,8 +121,44 @@ export default function SettingsPage() {
       ),
     },
 
-
     // =================================================
+    // APPEARANCE
+    // =================================================
+
+    {
+      title: 'Appearance',
+      description:
+        'Customize the POS theme, colors and display appearance.',
+      href: '/settings/theme',
+
+      icon: (
+        <svg
+          width="21"
+          height="21"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="4"
+          />
+
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+      ),
+    },
+
+        // =================================================
     // BUSINESS
     // =================================================
 
@@ -269,44 +305,6 @@ export default function SettingsPage() {
           <path d="M3 10h18" />
 
           <path d="M7 15h3" />
-        </svg>
-      ),
-    },
-
-
-    // =================================================
-    // APPEARANCE
-    // =================================================
-
-    {
-      title: 'Appearance',
-      description:
-        'Customize the POS theme, colors and display appearance.',
-      href: '/settings/appearance',
-
-      icon: (
-        <svg
-          width="21"
-          height="21"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="4"
-          />
-
-          <path d="M12 2v2" />
-          <path d="M12 20v2" />
-          <path d="m4.93 4.93 1.41 1.41" />
-          <path d="m17.66 17.66 1.41 1.41" />
-          <path d="M2 12h2" />
-          <path d="M20 12h2" />
-          <path d="m6.34 17.66-1.41 1.41" />
-          <path d="m19.07 4.93-1.41 1.41" />
         </svg>
       ),
     },
