@@ -152,7 +152,7 @@ export default function SyncPage() {
       ) {
 
         throw new Error(
-          res?.message ||
+          res?.message! ||
           'Order upload failed.'
         );
 

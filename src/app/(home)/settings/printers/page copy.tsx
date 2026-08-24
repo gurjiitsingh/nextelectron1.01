@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import {
   Printer,
   Receipt,
@@ -15,137 +16,303 @@ import {
 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 
+
+// =====================================================
+// TYPES
+// =====================================================
+
+type PrinterRole =
+  | 'BILL'
+  | 'KITCHEN'
+  | 'BAR';
+
+type PrinterConfig = {
+  role: PrinterRole;
+  enabled: boolean;
+  connectionType: string;
+  paperSize: string;
+  renderMode: string;
+  ip: string;
+  port: number;
+  name: string;
+};
+
+
+// =====================================================
+// ROLES
+// =====================================================
+
 const roles = [
   {
-    key: 'BILL',
+    key: 'BILL' as PrinterRole,
     title: 'Bill Printer',
     icon: Receipt,
   },
   {
-    key: 'KITCHEN',
+    key: 'KITCHEN' as PrinterRole,
     title: 'Kitchen Printer',
     icon: ChefHat,
   },
   {
-    key: 'BAR',
+    key: 'BAR' as PrinterRole,
     title: 'Bar Printer',
     icon: Wine,
   },
 ];
 
-function defaultConfig(role: string) {
+
+// =====================================================
+// DEFAULT CONFIG
+// =====================================================
+
+function defaultConfig(
+  role: PrinterRole
+): PrinterConfig {
   return {
     role,
     enabled: true,
     connectionType: 'LAN',
     paperSize: '80mm',
     renderMode: 'TEXT',
-    ip: '127.0.0.1',
+    ip: '',
     port: 9100,
     name: `${role} Printer`,
   };
 }
 
-export default function PrinterSettingsPage() {
-  const { theme, background } = usePosTheme();
 
-  const [configs, setConfigs] = useState<any[]>([]);
-  const [saving, setSaving] = useState<string | null>(null);
+// =====================================================
+// PAGE
+// =====================================================
+
+export default function PrinterSettingsPage() {
+
+  const {
+    theme,
+    background,
+  } = usePosTheme();
+
+
+  // ===================================================
+  // CONFIGS
+  // ===================================================
+
+  const [configs, setConfigs] =
+    useState<PrinterConfig[]>([
+      defaultConfig('BILL'),
+      defaultConfig('KITCHEN'),
+      defaultConfig('BAR'),
+    ]);
+
+
+  const [saving, setSaving] =
+    useState<PrinterRole | null>(null);
+
+
+  // ===================================================
+  // LOAD
+  // ===================================================
 
   useEffect(() => {
+
+    async function load() {
+
+      try {
+
+        const data =
+          await window.posApi.getPrinterSettings();
+
+        setConfigs(
+          roles.map((role) => {
+
+            const existing =
+              data?.find(
+                (item: any) =>
+                  item.role === role.key
+              );
+
+            return {
+              ...defaultConfig(role.key),
+              ...(existing || {}),
+            };
+
+          })
+        );
+
+      } catch (error) {
+
+        console.error(
+          'Failed to load printer settings',
+          error
+        );
+
+      }
+
+    }
+
     load();
+
   }, []);
 
-  async function load() {
-    try {
-      const data =
-        await window.posApi.getPrinterSettings();
 
-      const merged = roles.map((role) => {
-        return (
-          data.find(
-            (c: any) => c.role === role.key
-          ) ?? defaultConfig(role.key)
-        );
-      });
+  // ===================================================
+  // UPDATE
+  // ===================================================
 
-      setConfigs(merged);
-    } catch (error) {
-      console.error(
-        'Failed to load printer settings',
-        error
-      );
-    }
-  }
+  function updatePrinter(
+    role: PrinterRole,
+    field: keyof PrinterConfig,
+    value: any
+  ) {
 
-  function update(role: string, patch: any) {
-    setConfigs((prev) =>
-      prev.map((c) =>
-        c.role === role
-          ? { ...c, ...patch }
-          : c
-      )
+    setConfigs((current) =>
+      current.map((config) => {
+
+        if (config.role !== role) {
+          return config;
+        }
+
+        return {
+          ...config,
+          [field]: value,
+        };
+
+      })
     );
+
   }
 
-  async function save(role: string) {
+
+  // ===================================================
+  // GET CONFIG
+  // ===================================================
+
+  function getConfig(
+    role: PrinterRole
+  ): PrinterConfig {
+
+    return (
+      configs.find(
+        (config) =>
+          config.role === role
+      ) ||
+      defaultConfig(role)
+    );
+
+  }
+
+
+  // ===================================================
+  // SAVE
+  // ===================================================
+
+  async function save(
+    role: PrinterRole
+  ) {
+
+    const config =
+      getConfig(role);
+
     setSaving(role);
 
     try {
-      const config = configs.find(
-        (c) => c.role === role
-      );
 
-      const res =
+      const result =
         await window.posApi.savePrinterSetting(
           config
         );
 
-      if (res.success) {
-        alert(`${role} printer saved`);
+      if (result?.success) {
+
+        alert(
+          `${role} printer saved`
+        );
+
       }
+
     } catch (error) {
+
       console.error(
         'Failed to save printer',
         error
       );
+
     } finally {
+
       setSaving(null);
+
     }
+
   }
 
-  async function testPrint(role: string) {
-    try {
-      const res = await window.posApi.print({
-        role,
-        source: 'SYSTEM',
-        data: {
-          kotNumber: 'TEST',
-          tableNo: 'T1',
-          tableName: 'TEST TABLE',
-          orderType: 'TEST',
-          createdAt: Date.now(),
-          items: [
-            {
-              name: `${role} TEST ITEM`,
-              quantity: 1,
-            },
-          ],
-        },
-      });
 
-      alert(JSON.stringify(res));
+  // ===================================================
+  // TEST PRINT
+  // ===================================================
+
+  async function testPrint(
+    role: PrinterRole
+  ) {
+
+    try {
+
+      const result =
+        await window.posApi.print({
+
+          role,
+
+          source: 'SYSTEM',
+
+          data: {
+
+            kotNumber: 'TEST',
+
+            tableNo: 'T1',
+
+            tableName: 'TEST TABLE',
+
+            orderType: 'TEST',
+
+            createdAt: Date.now(),
+
+            items: [
+              {
+                name:
+                  `${role} TEST ITEM`,
+                quantity: 1,
+              },
+            ],
+
+          },
+
+        });
+
+      alert(
+        JSON.stringify(result)
+      );
+
     } catch (error) {
+
       console.error(
         'Test print failed',
         error
       );
 
-      alert('Test print failed');
+      alert(
+        'Test print failed'
+      );
+
     }
+
   }
 
+
+  // ===================================================
+  // RENDER
+  // ===================================================
+
   return (
+
     <div
       className={`
         h-[calc(100vh-64px)]
@@ -155,11 +322,13 @@ export default function PrinterSettingsPage() {
         ${background.text}
       `}
     >
+
       <div className="mx-auto max-w-6xl p-6">
 
-        {/* =====================================================
+
+        {/* =================================================
             HEADER
-        ===================================================== */}
+        ================================================= */}
 
         <div className="mb-8 flex items-center gap-4">
 
@@ -168,12 +337,18 @@ export default function PrinterSettingsPage() {
             style={{
               backgroundColor:
                 theme.primaryLight,
+
               color:
                 theme.primaryText,
             }}
           >
-            <Printer className="h-8 w-8" />
+
+            <Printer
+              className="h-8 w-8"
+            />
+
           </div>
+
 
           <div>
 
@@ -197,27 +372,23 @@ export default function PrinterSettingsPage() {
         </div>
 
 
-        {/* =====================================================
-            PRINTER CARDS
-        ===================================================== */}
+        {/* =================================================
+            PRINTERS
+        ================================================= */}
 
         <div className="grid gap-6 lg:grid-cols-3">
 
           {roles.map((roleInfo) => {
 
             const config =
-              configs.find(
-                (c) =>
-                  c.role === roleInfo.key
-              ) ??
-              defaultConfig(
-                roleInfo.key
-              );
+              getConfig(roleInfo.key);
 
             const Icon =
               roleInfo.icon;
 
+
             return (
+
               <div
                 key={roleInfo.key}
                 className={`
@@ -229,8 +400,9 @@ export default function PrinterSettingsPage() {
                 `}
               >
 
+
                 {/* =================================================
-                    CARD HEADER
+                    HEADER
                 ================================================= */}
 
                 <div
@@ -248,12 +420,18 @@ export default function PrinterSettingsPage() {
                       style={{
                         backgroundColor:
                           theme.primaryLight,
+
                         color:
                           theme.primaryText,
                       }}
                     >
-                      <Icon className="h-6 w-6" />
+
+                      <Icon
+                        className="h-6 w-6"
+                      />
+
                     </div>
+
 
                     <div>
 
@@ -273,10 +451,11 @@ export default function PrinterSettingsPage() {
 
 
                 {/* =================================================
-                    CARD BODY
+                    BODY
                 ================================================= */}
 
                 <div className="space-y-5 p-5">
+
 
                   {/* =================================================
                       ENABLE
@@ -294,35 +473,23 @@ export default function PrinterSettingsPage() {
                     `}
                   >
 
-                    <span
-                      className="
-                        text-sm
-                        font-medium
-                        opacity-70
-                      "
-                    >
+                    <span className="text-sm font-medium opacity-70">
                       Enable Printer
                     </span>
 
                     <input
                       type="checkbox"
-                      checked={config.enabled}
-                      onChange={(e) =>
-                        update(
+                      checked={
+                        config.enabled
+                      }
+                      onChange={(event) =>
+                        updatePrinter(
                           config.role,
-                          {
-                            enabled:
-                              e.target.checked,
-                          }
+                          'enabled',
+                          event.target.checked
                         )
                       }
-                      className="
-                        h-5
-                        w-5
-                        rounded
-                        border-gray-300
-                        focus:ring-2
-                      "
+                      className="h-5 w-5"
                       style={{
                         accentColor:
                           theme.primary,
@@ -333,24 +500,27 @@ export default function PrinterSettingsPage() {
 
 
                   {/* =================================================
-                      PRINTER NAME
+                      NAME
                   ================================================= */}
 
                   <div>
 
-                    <label
-                      className="
-                        mb-2
-                        block
-                        text-sm
-                        font-medium
-                        opacity-70
-                      "
-                    >
+                    <label className="mb-2 block text-sm font-medium opacity-70">
                       Printer Name
                     </label>
 
                     <input
+                      type="text"
+                      value={
+                        config.name
+                      }
+                      onChange={(event) =>
+                        updatePrinter(
+                          config.role,
+                          'name',
+                          event.target.value
+                        )
+                      }
                       className={`
                         w-full
                         rounded-xl
@@ -360,54 +530,27 @@ export default function PrinterSettingsPage() {
                         py-2
                         text-sm
                         outline-none
-                        transition
+                        focus:ring-2
                       `}
-                      value={config.name}
-                      onChange={(e) =>
-                        update(
-                          config.role,
-                          {
-                            name:
-                              e.target.value,
-                          }
-                        )
-                      }
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor =
-                          theme.primary;
-
-                        e.currentTarget.style.boxShadow =
-                          `0 0 0 2px ${theme.primaryLight}`;
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor =
-                          '';
-
-                        e.currentTarget.style.boxShadow =
-                          '';
-                      }}
+                      style={{
+                        '--tw-ring-color':
+                          theme.primaryLight,
+                      } as React.CSSProperties}
                     />
 
                   </div>
 
 
                   {/* =================================================
-                      CONNECTION TYPE
+                      CONNECTION
                   ================================================= */}
 
                   <div>
 
-                    <label
-                      className="
-                        mb-2
-                        block
-                        text-sm
-                        font-medium
-                        opacity-70
-                      "
-                    >
+                    <label className="mb-2 block text-sm font-medium opacity-70">
                       Connection Type
                     </label>
+
 
                     <div className="grid grid-cols-3 gap-2">
 
@@ -424,26 +567,26 @@ export default function PrinterSettingsPage() {
                           key: 'USB',
                           icon: Usb,
                         },
-                      ].map((opt) => {
+                      ].map((option) => {
 
-                        const OptIcon =
-                          opt.icon;
+                        const OptionIcon =
+                          option.icon;
 
                         const selected =
                           config.connectionType ===
-                          opt.key;
+                          option.key;
+
 
                         return (
+
                           <button
-                            key={opt.key}
+                            key={option.key}
                             type="button"
                             onClick={() =>
-                              update(
+                              updatePrinter(
                                 config.role,
-                                {
-                                  connectionType:
-                                    opt.key,
-                                }
+                                'connectionType',
+                                option.key
                               )
                             }
                             className={`
@@ -453,37 +596,37 @@ export default function PrinterSettingsPage() {
                               justify-center
                               rounded-xl
                               border
+                              ${background.border}
                               px-3
                               py-3
                               text-xs
-                              transition
-                              ${background.border}
                             `}
                             style={
                               selected
                                 ? {
                                     borderColor:
                                       theme.primary,
+
                                     backgroundColor:
                                       theme.primaryLight,
+
                                     color:
                                       theme.primaryText,
                                   }
                                 : undefined
                             }
                           >
-                            <OptIcon
-                              className="
-                                mb-1
-                                h-5
-                                w-5
-                              "
+
+                            <OptionIcon
+                              className="mb-1 h-5 w-5"
                             />
 
-                            {opt.key}
+                            {option.key}
 
                           </button>
+
                         );
+
                       })}
 
                     </div>
@@ -492,22 +635,15 @@ export default function PrinterSettingsPage() {
 
 
                   {/* =================================================
-                      PAPER SIZE
+                      PAPER
                   ================================================= */}
 
                   <div>
 
-                    <label
-                      className="
-                        mb-2
-                        block
-                        text-sm
-                        font-medium
-                        opacity-70
-                      "
-                    >
+                    <label className="mb-2 block text-sm font-medium opacity-70">
                       Paper Size
                     </label>
+
 
                     <div className="grid grid-cols-2 gap-2">
 
@@ -520,36 +656,37 @@ export default function PrinterSettingsPage() {
                           config.paperSize ===
                           size;
 
+
                         return (
+
                           <button
                             key={size}
                             type="button"
                             onClick={() =>
-                              update(
+                              updatePrinter(
                                 config.role,
-                                {
-                                  paperSize:
-                                    size,
-                                }
+                                'paperSize',
+                                size
                               )
                             }
                             className={`
                               rounded-xl
                               border
+                              ${background.border}
                               px-3
                               py-2
                               text-sm
                               font-medium
-                              transition
-                              ${background.border}
                             `}
                             style={
                               selected
                                 ? {
                                     borderColor:
                                       theme.primary,
+
                                     backgroundColor:
                                       theme.primaryLight,
+
                                     color:
                                       theme.primaryText,
                                   }
@@ -558,7 +695,9 @@ export default function PrinterSettingsPage() {
                           >
                             {size}
                           </button>
+
                         );
+
                       })}
 
                     </div>
@@ -567,22 +706,15 @@ export default function PrinterSettingsPage() {
 
 
                   {/* =================================================
-                      RENDER MODE
+                      RENDER
                   ================================================= */}
 
                   <div>
 
-                    <label
-                      className="
-                        mb-2
-                        block
-                        text-sm
-                        font-medium
-                        opacity-70
-                      "
-                    >
+                    <label className="mb-2 block text-sm font-medium opacity-70">
                       Render Mode
                     </label>
+
 
                     <div className="grid grid-cols-2 gap-2">
 
@@ -595,36 +727,37 @@ export default function PrinterSettingsPage() {
                           config.renderMode ===
                           mode;
 
+
                         return (
+
                           <button
                             key={mode}
                             type="button"
                             onClick={() =>
-                              update(
+                              updatePrinter(
                                 config.role,
-                                {
-                                  renderMode:
-                                    mode,
-                                }
+                                'renderMode',
+                                mode
                               )
                             }
                             className={`
                               rounded-xl
                               border
+                              ${background.border}
                               px-3
                               py-2
                               text-sm
                               font-medium
-                              transition
-                              ${background.border}
                             `}
                             style={
                               selected
                                 ? {
                                     borderColor:
                                       theme.primary,
+
                                     backgroundColor:
                                       theme.primaryLight,
+
                                     color:
                                       theme.primaryText,
                                   }
@@ -633,7 +766,9 @@ export default function PrinterSettingsPage() {
                           >
                             {mode}
                           </button>
+
                         );
+
                       })}
 
                     </div>
@@ -642,28 +777,19 @@ export default function PrinterSettingsPage() {
 
 
                   {/* =================================================
-                      NETWORK SETTINGS
+                      NETWORK
                   ================================================= */}
 
                   <div
-                    className="
-                      rounded-xl
-                      p-4
-                    "
+                    className="rounded-xl p-4"
                     style={{
                       backgroundColor:
                         theme.primaryLight,
-                      color:
-                        background.surfaceText,
                     }}
                   >
 
                     <p
-                      className="
-                        mb-3
-                        text-sm
-                        font-medium
-                      "
+                      className="mb-3 text-sm font-medium"
                       style={{
                         color:
                           background.surfaceText,
@@ -672,66 +798,46 @@ export default function PrinterSettingsPage() {
                       Network Settings
                     </p>
 
+
                     <div className="space-y-3">
+
 
                       {/* IP */}
 
                       <div>
 
-                        <label
-                          className="
-                            mb-1
-                            block
-                            text-xs
-                            font-medium
-                            opacity-60
-                          "
-                          style={{
-                            color:
-                              background.surfaceText,
-                          }}
-                        >
+                        <label className="mb-1 block text-xs font-medium opacity-60">
                           IP Address
                         </label>
 
                         <input
+                          type="text"
+                          value={
+                            config.ip
+                          }
+                          onChange={(event) =>
+                            updatePrinter(
+                              config.role,
+                              'ip',
+                              event.target.value
+                            )
+                          }
+                          placeholder="192.168.1.100"
                           className={`
                             w-full
                             rounded-xl
                             border
                             ${background.border}
-                            ${background.surfaceText}
                             px-3
                             py-2
                             text-sm
                             outline-none
-                            transition
+                            focus:ring-2
                           `}
-                          value={
-                            config.ip || ''
-                          }
-                          onChange={(e) =>
-                            update(
-                              config.role,
-                              {
-                                ip: e.target.value,
-                              }
-                            )
-                          }
-                          onFocus={(e) => {
-                            e.currentTarget.style.borderColor =
-                              theme.primary;
-
-                            e.currentTarget.style.boxShadow =
-                              `0 0 0 2px ${theme.primaryLight}`;
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.borderColor =
-                              '';
-
-                            e.currentTarget.style.boxShadow =
-                              '';
-                          }}
+                          style={{
+                            '--tw-ring-color':
+                              theme.primaryLight,
+                          } as React.CSSProperties}
                         />
 
                       </div>
@@ -741,64 +847,39 @@ export default function PrinterSettingsPage() {
 
                       <div>
 
-                        <label
-                          className="
-                            mb-1
-                            block
-                            text-xs
-                            font-medium
-                            opacity-60
-                          "
-                          style={{
-                            color:
-                              background.surfaceText,
-                          }}
-                        >
+                        <label className="mb-1 block text-xs font-medium opacity-60">
                           Port
                         </label>
 
                         <input
                           type="number"
+                          value={
+                            config.port
+                          }
+                          onChange={(event) =>
+                            updatePrinter(
+                              config.role,
+                              'port',
+                              Number(
+                                event.target.value
+                              )
+                            )
+                          }
                           className={`
                             w-full
                             rounded-xl
                             border
                             ${background.border}
-                            ${background.surfaceText}
                             px-3
                             py-2
                             text-sm
                             outline-none
-                            transition
+                            focus:ring-2
                           `}
-                          value={
-                            config.port ||
-                            9100
-                          }
-                          onChange={(e) =>
-                            update(
-                              config.role,
-                              {
-                                port: Number(
-                                  e.target.value
-                                ),
-                              }
-                            )
-                          }
-                          onFocus={(e) => {
-                            e.currentTarget.style.borderColor =
-                              theme.primary;
-
-                            e.currentTarget.style.boxShadow =
-                              `0 0 0 2px ${theme.primaryLight}`;
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.borderColor =
-                              '';
-
-                            e.currentTarget.style.boxShadow =
-                              '';
-                          }}
+                          style={{
+                            '--tw-ring-color':
+                              theme.primaryLight,
+                          } as React.CSSProperties}
                         />
 
                       </div>
@@ -828,6 +909,7 @@ export default function PrinterSettingsPage() {
                   }}
                 >
 
+
                   {/* SAVE */}
 
                   <button
@@ -851,25 +933,11 @@ export default function PrinterSettingsPage() {
                       text-sm
                       font-medium
                       text-white
-                      transition
                       disabled:opacity-50
                     "
                     style={{
                       backgroundColor:
                         theme.primary,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (
-                        saving !==
-                        config.role
-                      ) {
-                        e.currentTarget.style.backgroundColor =
-                          theme.primaryHover;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        theme.primary;
                     }}
                   >
 
@@ -905,31 +973,12 @@ export default function PrinterSettingsPage() {
                       py-3
                       text-sm
                       font-medium
-                      transition
                     `}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        theme.primaryLight;
-
-                      e.currentTarget.style.borderColor =
-                        theme.primary;
-
-                      e.currentTarget.style.color =
-                        theme.primaryText;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        '';
-
-                      e.currentTarget.style.borderColor =
-                        '';
-
-                      e.currentTarget.style.color =
-                        '';
-                    }}
                   >
 
-                    <TestTube className="h-4 w-4" />
+                    <TestTube
+                      className="h-4 w-4"
+                    />
 
                     Test
 
@@ -938,12 +987,17 @@ export default function PrinterSettingsPage() {
                 </div>
 
               </div>
+
             );
+
           })}
 
         </div>
 
       </div>
+
     </div>
+
   );
+
 }

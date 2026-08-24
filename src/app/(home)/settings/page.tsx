@@ -66,7 +66,7 @@ export default function SettingsPage() {
       title: 'Printers',
       description:
         'Configure bill, kitchen and other POS printers.',
-      href: '/settings/printer',
+      href: '/settings/printers',
 
       icon: (
         <svg

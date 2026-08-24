@@ -204,6 +204,44 @@ declare global {
       }>;
 
 
+
+      firebase: {
+  initialize: (
+    clientId: string
+  ) => Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }>;
+
+  getConfig: () => Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }>;
+};
+
+
+getPosIPAddress: () => Promise<{
+  success: boolean;
+  ipAddress?: string;
+  error?: string;
+}>;
+
+
+
+
+registerPosTerminal: () => Promise<{
+  success: boolean;
+  terminal?: {
+    ipAddress?: string;
+    port?: number;
+    terminalId?: string;
+    terminalName?: string;
+  };
+  error?: string;
+}>;
+
       // =====================================================
       // PRINTER SETTINGS
       // =====================================================

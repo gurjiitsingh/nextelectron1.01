@@ -33,7 +33,7 @@ export default function PosTopBar() {
   const isKOT = pathname.startsWith("/kot");
   const isOrders = pathname.startsWith("/orders");
   const isTables = pathname.startsWith("/tables");
-  const isPrinter = pathname.startsWith("/settings/printer");
+  const isPrinter = pathname.startsWith("/settings/printers");
 
   const isSettings =
     pathname === "/settings" ||
@@ -71,7 +71,7 @@ export default function PosTopBar() {
   // =====================================================
 
   const rightSidebarButtonClass = `
-    rounded-sm
+    rounded-md
     border
     px-0.5
     py-2
@@ -88,7 +88,7 @@ export default function PosTopBar() {
   // =====================================================
 
   const sidebarButtonClass = `
-    rounded-sm
+    rounded-md
     border
     px-1.5
     py-2
@@ -116,7 +116,7 @@ export default function PosTopBar() {
       
       `}
       style={{
-        borderColor: background.topbarBorderColor,
+        borderColor: background.topbarBorder,
       }}
     >
       <div className="w-full flex justify-between items-center">
@@ -148,7 +148,7 @@ export default function PosTopBar() {
             "
             style={{
               backgroundColor: theme.inactive,
-              borderColor: background.topbarBorderColor,
+              borderColor: background.topbarBorder,
             }}
             aria-label="Open menu"
           >

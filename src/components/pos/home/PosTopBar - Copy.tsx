@@ -354,7 +354,7 @@ borderColor: theme.primaryLight,
         {/* ================================================= */}
 
         <Link
-          href="/settings/printer"
+          href="/settings/printers"
           className={navButtonClass(isPrinter)}
           style={{
             backgroundColor: isPrinter

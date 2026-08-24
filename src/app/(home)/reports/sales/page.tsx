@@ -324,16 +324,19 @@ const {
 
   return (
 
-    <div
-      className={`
-        min-h-full
-        ${background.className}
-        ${background.text}
-        p-4
-        pb-8
-        md:p-5
-      `}
-    >
+ <div
+  className={`
+    h-full
+    min-h-0
+    overflow-y-auto
+    app-scrollbar
+    ${background.className}
+    ${background.text}
+    p-4
+    pb-8
+    md:p-5
+  `}
+>
 
       {/* =================================================
           HEADER

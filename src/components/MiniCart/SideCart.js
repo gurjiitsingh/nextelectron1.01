@@ -521,16 +521,16 @@ export const SideCart = () => {
               </Link>
 
               <Link
-                href="/settings/printer"
+                href="/settings/printers"
                 onClick={handleLinkClick}
-                className={sidebarLinkClass("/settings/printer")}
+                className={sidebarLinkClass("/settings/printers")}
                 style={{
-                  color: isActive("/settings/printer")
+                  color: isActive("/settings/printers")
                     ? theme.primary
                     : background.text === "text-white"
                       ? "#FFFFFF"
                       : "#334155",
-                  fontWeight: isActive("/settings/printer")
+                  fontWeight: isActive("/settings/printers")
                     ? 700
                     : 500,
                 }}
