@@ -15,47 +15,43 @@ const {
 
 const savedConfig = getFirebaseConfig();
 
-if (!savedConfig) {
-  throw new Error(
-    "Firebase configuration not found. Please initialize the POS first."
-  );
-}
 
+ 
+  const firebaseConfig = {
+  apiKey:
+    savedConfig?.apiKey ||
+    'AIzaSyAOFaFrogsiaUYjfRb8nqYogrfrfw0AWzY',
 
-const firebaseConfig = {
-  apiKey: savedConfig.apiKey,
-  authDomain: savedConfig.authDomain,
-  databaseURL: savedConfig.databaseURL,
-  projectId: savedConfig.projectId,
-  storageBucket: savedConfig.storageBucket,
-  messagingSenderId: savedConfig.messagingSenderId,
-  appId: savedConfig.appId,
-  measurementId: savedConfig.measurementId,
+  authDomain:
+    savedConfig?.authDomain ||
+    'food-demo-d69f0.firebaseapp.com',
+
+  databaseURL:
+    savedConfig?.databaseURL ||
+    '',
+
+  projectId:
+    savedConfig?.projectId ||
+    'food-demo-d69f0',
+
+  storageBucket:
+    savedConfig?.storageBucket ||
+    'food-demo-d69f0.firebasestorage.app',
+
+  messagingSenderId:
+    savedConfig?.messagingSenderId ||
+    '694719081868',
+
+  appId:
+    savedConfig?.appId ||
+    '1:694719081868:web:c9ad72f4238f48c5fbbaa9',
+
+  measurementId:
+    savedConfig?.measurementId ||
+    'G-RYLQPYK7T4',
 };
 
 
-console.log(
-  "========== FIREBASE CLIENT CONFIG =========="
-);
-
-console.log(
-  "CLIENT ID:",
-  savedConfig.clientId
-);
-
-console.log(
-  "PROJECT ID:",
-  firebaseConfig.projectId
-);
-
-console.log(
-  "API KEY EXISTS:",
-  !!firebaseConfig.apiKey
-);
-
-console.log(
-  "============================================"
-);
 
 
 const app =

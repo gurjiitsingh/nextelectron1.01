@@ -20,7 +20,19 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+console.log('====================================');
+console.log('ACTUAL SQLITE DATABASE:');
+console.log(dbPath);
+console.log('====================================');
 
+const tableInfo = db
+  .prepare(`PRAGMA table_info(pos_order_master)`)
+  .all();
+
+console.log(
+  'POS ORDER MASTER COLUMNS:',
+  tableInfo
+);
 
 // =====================================================
 // DEBUG COUNTS

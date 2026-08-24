@@ -516,7 +516,7 @@ getPosIPAddress: () =>
       }
     ),
   // =====================================================
-  // SALE REPORTS
+  // SALE REPORTS REAL DATE
   // =====================================================
 
 
@@ -524,7 +524,7 @@ getPosIPAddress: () =>
   businessDate
 ) =>
   ipcRenderer.invoke(
-    'saleReport:getReport',
+    'saleReport:getReport', 
     businessDate
   ),
 

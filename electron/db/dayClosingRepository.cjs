@@ -498,37 +498,44 @@ function closeBusinessDay({
         businessDay.businessDate;
 
 
-      // ===============================================
-      // PREVENT DOUBLE CLOSE
-      // ===============================================
+    
 
-      if (
-        alreadyClosed(
-          businessDate
-        )
-      ) {
+// ===============================================
+// ALREADY CLOSED
+// ===============================================
 
-        throw new Error(
-          'Business day is already closed.'
-        );
+if (
+  alreadyClosed(
+    businessDate
+  )
+) {
 
-      }
+  return {
+    success: true,
+    alreadyClosed: true,
+    businessDate,
+    message: 'Business day is already closed.',
+  };
+
+}
 
 
-      // ===============================================
-      // PREVENT FUTURE BUSINESS DAY
-      // ===============================================
+   
 
-      if (
-        !canCreateNextBusinessDay()
-      ) {
+   // ===============================================
+// PREVENT FUTURE BUSINESS DAY
+// ===============================================
 
-        throw new Error(
-          'Business day already prepared for tomorrow.'
-        );
+if (!canCreateNextBusinessDay()) {
 
-      }
+  return {
+    success: true,
+    alreadyPrepared: true,
+    businessDate,
+    message: 'Business day is already prepared for the next day.',
+  };
 
+}
 
       // ===============================================
       // SALES SUMMARY
@@ -813,15 +820,16 @@ function closeBusinessDay({
       let nextDate;
 
 
-      if (
-        currentDate > today
-      ) {
+ if (currentDate > today) {
 
-        throw new Error(
-          'Business day already prepared for tomorrow.'
-        );
+  return {
+    success: true,
+    alreadyPrepared: true,
+    businessDate,
+    message: 'Business day is already prepared for the next day.',
+  };
 
-      }
+}
 
 
       if (

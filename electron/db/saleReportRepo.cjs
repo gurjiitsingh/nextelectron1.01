@@ -1,12 +1,10 @@
 const { db } = require('./sqlite.cjs');
+
 // =====================================================
 // SALE REPORT REPOSITORY
 // =====================================================
 
-function getSalesReport(businessDate) {
-  if (!businessDate) {
-    throw new Error("Business date is required");
-  }
+function getSalesReport(realDate) {
 
   // ===================================================
   // OVERALL SALES
@@ -45,91 +43,98 @@ function getSalesReport(businessDate) {
 
       FROM pos_order_master
 
-      WHERE businessDate = ?
+      WHERE realDate = ?
 
         AND UPPER(orderStatus) = 'COMPLETED'
     `)
-    .get(businessDate);
+    .get(realDate);
 
 
-  // ===================================================
-  // PAYMENT BREAKDOWN
-  // ===================================================
+ 
 
-  const paymentStats = db
-    .prepare(`
-      SELECT
+// ===================================================
+// PAYMENT BREAKDOWN
+// ===================================================
 
-        COALESCE(
-          SUM(
-            CASE
-              WHEN UPPER(mode) = 'CASH'
-              THEN amount
-              ELSE 0
-            END
-          ),
-          0
-        ) AS cash,
+const paymentStats = db
+  .prepare(`
+    SELECT
 
-        COALESCE(
-          SUM(
-            CASE
-              WHEN UPPER(mode) = 'CARD'
-              THEN amount
-              ELSE 0
-            END
-          ),
-          0
-        ) AS card,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN UPPER(p.mode) = 'CASH'
+            THEN p.amount
+            ELSE 0
+          END
+        ),
+        0
+      ) AS cash,
 
-        COALESCE(
-          SUM(
-            CASE
-              WHEN UPPER(mode) = 'UPI'
-              THEN amount
-              ELSE 0
-            END
-          ),
-          0
-        ) AS upi,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN UPPER(p.mode) = 'CARD'
+            THEN p.amount
+            ELSE 0
+          END
+        ),
+        0
+      ) AS card,
 
-        COALESCE(
-          SUM(
-            CASE
-              WHEN UPPER(mode) = 'WALLET'
-              THEN amount
-              ELSE 0
-            END
-          ),
-          0
-        ) AS wallet,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN UPPER(p.mode) = 'UPI'
+            THEN p.amount
+            ELSE 0
+          END
+        ),
+        0
+      ) AS upi,
 
-        COALESCE(
-          SUM(
-            CASE
-              WHEN UPPER(mode) = 'CREDIT'
-              THEN amount
-              ELSE 0
-            END
-          ),
-          0
-        ) AS credit
+      COALESCE(
+        SUM(
+          CASE
+            WHEN UPPER(p.mode) = 'WALLET'
+            THEN p.amount
+            ELSE 0
+          END
+        ),
+        0
+      ) AS wallet,
 
-      FROM pos_order_payments
+      COALESCE(
+        SUM(
+          CASE
+            WHEN UPPER(p.mode) = 'CREDIT'
+            THEN p.amount
+            ELSE 0
+          END
+        ),
+        0
+      ) AS credit
 
-      WHERE businessDate = ?
+    FROM pos_order_payments p
 
-        AND (
-          isVoided IS NULL
-          OR isVoided = 0
-        )
+    INNER JOIN pos_order_master om
+      ON om.id = p.orderId
 
-        AND (
-          status IS NULL
-          OR UPPER(status) != 'VOIDED'
-        )
-    `)
-    .get(businessDate);
+    WHERE om.realDate = ?
+
+      AND UPPER(om.orderStatus) = 'COMPLETED'
+
+      AND (
+        p.isVoided IS NULL
+        OR p.isVoided = 0
+      )
+
+      AND (
+        p.status IS NULL
+        OR UPPER(p.status) != 'VOIDED'
+      )
+  `)
+  .get(realDate);
 
 
   // ===================================================
@@ -159,7 +164,7 @@ function getSalesReport(businessDate) {
       INNER JOIN pos_order_master om
         ON om.id = oi.orderMasterId
 
-      WHERE om.businessDate = ?
+      WHERE om.realDate = ?
 
         AND UPPER(om.orderStatus) = 'COMPLETED'
 
@@ -170,7 +175,7 @@ function getSalesReport(businessDate) {
       ORDER BY
         sales DESC
     `)
-    .all(businessDate);
+    .all(realDate);
 
 
   // ===================================================
@@ -204,7 +209,7 @@ function getSalesReport(businessDate) {
       INNER JOIN pos_order_master om
         ON om.id = oi.orderMasterId
 
-      WHERE om.businessDate = ?
+      WHERE om.realDate = ?
 
         AND UPPER(om.orderStatus) = 'COMPLETED'
 
@@ -217,7 +222,7 @@ function getSalesReport(businessDate) {
       ORDER BY
         sales DESC
     `)
-    .all(businessDate);
+    .all(realDate);
 
 
   // ===================================================
@@ -239,7 +244,7 @@ function getSalesReport(businessDate) {
 
       FROM pos_order_master
 
-      WHERE businessDate = ?
+      WHERE realDate = ?
 
         AND UPPER(orderStatus) = 'COMPLETED'
 
@@ -249,7 +254,7 @@ function getSalesReport(businessDate) {
       ORDER BY
         sales DESC
     `)
-    .all(businessDate);
+    .all(realDate);
 
 
   // ===================================================
@@ -273,7 +278,7 @@ function getSalesReport(businessDate) {
 
       FROM pos_order_master
 
-      WHERE businessDate = ?
+      WHERE realDate = ?
 
         AND UPPER(orderStatus) = 'COMPLETED'
 
@@ -284,7 +289,7 @@ function getSalesReport(businessDate) {
       ORDER BY
         sales DESC
     `)
-    .all(businessDate);
+    .all(realDate);
 
 
   // ===================================================
@@ -310,7 +315,7 @@ function getSalesReport(businessDate) {
 
       FROM pos_order_master
 
-      WHERE businessDate = ?
+      WHERE realDate = ?
 
         AND UPPER(orderStatus) = 'COMPLETED'
 
@@ -320,7 +325,7 @@ function getSalesReport(businessDate) {
       ORDER BY
         hour
     `)
-    .all(businessDate);
+    .all(realDate);
 
 
   // ===================================================

@@ -202,14 +202,14 @@ function createNextBusinessDay({
   // PREVENT DUPLICATE / FUTURE BUSINESS DAY
   // ---------------------------------------------------
 
-  if (
-    current.businessDate > today
-  ) {
-
-    throw new Error(
-      'Business day already prepared for tomorrow.'
-    );
-  }
+if (current.businessDate > today) {
+  return {
+    success: true,
+    alreadyPrepared: true,
+    businessDate: current.businessDate,
+    message: 'Business day is already prepared for the next day.',
+  };
+}
 
 
   // ---------------------------------------------------

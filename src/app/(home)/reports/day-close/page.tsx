@@ -68,10 +68,7 @@ const router = useRouter();
 
       if (!result?.success) {
 
-        throw new Error(
-          result?.error ||
-          'Failed to load business day'
-        );
+      
       }
 
       const day =
@@ -91,10 +88,7 @@ const router = useRouter();
 
     } catch (e: any) {
 
-      console.error(
-        'LOAD BUSINESS DAY FAILED',
-        e
-      );
+     
 
       setError(
         e?.message ||
@@ -136,10 +130,7 @@ const router = useRouter();
 
       if (!result?.success) {
 
-        throw new Error(
-          result?.error ||
-          'Failed to load summary'
-        );
+     
       }
 
       setSummary(
@@ -325,10 +316,7 @@ const router = useRouter();
 
       if (!result?.success) {
 
-        throw new Error(
-          result?.error ||
-          'Failed to close business day'
-        );
+       
       }
 
       setMessage(
@@ -478,17 +466,19 @@ const router = useRouter();
 
   return (
 
-    <div
-      className={`
-    min-h-[calc(100vh-164px)]
+<div
+  className={`
+    h-[calc(100vh-60px)]
+    min-h-0
+    overflow-y-scroll
+    app-scrollbar
     ${background.className}
     ${background.text}
     p-4
-    pb-24
+    pb-14
     md:p-5
-    overflow-y-auto
   `}
-    >
+>
 
       {/* =================================================
           HEADER

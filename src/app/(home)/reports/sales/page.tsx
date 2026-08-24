@@ -121,7 +121,7 @@ const {
   async function loadReport(
     businessDate: string
   ) {
-
+console.log("businessDate-----------------", businessDate)
     if (!businessDate) {
       return;
     }
