@@ -71,11 +71,13 @@ export default function PosTopBar() {
   // =====================================================
 
   const rightSidebarButtonClass = `
-    rounded-md
+    rounded-lg
     border
-    px-0.5
-    py-2
+    px-1.5
+    py-2.5
     text-xs
+     min-w-20
+    text-center
     font-medium
     leading-none
     whitespace-nowrap
@@ -88,11 +90,13 @@ export default function PosTopBar() {
   // =====================================================
 
   const sidebarButtonClass = `
-    rounded-md
+    rounded-lg
     border
     px-1.5
-    py-2
+    py-2.5
     text-xs
+    min-w-17
+    text-center
     font-medium
     leading-none
     transition-all
@@ -547,7 +551,7 @@ export default function PosTopBar() {
                 }
               }}
             >
-              🍳 RUNNING
+            TW/DL
             </button>
 
           </div>

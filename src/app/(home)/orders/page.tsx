@@ -285,15 +285,19 @@ const {
 
   return (
 
-    <div
-      className={`
-        min-h-screen
-        ${background.className}
-        ${background.text}
-        p-4
-        md:p-5
-      `}
-    >
+<div
+  className={`
+    h-[calc(100vh-60px)]
+    min-h-0
+    overflow-y-auto
+    app-scrollbar
+    ${background.className}
+    ${background.text}
+    p-4
+    pb-14
+    md:p-5
+  `}
+>
 
       {/* =================================================
           HEADER

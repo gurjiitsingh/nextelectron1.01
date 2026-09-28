@@ -476,7 +476,7 @@ export const POS_THEMES: Record<
 
     primaryText: '#315FCF',
 
-    inactive: '#6F86BD',
+    inactive: '#9197a4',
   },
 
 
@@ -514,7 +514,7 @@ export const POS_THEMES: Record<
 
     primaryText: '#287F7A',
 
-    inactive: '#68827F',
+    inactive: '#6c7675',
   },
 
 
@@ -533,7 +533,7 @@ export const POS_THEMES: Record<
 
     primaryText: '#14869A',
 
-    inactive: '#668C94',
+    inactive: '#a1aaab',
   },
 
 
