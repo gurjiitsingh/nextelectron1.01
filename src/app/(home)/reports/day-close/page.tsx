@@ -32,13 +32,15 @@ const router = useRouter();
 
   const [closing, setClosing] =
     useState(false);
-
+const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [message, setMessage] =
     useState('');
 
   const [error, setError] =
     useState('');
-
+ 
+const [pendingActualCash, setPendingActualCash] = useState(0);
+const [pendingDifference, setPendingDifference] = useState(0);
 
   // =====================================================
   // LOAD CURRENT BUSINESS DAY
@@ -252,102 +254,100 @@ const router = useRouter();
   // CLOSE DAY
   // =====================================================
 
-  async function handleCloseDay() {
+  
 
-    if (closing) {
-      return;
-    }
+async function handleCloseDay() {
 
-    setError('');
-    setMessage('');
-
-    if (!businessDay) {
-
-      setError(
-        'Business day is not loaded.'
-      );
-
-      return;
-    }
-
-    if (!actualCash.trim()) {
-
-      setError(
-        'Please enter actual cash counted.'
-      );
-
-      return;
-    }
-
-    const confirmed =
-      window.confirm(
-        `Close business day ${businessDay.businessDate}?\n\n` +
-        `Expected Cash: ₹${expectedCash.toFixed(2)}\n` +
-        `Actual Cash: ₹${actualCashValue.toFixed(2)}\n` +
-        `Difference: ₹${cashDifference.toFixed(2)}`
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-
-      setClosing(true);
-
-      const result =
-        await window.posApi
-          .closeBusinessDay({
-
-            actualCash:
-              actualCashValue,
-
-            notes,
-
-            closedById: '',
-            closedByName: '',
-
-          });
-
-      console.log(
-        'CLOSE DAY RESULT:',
-        result
-      );
-
-      if (!result?.success) {
-
-       
-      }
-
-      setMessage(
-        'Business day closed successfully.'
-      );
-
-      setActualCash('');
-      setNotes('');
-
-      await loadBusinessDay();
-
-    } catch (e: any) {
-
-      console.error(
-        'CLOSE DAY FAILED',
-        e
-      );
-
-      setError(
-        e?.message ||
-        'Failed to close business day'
-      );
-
-    } finally {
-
-      setClosing(false);
-
-    }
+  if (closing) {
+    return;
   }
 
+  setError('');
+  setMessage('');
 
+  if (!businessDay) {
+    setError('Business day is not loaded.');
+    return;
+  }
+
+  if (!actualCash.trim()) {
+    setError('Please enter actual cash counted.');
+    return;
+  }
+
+  const difference =
+    actualCashValue - expectedCash;
+
+  setPendingActualCash(actualCashValue);
+  setPendingDifference(difference);
+
+  setShowCloseConfirm(true);
+}
+
+async function confirmCloseDay() {
+
+  setShowCloseConfirm(false);
+
+  if (closing) {
+    return;
+  }
+
+  try {
+
+    setClosing(true);
+
+    const result =
+      await window.posApi.closeBusinessDay({
+
+        actualCash:
+          pendingActualCash,
+
+        notes,
+
+        closedById: '',
+        closedByName: '',
+
+      });
+
+    console.log(
+      'CLOSE DAY RESULT:',
+      result
+    );
+
+    if (!result?.success) {
+      throw new Error(
+        result?.message ||
+        'Failed to close business day'
+      );
+    }
+
+    setMessage(
+      'Business day closed successfully.'
+    );
+
+    setActualCash('');
+    setNotes('');
+
+    await loadBusinessDay();
+
+  } catch (e: any) {
+
+    console.error(
+      'CLOSE DAY FAILED',
+      e
+    );
+
+    setError(
+      e?.message ||
+      'Failed to close business day'
+    );
+
+  } finally {
+
+    setClosing(false);
+
+  }
+}
   // =====================================================
   // MONEY FORMAT
   // =====================================================
@@ -1036,6 +1036,111 @@ const router = useRouter();
         </SectionCard>
 
       </div>
+
+{showCloseConfirm && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+
+    <div
+      className={`
+        w-full
+        max-w-md
+        rounded-2xl
+        border
+        ${background.border}
+        ${background.className}
+        p-6
+        shadow-2xl
+      `}
+    >
+
+      <h2 className="text-lg font-bold">
+        Close Business Day?
+      </h2>
+
+      <div className="mt-4 space-y-2 text-sm">
+
+        <div className="flex justify-between">
+          <span className="opacity-60">
+            Expected Cash
+          </span>
+
+          <span className="font-semibold">
+            {money(expectedCash)}
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="opacity-60">
+            Actual Cash
+          </span>
+
+          <span className="font-semibold">
+            {money(pendingActualCash)}
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="opacity-60">
+            Difference
+          </span>
+
+          <span className="font-semibold">
+            {money(pendingDifference)}
+          </span>
+        </div>
+
+      </div>
+
+      <div className="mt-6 flex justify-end gap-3">
+
+        <button
+          type="button"
+          onClick={() =>
+            setShowCloseConfirm(false)
+          }
+          className="
+            rounded-xl
+            border
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+          "
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={confirmCloseDay}
+          disabled={closing}
+          className="
+            rounded-xl
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+            text-white
+            disabled:opacity-50
+          "
+          style={{
+            backgroundColor: theme.primary,
+          }}
+        >
+          {closing
+            ? 'Closing...'
+            : 'Confirm'}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
+
+
+
 
     </div>
   );

@@ -306,6 +306,7 @@ console.log("Order------------------",order)
       <div
         className={`
           min-h-screen
+          
           ${background.className}
           ${background.text}
           p-5
@@ -379,7 +380,8 @@ console.log("Order------------------",order)
 
     <div
       className={`
-        min-h-screen
+        h-[95%]
+         overflow-y-auto
         ${background.className}
         ${background.text}
         p-4
