@@ -28,28 +28,30 @@ export default function Bill({
   onSuccess,
 }: BillProps) {
 
-const {
-  activeTable,
-  activeOrder,
-} = usePosSession();
+  const {
+    activeTable,
+    activeOrder,
+  } = usePosSession();
 
-const isRunningOrder =
-  !!activeOrder?.orderNo;
 
-const currentTableId =
-  activeOrder?.orderNo ||
-  activeTable?.tableId ||
-  activeTable?.tableName ||
-  'T1';
 
-const currentTableName =
-  activeOrder?.orderNo ||
-  activeTable?.tableName ||
-  'N/A';
+  const isRunningOrder =
+    !!activeOrder?.orderNo;
 
-const currentOrderType =
-  activeOrder?.orderType ||
-  'DINE_IN';
+  const currentTableId =
+    activeOrder?.orderNo ||
+    activeTable?.tableId ||
+    activeTable?.tableName ||
+    'T1';
+
+  const currentTableName =
+    activeOrder?.orderNo ||
+    activeTable?.tableName ||
+    'N/A';
+
+  const currentOrderType =
+    activeOrder?.orderType ||
+    'DINE_IN';
 
   const [billRows, setBillRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,24 +59,29 @@ const currentOrderType =
   const [error, setError] = useState<string | null>(null);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showPaymentSummary, setShowPaymentSummary] =
-  useState(false);
+    useState(false);
 
   const [paymentAllocation, setPaymentAllocation] =
-  useState<PaymentAllocationValue>({
-    cash: 0,
-    card: 0,
-    upi: 0,
-    credit: 0,
-  });
+    useState<PaymentAllocationValue>({
+      cash: 0,
+      card: 0,
+      upi: 0,
+      credit: 0,
+    });
 
   const [showComplimentaryMenu, setShowComplimentaryMenu] =
-  useState(false);
+    useState(false);
 
-const [complimentaryReason, setComplimentaryReason] =
-  useState<string | null>(null);
-const [showPaymentAllocation, setShowPaymentAllocation] =
-  useState(false);
-  
+  const [complimentaryReason, setComplimentaryReason] =
+    useState<string | null>(null);
+  const [showCancelBillConfirm, setShowCancelBillConfirm] =
+    useState(false);
+
+  const [cancelBillReason, setCancelBillReason] =
+    useState('');
+  const [showPaymentAllocation, setShowPaymentAllocation] =
+    useState(false);
+
 
   // =====================================================
   // POS THEME
@@ -82,124 +89,125 @@ const [showPaymentAllocation, setShowPaymentAllocation] =
 
   const {
     background,
+    theme,
   } = usePosTheme();
 
   // =====================================================
   // LOAD BILL ITEMS
   // =====================================================
 
- useEffect(() => {
-  loadBillItems();
-}, [
-  currentTableId,
-  currentOrderType,
-]);
+  useEffect(() => {
+    loadBillItems();
+  }, [
+    currentTableId,
+    currentOrderType,
+  ]);
 
-// =====================================================
-// LOAD BILL ITEMS
-// =====================================================
-useEffect(() => {
+  // =====================================================
+  // LOAD BILL ITEMS
+  // =====================================================
+  useEffect(() => {
 
-  if (!window.posApi?.onKotReceived) {
+    if (!window.posApi?.onKotReceived) {
+      console.log(
+        'WAITER KOT LISTENER API NOT AVAILABLE'
+      );
+      return;
+    }
+
     console.log(
-      'WAITER KOT LISTENER API NOT AVAILABLE'
+      'REGISTERING BILL WAITER KOT LISTENER'
     );
-    return;
-  }
 
-  console.log(
-    'REGISTERING BILL WAITER KOT LISTENER'
-  );
+    const unsubscribe =
+      window.posApi.onKotReceived((data) => {
 
-  const unsubscribe =
-    window.posApi.onKotReceived((data) => {
+        console.log(
+          'WAITER KOT RECEIVED IN BILL UI:',
+          data
+        );
+
+        if (
+          data?.tableNo &&
+          data.tableNo !== currentTableId
+        ) {
+          return;
+        }
+
+        loadBillItems();
+
+      });
+
+    return unsubscribe;
+
+  }, [currentTableId]);
+
+
+
+  async function loadBillItems() {
+    if (!currentTableId) return;
+
+    try {
+      setLoading(true);
+
+      // =============================================
+      // BILL ITEMS
+      // =============================================
+
+      const billRows =
+        await window.posApi.getBillItems(
+          currentTableId
+        );
+
+      // =============================================
+      // CART ITEMS
+      //
+      // These may not have been sent to kitchen/bill yet
+      // =============================================
+
+      // const cartRows =
+      //   await window.posApi.getCartItems(
+      //     currentTableId
+      //   );
 
       console.log(
-        'WAITER KOT RECEIVED IN BILL UI:',
-        data
+        'BILL ITEMS =>',
+        currentTableId,
+        billRows
       );
 
-      if (
-        data?.tableNo &&
-        data.tableNo !== currentTableId
-      ) {
-        return;
-      }
+      // console.log(
+      //   'CART ITEMS =>',
+      //   currentTableId,
+      //   cartRows
+      // );
 
-      loadBillItems();
+      // =============================================
+      // COMBINE
+      // =============================================
 
-    });
+      const combinedRows = [
+        ...(billRows || []),
 
-  return unsubscribe;
+      ];
 
-}, [currentTableId]);
+      setBillRows(combinedRows);
 
+    } catch (e) {
 
-
-async function loadBillItems() {
-  if (!currentTableId) return;
-
-  try {
-    setLoading(true);
-
-    // =============================================
-    // BILL ITEMS
-    // =============================================
-
-    const billRows =
-      await window.posApi.getBillItems(
-        currentTableId
+      console.error(
+        'Failed to load bill/cart items',
+        e
       );
 
-    // =============================================
-    // CART ITEMS
-    //
-    // These may not have been sent to kitchen/bill yet
-    // =============================================
+    } finally {
 
-    const cartRows =
-      await window.posApi.getCartItems(
-        currentTableId
-      );
+      setLoading(false);
 
-    console.log(
-      'BILL ITEMS =>',
-      currentTableId,
-      billRows
-    );
-
-    console.log(
-      'CART ITEMS =>',
-      currentTableId,
-      cartRows
-    );
-
-    // =============================================
-    // COMBINE
-    // =============================================
-
-    const combinedRows = [
-      ...(billRows || []),
-      ...(cartRows || []),
-    ];
-
-    setBillRows(combinedRows);
-
-  } catch (e) {
-
-    console.error(
-      'Failed to load bill/cart items',
-      e
-    );
-
-  } finally {
-
-    setLoading(false);
-
+    }
   }
-}
 
-  
+
 
   // =====================================================
   // FORM STATE
@@ -360,190 +368,190 @@ async function loadBillItems() {
 
 
 
-   // =====================================================
-// UPDATE BILL ITEM QUANTITY
-// =====================================================
+  // =====================================================
+  // UPDATE BILL ITEM QUANTITY
+  // =====================================================
 
-async function updateBillItemQuantity(
-  item: any,
-  newQuantity: number
-) {
-  if (!item?.productId) {
-    return;
+  async function updateBillItemQuantity(
+    item: any,
+    newQuantity: number
+  ) {
+    if (!item?.productId) {
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      setError(null);
+
+      console.log(
+        'UPDATE BILL ITEM:',
+        {
+          productId: item.productId,
+          quantity: newQuantity,
+          tableNo: currentTableId,
+        }
+      );
+
+      // Quantity cannot go below zero
+      const quantity = Math.max(
+        0,
+        Number(newQuantity)
+      );
+
+      // =============================================
+      // DELETE ITEM
+      // =============================================
+
+      const result =
+        await window.posApi.updateBillItemQuantity({
+
+          tableNo:
+            currentTableId,
+
+          billItemGroupKey:
+            item.billItemGroupKey,
+
+          quantity,
+        });
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error ||
+          'Failed to update item quantity'
+        );
+      }
+
+
+
+      // =============================================
+      // RELOAD
+      // =============================================
+
+      await loadBillItems();
+
+    } catch (e) {
+
+      console.error(
+        'FAILED TO UPDATE BILL ITEM:',
+        e
+      );
+
+      const message =
+        e instanceof Error
+          ? e.message
+          : String(e);
+
+      setError(
+        message ||
+        'Failed to update item'
+      );
+
+    } finally {
+
+      setProcessing(false);
+    }
   }
 
-  try {
-    setProcessing(true);
-    setError(null);
+
+  // =====================================================
+  // DECREASE
+  // =====================================================
+
+  async function decreaseBillItem(item: any) {
+    const currentQuantity =
+      Number(item.quantity || 0);
+
+    const newQuantity =
+      currentQuantity - 1;
+
+    await updateBillItemQuantity(
+      item,
+      newQuantity
+    );
+  }
+
+
+
+
+  // =====================================================
+  // INCREASE
+  // =====================================================
+
+  async function increaseBillItem(item: any) {
 
     console.log(
-      'UPDATE BILL ITEM:',
+      '========================================'
+    );
+
+    console.log(
+      'INCREASE BILL ITEM - RAW ITEM:'
+    );
+
+    console.log(
+      item
+    );
+
+    console.log(
+      'INCREASE BILL ITEM - JSON:'
+    );
+
+    console.log(
+      JSON.stringify(
+        item,
+        null,
+        2
+      )
+    );
+
+    console.log(
+      'INCREASE BILL ITEM - QUANTITY:',
+      item?.quantity
+    );
+
+    console.log(
+      'INCREASE BILL ITEM - PRODUCT ID:',
+      item?.productId
+    );
+
+    console.log(
+      'INCREASE BILL ITEM - GROUP KEY:',
+      item?.billItemGroupKey
+    );
+
+    console.log(
+      'INCREASE BILL ITEM - MODIFIERS:',
+      item?.modifiersJson
+    );
+
+    console.log(
+      'INCREASE BILL ITEM - NOTE:',
+      item?.note
+    );
+
+    console.log(
+      '========================================'
+    );
+
+    const currentQuantity =
+      Number(item.quantity || 0);
+
+    const newQuantity =
+      currentQuantity + 1;
+
+    console.log(
+      'CALCULATED QUANTITY:',
       {
-        productId: item.productId,
-        quantity: newQuantity,
-        tableNo: currentTableId,
+        currentQuantity,
+        newQuantity,
       }
     );
 
-    // Quantity cannot go below zero
-    const quantity = Math.max(
-      0,
-      Number(newQuantity)
-    );
-
-    // =============================================
-    // DELETE ITEM
-    // =============================================
-
-      const result =
-    await window.posApi.updateBillItemQuantity({
-
-      tableNo:
-        currentTableId,
-
-      billItemGroupKey:
-        item.billItemGroupKey,
-
-      quantity,
-    });
-
-  if (!result?.success) {
-    throw new Error(
-      result?.error ||
-      'Failed to update item quantity'
-    );
-  }
-
-
-
-    // =============================================
-    // RELOAD
-    // =============================================
-
-    await loadBillItems();
-
-  } catch (e) {
-
-    console.error(
-      'FAILED TO UPDATE BILL ITEM:',
-      e
-    );
-
-    const message =
-      e instanceof Error
-        ? e.message
-        : String(e);
-
-    setError(
-      message ||
-      'Failed to update item'
-    );
-
-  } finally {
-
-    setProcessing(false);
-  }
-}
-
-
-// =====================================================
-// DECREASE
-// =====================================================
-
-async function decreaseBillItem(item: any) {
-  const currentQuantity =
-    Number(item.quantity || 0);
-
-  const newQuantity =
-    currentQuantity - 1;
-
-  await updateBillItemQuantity(
-    item,
-    newQuantity
-  );
-}
-
-
-
-
-// =====================================================
-// INCREASE
-// =====================================================
-
-async function increaseBillItem(item: any) {
-
-  console.log(
-    '========================================'
-  );
-
-  console.log(
-    'INCREASE BILL ITEM - RAW ITEM:'
-  );
-
-  console.log(
-    item
-  );
-
-  console.log(
-    'INCREASE BILL ITEM - JSON:'
-  );
-
-  console.log(
-    JSON.stringify(
+    await updateBillItemQuantity(
       item,
-      null,
-      2
-    )
-  );
-
-  console.log(
-    'INCREASE BILL ITEM - QUANTITY:',
-    item?.quantity
-  );
-
-  console.log(
-    'INCREASE BILL ITEM - PRODUCT ID:',
-    item?.productId
-  );
-
-  console.log(
-    'INCREASE BILL ITEM - GROUP KEY:',
-    item?.billItemGroupKey
-  );
-
-  console.log(
-    'INCREASE BILL ITEM - MODIFIERS:',
-    item?.modifiersJson
-  );
-
-  console.log(
-    'INCREASE BILL ITEM - NOTE:',
-    item?.note
-  );
-
-  console.log(
-    '========================================'
-  );
-
-  const currentQuantity =
-    Number(item.quantity || 0);
-
-  const newQuantity =
-    currentQuantity + 1;
-
-  console.log(
-    'CALCULATED QUANTITY:',
-    {
-      currentQuantity,
-      newQuantity,
-    }
-  );
-
-  await updateBillItemQuantity(
-    item,
-    newQuantity
-  );
-} 
+      newQuantity
+    );
+  }
 
 
 
@@ -556,6 +564,7 @@ async function increaseBillItem(item: any) {
       'CASH'
       | 'CARD'
       | 'UPI'
+      | 'CANCEL',
   ) {
 
     if (processing) {
@@ -637,8 +646,8 @@ async function increaseBillItem(item: any) {
           tableName:
             currentTableName,
 
-        orderType:
-      currentOrderType,
+          orderType:
+            currentOrderType,
 
           customerName:
             customerName.trim() ||
@@ -846,611 +855,884 @@ async function increaseBillItem(item: any) {
     }
   }
 
-// =====================================================
-// MULTIPLE / CREDIT PAYMENT CHECKOUT
-// =====================================================
 
-async function handlePaymentAllocation(
-  payment: PaymentAllocationValue
-) {
-  if (processing) {
-    return;
-  }
+  // CANCEL
 
-  if (billItems.length === 0) {
-    setError('No items in bill');
-    return;
-  }
-
-  if (!currentTableId) {
-    setError('No table selected');
-    return;
-  }
-
-  const totalAmount =
-    Number(calculation.grandTotal) || 0;
-
-  const cash = Math.max(0, Number(payment.cash) || 0);
-  const card = Math.max(0, Number(payment.card) || 0);
-  const upi = Math.max(0, Number(payment.upi) || 0);
-  const credit = Math.max(0, Number(payment.credit) || 0);
-
-  const totalAllocated =
-    cash +
-    card +
-    upi +
-    credit;
-
-  // Small floating-point tolerance
-  if (
-    Math.abs(totalAllocated - totalAmount) > 0.01
+  async function handleCancel(
+    selectedPaymentMode:
+      'CASH'
+      | 'CARD'
+      | 'UPI'
+      | 'CANCEL',
+    reason = ""
   ) {
-    setError(
-      `Payment allocation must equal ₹${totalAmount.toFixed(2)}`
-    );
-    return;
+
+    if (processing) {
+      return;
+    }
+
+
+    if (billItems.length === 0) {
+
+      setError(
+        'No items in bill'
+      );
+
+      return;
+    }
+
+
+    if (!currentTableId) {
+
+      setError(
+        'No table selected'
+      );
+
+      return;
+    }
+
+
+    try {
+
+      setProcessing(true);
+
+      setError(null);
+
+
+      // =================================================
+      // 1. CALCULATE FINAL TOTAL
+      // =================================================
+
+      const totalAmount =
+        Number(
+          calculation.grandTotal
+        ) || 0;
+
+
+
+
+      // =================================================
+      // 2. CREATE BILL
+      // =================================================
+
+      const result =
+        await window.posApi.cancelBill({
+
+          tableNo:
+            currentTableId,
+
+          tableName:
+            currentTableName,
+
+          orderType:
+            currentOrderType,
+
+          customerName:
+            customerName.trim() ||
+            'Customer',
+
+          customerPhone:
+            customerPhone.trim(),
+
+          discountTotal: 0.0,
+
+          deliveryFee: 0.0,
+
+          deliveryTax: 0.0,
+
+
+          // =============================================
+          // PAYMENT
+          // =============================================
+
+          paymentMode:
+            selectedPaymentMode,
+
+          paymentStatus:
+            'CANCEL',
+
+          paidAmount: 0.0,
+
+          payments: [
+
+            {
+              mode: 'CANCEL',
+              // selectedPaymentMode,
+
+              amount: 0.0,
+            },
+
+          ],
+
+
+          // =============================================
+          // DEVICE
+          // =============================================
+
+          deviceId:
+            'POS',
+
+          deviceName:
+            'Electron POS',
+
+          appVersion:
+            '2.0',
+
+
+          // =============================================
+          // DATE
+          // =============================================
+
+          businessDate:
+            new Date()
+              .toISOString()
+              .slice(0, 10),
+
+
+          currency:
+            '₹',
+        });
+
+
+      // =================================================
+      // 3. CHECK BILL RESULT
+      // =================================================
+
+      if (!result.success) {
+
+        throw new Error(
+          result.error ||
+          'Failed to create bill'
+        );
+      }
+
+
+      console.log(
+        'BILL CREATED:',
+        result
+      );
+
+
+      // =================================================
+      // 4. MARK KOT HISTORY
+      //
+      // IMPORTANT:
+      //
+      // We do NOT provide kotHistoryId.
+      //
+      // Repository finds all KOT histories
+      // belonging to currentTableId.
+      //
+      // ================================================
+
+      const kotResult =
+        await window.posApi.markTableHistoryPaid({
+
+          tableNo:
+            currentTableId,
+
+          billItems:
+            billItems,
+
+          orderId:
+            result.srno || "",
+
+
+        });
+
+
+
+
+      if (!kotResult.success) {
+
+        throw new Error(
+          kotResult.error ||
+          'Failed to update KOT history'
+        );
+      }
+
+
+      // =================================================
+      // 5. RESET BILL DRAFT
+      // =================================================
+
+      setBillDraft({
+
+        customerName:
+          'Customer',
+
+        customerPhone:
+          '',
+
+        discount:
+          0,
+
+        discountPercent:
+          0,
+
+        deliveryFee:
+          0,
+
+        paymentMode:
+          'CASH',
+
+        paidAmount:
+          0,
+      });
+
+
+      // =================================================
+      // 6. CLEAR BILL UI
+      // =================================================
+
+      setBillRows([]);
+
+
+      // =================================================
+      // 7. RELOAD BILL ITEMS
+      // =================================================
+
+      await loadBillItems();
+
+
+      // =================================================
+      // 8. SUCCESS CALLBACK
+      // =================================================
+
+      onSuccess?.();
+
+
+    } catch (e) {
+
+      console.error(
+        'BILL FAILED',
+        e
+      );
+
+
+      const message =
+        e instanceof Error
+          ? e.message
+          : String(e);
+
+
+      setError(
+        message ||
+        'Payment failed'
+      );
+
+
+    } finally {
+
+      setProcessing(false);
+    }
   }
 
-  try {
-    setProcessing(true);
-    setError(null);
+  // =====================================================
+  // MULTIPLE / CREDIT PAYMENT CHECKOUT
+  // =====================================================
 
-    // =================================================
-    // BUILD PAYMENT ARRAY
-    // =================================================
+  async function handlePaymentAllocation(
+    payment: PaymentAllocationValue
+  ) {
+    if (processing) {
+      return;
+    }
 
-    const payments: {
-      mode:
+    if (billItems.length === 0) {
+      setError('No items in bill');
+      return;
+    }
+
+    if (!currentTableId) {
+      setError('No table selected');
+      return;
+    }
+
+    const totalAmount =
+      Number(calculation.grandTotal) || 0;
+
+    const cash = Math.max(0, Number(payment.cash) || 0);
+    const card = Math.max(0, Number(payment.card) || 0);
+    const upi = Math.max(0, Number(payment.upi) || 0);
+    const credit = Math.max(0, Number(payment.credit) || 0);
+
+    const totalAllocated =
+      cash +
+      card +
+      upi +
+      credit;
+
+    // Small floating-point tolerance
+    if (
+      Math.abs(totalAllocated - totalAmount) > 0.01
+    ) {
+      setError(
+        `Payment allocation must equal ₹${totalAmount.toFixed(2)}`
+      );
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      setError(null);
+
+      // =================================================
+      // BUILD PAYMENT ARRAY
+      // =================================================
+
+      const payments: {
+        mode:
         | 'CASH'
         | 'CARD'
         | 'UPI'
         | 'CREDIT';
 
-      amount: number;
-    }[] = [];
+        amount: number;
+      }[] = [];
 
-    if (cash > 0) {
-      payments.push({
-        mode: 'CASH',
-        amount: cash,
-      });
-    }
-
-    if (card > 0) {
-      payments.push({
-        mode: 'CARD',
-        amount: card,
-      });
-    }
-
-    if (upi > 0) {
-      payments.push({
-        mode: 'UPI',
-        amount: upi,
-      });
-    }
-
-    if (credit > 0) {
-      payments.push({
-        mode: 'CREDIT',
-        amount: credit,
-      });
-    }
-
-    // =================================================
-    // DETERMINE PAYMENT STATUS
-    // =================================================
-
-    const paidAmount =
-      cash +
-      card +
-      upi;
-
-    let paymentStatus:
-      | 'PAID'
-      | 'PARTIAL'
-      | 'CREDIT';
-
-    if (credit <= 0.01) {
-      paymentStatus = 'PAID';
-    } else if (paidAmount > 0) {
-      paymentStatus = 'PARTIAL';
-    } else {
-      paymentStatus = 'CREDIT';
-    }
-
-    // =================================================
-    // PAYMENT MODE
-    //
-    // For multiple payments use MIXED.
-    // For single payment keep actual mode.
-    // =================================================
-
-    let finalPaymentMode:
-      | 'CASH'
-      | 'CARD'
-      | 'UPI'
-      | 'CREDIT'
-      | 'MIXED';
-
-    if (payments.length === 1) {
-      finalPaymentMode = payments[0].mode;
-    } else {
-      finalPaymentMode = 'MIXED';
-    }
-
-    console.log(
-      'MULTIPLE PAYMENT CHECKOUT:',
-      {
-        totalAmount,
-        payments,
-        paidAmount,
-        credit,
-        paymentStatus,
-        finalPaymentMode,
+      if (cash > 0) {
+        payments.push({
+          mode: 'CASH',
+          amount: cash,
+        });
       }
-    );
 
-    // =================================================
-    // CREATE BILL
-    // =================================================
+      if (card > 0) {
+        payments.push({
+          mode: 'CARD',
+          amount: card,
+        });
+      }
 
-    const result =
-      await window.posApi.createBill({
+      if (upi > 0) {
+        payments.push({
+          mode: 'UPI',
+          amount: upi,
+        });
+      }
 
-        tableNo:
-          currentTableId,
+      if (credit > 0) {
+        payments.push({
+          mode: 'CREDIT',
+          amount: credit,
+        });
+      }
 
-        tableName:
-          currentTableName,
+      // =================================================
+      // DETERMINE PAYMENT STATUS
+      // =================================================
 
-         orderType:
-      currentOrderType,
+      const paidAmount =
+        cash +
+        card +
+        upi;
+
+      let paymentStatus:
+        | 'PAID'
+        | 'PARTIAL'
+        | 'CREDIT';
+
+      if (credit <= 0.01) {
+        paymentStatus = 'PAID';
+      } else if (paidAmount > 0) {
+        paymentStatus = 'PARTIAL';
+      } else {
+        paymentStatus = 'CREDIT';
+      }
+
+      // =================================================
+      // PAYMENT MODE
+      //
+      // For multiple payments use MIXED.
+      // For single payment keep actual mode.
+      // =================================================
+
+      let finalPaymentMode:
+        | 'CASH'
+        | 'CARD'
+        | 'UPI'
+        | 'CREDIT'
+        | 'MIXED';
+
+      if (payments.length === 1) {
+        finalPaymentMode = payments[0].mode;
+      } else {
+        finalPaymentMode = 'MIXED';
+      }
+
+      console.log(
+        'MULTIPLE PAYMENT CHECKOUT:',
+        {
+          totalAmount,
+          payments,
+          paidAmount,
+          credit,
+          paymentStatus,
+          finalPaymentMode,
+        }
+      );
+
+      // =================================================
+      // CREATE BILL
+      // =================================================
+
+      const result =
+        await window.posApi.createBill({
+
+          tableNo:
+            currentTableId,
+
+          tableName:
+            currentTableName,
+
+          orderType:
+            currentOrderType,
+
+          customerName:
+            customerName.trim() ||
+            'Customer',
+
+          customerPhone:
+            customerPhone.trim(),
+
+          // =================================================
+          // TAX / DISCOUNT / DELIVERY
+          // =================================================
+
+          discountTotal:
+            calculation.discount,
+
+          deliveryFee:
+            calculation.deliveryFee,
+
+          deliveryTax:
+            calculation.deliveryTax,
+
+          // =================================================
+          // PAYMENT
+          // =================================================
+
+          paymentMode:
+            finalPaymentMode,
+
+          paymentStatus,
+
+          paidAmount,
+
+          payments,
+
+          // =================================================
+          // DEVICE
+          // =================================================
+
+          deviceId:
+            'POS',
+
+          deviceName:
+            'Electron POS',
+
+          appVersion:
+            '1.0',
+
+          // =================================================
+          // DATE
+          // =================================================
+
+          businessDate:
+            new Date()
+              .toISOString()
+              .slice(0, 10),
+
+          currency:
+            '₹',
+        });
+
+      // =================================================
+      // CHECK BILL RESULT
+      // =================================================
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error ||
+          'Failed to create bill'
+        );
+      }
+
+      console.log(
+        'MULTIPLE PAYMENT BILL CREATED:',
+        result
+      );
+
+      // =================================================
+      // MARK KOT HISTORY PAID
+      // =================================================
+
+      const kotResult =
+        await window.posApi.markTableHistoryPaid({
+          tableNo:
+            currentTableId,
+
+          billItems:
+            billItems,
+
+          orderId:
+            result.srno || '',
+        });
+
+      if (!kotResult?.success) {
+        throw new Error(
+          kotResult?.error ||
+          'Failed to update KOT history'
+        );
+      }
+
+      // =================================================
+      // RESET BILL DRAFT
+      // =================================================
+
+      setBillDraft({
 
         customerName:
-          customerName.trim() ||
           'Customer',
 
         customerPhone:
-          customerPhone.trim(),
+          '',
 
-        // =================================================
-        // TAX / DISCOUNT / DELIVERY
-        // =================================================
+        discount:
+          0,
 
-        discountTotal:
-          calculation.discount,
+        discountPercent:
+          0,
 
         deliveryFee:
-          calculation.deliveryFee,
-
-        deliveryTax:
-          calculation.deliveryTax,
-
-        // =================================================
-        // PAYMENT
-        // =================================================
+          0,
 
         paymentMode:
-          finalPaymentMode,
+          'CASH',
 
-        paymentStatus,
-
-        paidAmount,
-
-        payments,
-
-        // =================================================
-        // DEVICE
-        // =================================================
-
-        deviceId:
-          'POS',
-
-        deviceName:
-          'Electron POS',
-
-        appVersion:
-          '1.0',
-
-        // =================================================
-        // DATE
-        // =================================================
-
-        businessDate:
-          new Date()
-            .toISOString()
-            .slice(0, 10),
-
-        currency:
-          '₹',
-      });
-
-    // =================================================
-    // CHECK BILL RESULT
-    // =================================================
-
-    if (!result?.success) {
-      throw new Error(
-        result?.error ||
-        'Failed to create bill'
-      );
-    }
-
-    console.log(
-      'MULTIPLE PAYMENT BILL CREATED:',
-      result
-    );
-
-    // =================================================
-    // MARK KOT HISTORY PAID
-    // =================================================
-
-    const kotResult =
-      await window.posApi.markTableHistoryPaid({
-        tableNo:
-          currentTableId,
-
-        billItems:
-          billItems,
-
-        orderId:
-          result.srno || '',
-      });
-
-    if (!kotResult?.success) {
-      throw new Error(
-        kotResult?.error ||
-        'Failed to update KOT history'
-      );
-    }
-
-    // =================================================
-    // RESET BILL DRAFT
-    // =================================================
-
-    setBillDraft({
-
-      customerName:
-        'Customer',
-
-      customerPhone:
-        '',
-
-      discount:
-        0,
-
-      discountPercent:
-        0,
-
-      deliveryFee:
-        0,
-
-      paymentMode:
-        'CASH',
-
-      paidAmount:
-        0,
-    });
-
-    // =================================================
-    // RESET PAYMENT ALLOCATION
-    // =================================================
-
-    setPaymentAllocation({
-      cash: 0,
-      card: 0,
-      upi: 0,
-      credit: 0,
-    });
-
-    // =================================================
-    // CLOSE PAYMENT SUMMARY
-    // =================================================
-
-    setShowPaymentSummary(false);
-
-    // =================================================
-    // CLEAR BILL
-    // =================================================
-
-    setBillRows([]);
-
-    // =================================================
-    // RELOAD
-    // =================================================
-
-    await loadBillItems();
-
-    // =================================================
-    // SUCCESS
-    // =================================================
-
-    onSuccess?.();
-
-  } catch (e) {
-
-    console.error(
-      'MULTIPLE PAYMENT CHECKOUT FAILED:',
-      e
-    );
-
-    const message =
-      e instanceof Error
-        ? e.message
-        : String(e);
-
-    setError(
-      message ||
-      'Payment failed'
-    );
-
-  } finally {
-
-    setProcessing(false);
-  }
-}
-
-// =====================================================
-// COMPLIMENTARY CHECKOUT
-// =====================================================
-
-async function handleComplimentaryCheckout(
-  reason: string
-) {
-  if (processing) {
-    return;
-  }
-
-  if (billItems.length === 0) {
-    setError('No items in bill');
-    return;
-  }
-
-  if (!currentTableId) {
-    setError('No table selected');
-    return;
-  }
-
-  try {
-    setProcessing(true);
-    setError(null);
-
-    console.log(
-      'COMPLIMENTARY BILL:',
-      {
-        reason,
-        tableNo: currentTableId,
-        items: billItems,
-      }
-    );
-
-    // =================================================
-    // 1. CREATE COMPLIMENTARY BILL
-    // =================================================
-
-const result =
-  await window.posApi.createBill({
-
-    tableNo:
-      currentTableId,
-
-    tableName:
-      currentTableName,
-
-    orderType:
-      currentOrderType,
-
-    customerName:
-      customerName.trim() ||
-      'Customer',
-
-    customerPhone:
-      customerPhone.trim(),
-
-    // =================================================
-    // COMPLIMENTARY
-    // =================================================
-
-    // billType:
-    //   'COMPLIMENTARY',
-
-    // complimentaryReason:
-    //   reason,
-
-    // =================================================
-    // TAX / DISCOUNT / DELIVERY
-    // =================================================
-
-    discountTotal:
-      0,
-
-    deliveryFee:
-      0,
-
-    deliveryTax:
-      0,
-
-    // =================================================
-    // PAYMENT
-    // =================================================
-
-    paymentMode:
-      'COMPLIMENTARY',
-
-    paymentStatus:
-      'PAID',
-
-    paidAmount:
-      0,
-
-    payments: [
-      {
-        mode:
-          'COMPLIMENTARY',
-
-        amount:
+        paidAmount:
           0,
-      },
-    ],
+      });
 
-    // =================================================
-    // DEVICE
-    // =================================================
+      // =================================================
+      // RESET PAYMENT ALLOCATION
+      // =================================================
 
-    deviceId:
-      'POS',
+      setPaymentAllocation({
+        cash: 0,
+        card: 0,
+        upi: 0,
+        credit: 0,
+      });
 
-    deviceName:
-      'Electron POS',
+      // =================================================
+      // CLOSE PAYMENT SUMMARY
+      // =================================================
 
-    appVersion:
-      '1.0',
+      setShowPaymentSummary(false);
 
-    // =================================================
-    // DATE
-    // =================================================
+      // =================================================
+      // CLEAR BILL
+      // =================================================
 
-    businessDate:
-      new Date()
-        .toISOString()
-        .slice(0, 10),
+      setBillRows([]);
 
-    currency:
-      '₹',
-  });
+      // =================================================
+      // RELOAD
+      // =================================================
 
+      await loadBillItems();
 
-    // =================================================
-    // 2. CHECK RESULT
-    // =================================================
+      // =================================================
+      // SUCCESS
+      // =================================================
 
-    if (!result?.success) {
+      onSuccess?.();
 
-      throw new Error(
-        result?.error ||
-        'Failed to create complimentary bill'
+    } catch (e) {
+
+      console.error(
+        'MULTIPLE PAYMENT CHECKOUT FAILED:',
+        e
       );
+
+      const message =
+        e instanceof Error
+          ? e.message
+          : String(e);
+
+      setError(
+        message ||
+        'Payment failed'
+      );
+
+    } finally {
+
+      setProcessing(false);
+    }
+  }
+
+  // =====================================================
+  // COMPLIMENTARY CHECKOUT
+  // =====================================================
+
+  async function handleComplimentaryCheckout(
+    reason: string
+  ) {
+    if (processing) {
+      return;
     }
 
+    if (billItems.length === 0) {
+      setError('No items in bill');
+      return;
+    }
 
-    console.log(
-      'COMPLIMENTARY BILL CREATED:',
-      result
-    );
+    if (!currentTableId) {
+      setError('No table selected');
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      setError(null);
+
+      console.log(
+        'COMPLIMENTARY BILL:',
+        {
+          reason,
+          tableNo: currentTableId,
+          items: billItems,
+        }
+      );
+
+      // =================================================
+      // 1. CREATE COMPLIMENTARY BILL
+      // =================================================
+
+      const result =
+        await window.posApi.createBill({
+
+          tableNo:
+            currentTableId,
+
+          tableName:
+            currentTableName,
+
+          orderType:
+            currentOrderType,
+
+          customerName:
+            customerName.trim() ||
+            'Customer',
+
+          customerPhone:
+            customerPhone.trim(),
+
+          // =================================================
+          // COMPLIMENTARY
+          // =================================================
+
+          // billType:
+          //   'COMPLIMENTARY',
+
+          // complimentaryReason:
+          //   reason,
+
+          // =================================================
+          // TAX / DISCOUNT / DELIVERY
+          // =================================================
+
+          discountTotal:
+            0,
+
+          deliveryFee:
+            0,
+
+          deliveryTax:
+            0,
+
+          // =================================================
+          // PAYMENT
+          // =================================================
+
+          paymentMode:
+            'COMPLIMENTARY',
+
+          paymentStatus:
+            'PAID',
+
+          paidAmount:
+            0,
+
+          payments: [
+            {
+              mode:
+                'COMPLIMENTARY',
+
+              amount:
+                0,
+            },
+          ],
+
+          // =================================================
+          // DEVICE
+          // =================================================
+
+          deviceId:
+            'POS',
+
+          deviceName:
+            'Electron POS',
+
+          appVersion:
+            '1.0',
+
+          // =================================================
+          // DATE
+          // =================================================
+
+          businessDate:
+            new Date()
+              .toISOString()
+              .slice(0, 10),
+
+          currency:
+            '₹',
+        });
 
 
-    // =================================================
-    // 3. MARK KOT HISTORY PAID
-    // =================================================
+      // =================================================
+      // 2. CHECK RESULT
+      // =================================================
 
-    const kotResult =
-      await window.posApi.markTableHistoryPaid({
+      if (!result?.success) {
 
-        tableNo:
-          currentTableId,
+        throw new Error(
+          result?.error ||
+          'Failed to create complimentary bill'
+        );
+      }
 
-        billItems:
-          billItems,
 
-        orderId:
-          result.srno || '',
+      console.log(
+        'COMPLIMENTARY BILL CREATED:',
+        result
+      );
+
+
+      // =================================================
+      // 3. MARK KOT HISTORY PAID
+      // =================================================
+
+      const kotResult =
+        await window.posApi.markTableHistoryPaid({
+
+          tableNo:
+            currentTableId,
+
+          billItems:
+            billItems,
+
+          orderId:
+            result.srno || '',
+
+        });
+
+
+      if (!kotResult?.success) {
+
+        throw new Error(
+          kotResult?.error ||
+          'Failed to update KOT history'
+        );
+      }
+
+
+      // =================================================
+      // 4. RESET BILL DRAFT
+      // =================================================
+
+      setBillDraft({
+
+        customerName:
+          'Customer',
+
+        customerPhone:
+          '',
+
+        discount:
+          0,
+
+        discountPercent:
+          0,
+
+        deliveryFee:
+          0,
+
+        paymentMode:
+          'CASH',
+
+        paidAmount:
+          0,
 
       });
 
 
-    if (!kotResult?.success) {
+      // =================================================
+      // 5. CLEAR BILL UI
+      // =================================================
 
-      throw new Error(
-        kotResult?.error ||
-        'Failed to update KOT history'
+      setBillRows([]);
+
+
+      // =================================================
+      // 6. RELOAD BILL ITEMS
+      // =================================================
+
+      await loadBillItems();
+
+
+      // =================================================
+      // 7. CLEAR COMPLIMENTARY STATE
+      // =================================================
+
+      setComplimentaryReason(null);
+
+      setShowMoreMenu(false);
+
+      setShowComplimentaryMenu(false);
+
+
+      // =================================================
+      // 8. SUCCESS
+      // =================================================
+
+      onSuccess?.();
+
+    } catch (e) {
+
+      console.error(
+        'COMPLIMENTARY BILL FAILED',
+        e
       );
+
+      const message =
+        e instanceof Error
+          ? e.message
+          : String(e);
+
+      setError(
+        message ||
+        'Complimentary bill failed'
+      );
+
+    } finally {
+
+      setProcessing(false);
     }
-
-
-    // =================================================
-    // 4. RESET BILL DRAFT
-    // =================================================
-
-    setBillDraft({
-
-      customerName:
-        'Customer',
-
-      customerPhone:
-        '',
-
-      discount:
-        0,
-
-      discountPercent:
-        0,
-
-      deliveryFee:
-        0,
-
-      paymentMode:
-        'CASH',
-
-      paidAmount:
-        0,
-
-    });
-
-
-    // =================================================
-    // 5. CLEAR BILL UI
-    // =================================================
-
-    setBillRows([]);
-
-
-    // =================================================
-    // 6. RELOAD BILL ITEMS
-    // =================================================
-
-    await loadBillItems();
-
-
-    // =================================================
-    // 7. CLEAR COMPLIMENTARY STATE
-    // =================================================
-
-    setComplimentaryReason(null);
-
-    setShowMoreMenu(false);
-
-    setShowComplimentaryMenu(false);
-
-
-    // =================================================
-    // 8. SUCCESS
-    // =================================================
-
-    onSuccess?.();
-
-  } catch (e) {
-
-    console.error(
-      'COMPLIMENTARY BILL FAILED',
-      e
-    );
-
-    const message =
-      e instanceof Error
-        ? e.message
-        : String(e);
-
-    setError(
-      message ||
-      'Complimentary bill failed'
-    );
-
-  } finally {
-
-    setProcessing(false);
   }
-}
 
   // =====================================================
   // PREVIEW BILL IMAGE
@@ -1484,8 +1766,8 @@ const result =
           tableName:
             currentTableName,
 
-        orderType:
-      currentOrderType,
+          orderType:
+            currentOrderType,
 
           paymentMode,
 
@@ -1682,7 +1964,7 @@ const result =
           currentTableName,
 
         orderType:
-      currentOrderType,
+          currentOrderType,
 
         paymentMode,
 
@@ -1805,43 +2087,43 @@ const result =
 
 
   // =====================================================
-// PAYMENT SUMMARY VALUES
-// =====================================================
+  // PAYMENT SUMMARY VALUES
+  // =====================================================
 
-const grandTotal =
-  Number(calculation.grandTotal || 0);
+  const grandTotal =
+    Number(calculation.grandTotal || 0);
 
-const totalPaid =
-  Number(paidAmount || 0);
+  const totalPaid =
+    Number(paidAmount || 0);
 
-const cashPaid =
-  paymentMode === 'CASH'
-    ? totalPaid
-    : 0;
+  const cashPaid =
+    paymentMode === 'CASH'
+      ? totalPaid
+      : 0;
 
-const cardPaid =
-  paymentMode === 'CARD'
-    ? totalPaid
-    : 0;
+  const cardPaid =
+    paymentMode === 'CARD'
+      ? totalPaid
+      : 0;
 
-const upiPaid =
-  paymentMode === 'UPI'
-    ? totalPaid
-    : 0;
+  const upiPaid =
+    paymentMode === 'UPI'
+      ? totalPaid
+      : 0;
 
-const creditAmount =
-  Math.max(
-    0,
-    grandTotal - totalPaid
-  );
+  const creditAmount =
+    Math.max(
+      0,
+      grandTotal - totalPaid
+    );
 
-const isPartialPayment =
-  totalPaid > 0 &&
-  creditAmount > 0;
+  const isPartialPayment =
+    totalPaid > 0 &&
+    creditAmount > 0;
 
-const isCreditSale =
-  totalPaid === 0 &&
-  creditAmount > 0;
+  const isCreditSale =
+    totalPaid === 0 &&
+    creditAmount > 0;
 
   // =====================================================
   // UI
@@ -1930,77 +2212,77 @@ const isCreditSale =
             `}
           >
 
-         {billItems.map((item) => (
+            {billItems.map((item) => (
 
-  <div
-    key={item.name}
-    className="
+              <div
+                key={item.name}
+                className="
       px-3
       py-2
     "
-  >
+              >
 
-    <div className="flex items-center">
+                <div className="flex items-center">
 
-      {/* ========================================= */}
-      {/* ITEM NAME */}
-      {/* ========================================= */}
+                  {/* ========================================= */}
+                  {/* ITEM NAME */}
+                  {/* ========================================= */}
 
-      <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1">
 
-        <p
-          className="
+                    <p
+                      className="
             truncate
             text-[11px]
             font-medium
             leading-tight
             opacity-80
           "
-        >
-          {item.name}
-        </p>
+                    >
+                      {item.name}
+                    </p>
 
-        {item.note ? (
+                    {item.note ? (
 
-          <p
-            className="
+                      <p
+                        className="
               mt-0.5
               truncate
               text-[10px]
               leading-tight
               opacity-40
             "
-          >
-            {item.note}
-          </p>
+                      >
+                        {item.note}
+                      </p>
 
-        ) : null}
+                    ) : null}
 
-      </div>
+                  </div>
 
 
-      {/* ========================================= */}
-      {/* QTY CONTROLS */}
-      {/* ========================================= */}
+                  {/* ========================================= */}
+                  {/* QTY CONTROLS */}
+                  {/* ========================================= */}
 
-      <div
-        className="
+                  <div
+                    className="
           ml-2
           flex
           shrink-0
           items-center
           gap-0.5
         "
-      >
+                  >
 
-        {/* DECREASE */}
+                    {/* DECREASE */}
 
-{/* DECREASE */}
 
-<button
-  type="button"
-  disabled={processing}
-  className="
+
+                    <button
+                      type="button"
+                      disabled={processing}
+                      className="
     flex
     h-5
     w-5
@@ -2017,35 +2299,35 @@ const isCreditSale =
     disabled:cursor-not-allowed
     disabled:opacity-30
   "
-  onClick={() =>
-    decreaseBillItem(item)
-  }
->
-  −
-</button>
+                      onClick={() =>
+                        decreaseBillItem(item)
+                      }
+                    >
+                      −
+                    </button>
 
 
-{/* QUANTITY */}
+                    {/* QUANTITY */}
 
-<div
-  className="
+                    <div
+                      className="
     flex
     min-w-[22px]
     justify-center
     text-[11px]
     font-medium
   "
->
-  {item.quantity}
-</div>
+                    >
+                      {item.quantity}
+                    </div>
 
 
-{/* INCREASE */}
+                    {/* INCREASE */}
 
-<button
-  type="button"
-  disabled={processing}
-  className="
+                    <button
+                      type="button"
+                      disabled={processing}
+                      className="
     flex
     h-5
     w-5
@@ -2062,81 +2344,81 @@ const isCreditSale =
     disabled:cursor-not-allowed
     disabled:opacity-30
   "
-  onClick={() =>
-    increaseBillItem(item)
-  }
->
-  +
-</button>
+                      onClick={() =>
+                        increaseBillItem(item)
+                      }
+                    >
+                      +
+                    </button>
 
-      </div>
+                  </div>
 
 
-      {/* ========================================= */}
-      {/* PRICE / TOTAL */}
-      {/* ========================================= */}
+                  {/* ========================================= */}
+                  {/* PRICE / TOTAL */}
+                  {/* ========================================= */}
 
-      <div
-        className="
+                  <div
+                    className="
           ml-3
           min-w-[70px]
           shrink-0
           text-right
         "
-      >
+                  >
 
-        {/* TOTAL */}
+                    {/* TOTAL */}
 
-        <p
-          className="
+                    <p
+                      className="
             text-[12px]
             font-semibold
             leading-tight
             tabular-nums
             opacity-80
           "
-        >
-          ₹
-          {(
-            (
-              item.basePrice +
-              (
-                item.modifierTotal || 0
-              )
-            ) *
-            item.quantity
-          ).toFixed(2)}
-        </p>
+                    >
+                      ₹
+                      {(
+                        (
+                          item.basePrice +
+                          (
+                            item.modifierTotal || 0
+                          )
+                        ) *
+                        item.quantity
+                      ).toFixed(2)}
+                    </p>
 
 
-        {/* UNIT PRICE */}
+                    {/* UNIT PRICE */}
 
-        <p
-          className="
+                    <p
+                      className="
             mt-0.5
             text-[9px]
             leading-tight
             tabular-nums
             opacity-60
           "
-        >
-          ₹
-          {(
-            item.basePrice +
-            (
-              item.modifierTotal || 0
-            )
-          ).toFixed(2)}
-          {" / item"}
-        </p>
+                    >
+                      ₹
+                      {(
+                        item.basePrice +
+                        (
+                          item.modifierTotal || 0
+                        )
+                      ).toFixed(2)}
+                      {" / item"}
+                    </p>
 
-      </div>
+                  </div>
 
-    </div>
+                </div>
 
-  </div>
+              </div>
 
-))}
+            ))}
 
           </div>
 
@@ -2145,29 +2427,29 @@ const isCreditSale =
       </div>
 
 
-   
 
-  {/* =================================================
+
+      {/* =================================================
     BILL BUTTONS
 ================================================= */}
 
-<div
-  className="
+      <div
+        className="
     relative
     shrink-0
     px-2
     bg-zinc-800
     py-1
   "
->
+      >
 
-  {/* =================================================
+        {/* =================================================
       PAYMENT SUMMARY STRIP
   ================================================= */}
 
-  {showPaymentSummary && (
-    <div
-      className="
+        {showPaymentSummary && (
+          <div
+            className="
         absolute
         bottom-[100%]
         left-2
@@ -2181,12 +2463,12 @@ const isCreditSale =
         bg-zinc-900
         shadow-xl
       "
-    >
+          >
 
-      {/* HEADER */}
+            {/* HEADER */}
 
-      <div
-        className="
+            <div
+              className="
           flex
           items-center
           justify-between
@@ -2195,208 +2477,208 @@ const isCreditSale =
           px-3
           py-2
         "
-      >
-        <div
-          className="
+            >
+              <div
+                className="
             text-xs
             font-semibold
             uppercase
             tracking-wide
             text-white
           "
-        >
-          {isCreditSale
-            ? 'Credit Sale'
-            : 'Partial Payment'}
-        </div>
+              >
+                {isCreditSale
+                  ? 'Credit Sale'
+                  : 'Partial Payment'}
+              </div>
 
-        <div
-          className="
+              <div
+                className="
             text-xs
             font-semibold
             text-zinc-300
           "
-        >
-          ₹{Number(grandTotal || 0).toFixed(2)}
-        </div>
-      </div>
+              >
+                ₹{Number(grandTotal || 0).toFixed(2)}
+              </div>
+            </div>
 
 
-      {/* PAYMENT BREAKDOWN */}
+            {/* PAYMENT BREAKDOWN */}
 
-      <div
-        className="
+            <div
+              className="
           max-h-32
           overflow-y-auto
           px-3
           py-2
         "
-      >
+            >
 
-        {/* CASH */}
+              {/* CASH */}
 
-        {cashPaid > 0 && (
-          <div
-            className="
+              {cashPaid > 0 && (
+                <div
+                  className="
               flex
               items-center
               justify-between
               py-1
               text-xs
             "
-          >
-            <span className="text-zinc-400">
-              CASH
-            </span>
+                >
+                  <span className="text-zinc-400">
+                    CASH
+                  </span>
 
-            <span className="font-semibold text-white">
-              ₹{Number(cashPaid).toFixed(2)}
-            </span>
-          </div>
-        )}
+                  <span className="font-semibold text-white">
+                    ₹{Number(cashPaid).toFixed(2)}
+                  </span>
+                </div>
+              )}
 
 
-        {/* CARD */}
+              {/* CARD */}
 
-        {cardPaid > 0 && (
-          <div
-            className="
+              {cardPaid > 0 && (
+                <div
+                  className="
               flex
               items-center
               justify-between
               py-1
               text-xs
             "
-          >
-            <span className="text-zinc-400">
-              CARD
-            </span>
+                >
+                  <span className="text-zinc-400">
+                    CARD
+                  </span>
 
-            <span className="font-semibold text-white">
-              ₹{Number(cardPaid).toFixed(2)}
-            </span>
-          </div>
-        )}
+                  <span className="font-semibold text-white">
+                    ₹{Number(cardPaid).toFixed(2)}
+                  </span>
+                </div>
+              )}
 
 
-        {/* UPI */}
+              {/* UPI */}
 
-        {upiPaid > 0 && (
-          <div
-            className="
+              {upiPaid > 0 && (
+                <div
+                  className="
               flex
               items-center
               justify-between
               py-1
               text-xs
             "
-          >
-            <span className="text-zinc-400">
-              UPI
-            </span>
+                >
+                  <span className="text-zinc-400">
+                    UPI
+                  </span>
 
-            <span className="font-semibold text-white">
-              ₹{Number(upiPaid).toFixed(2)}
-            </span>
-          </div>
-        )}
-
-
-        {/* CREDIT */}
-
-       {/* {showPaymentAllocation && ( */}
-     <PaymentAllocation
-  totalAmount={calculation.grandTotal}
-  value={paymentAllocation}
-  onChange={setPaymentAllocation}
-  onPay={handlePaymentAllocation}
-  onCancel={() => {
-    setShowPaymentSummary(false);
-
-    setPaymentAllocation({
-      cash: 0,
-      card: 0,
-      upi: 0,
-      credit: 0,
-    });
-  }}
-/>
-        {/* )} */}
-
-      </div>
+                  <span className="font-semibold text-white">
+                    ₹{Number(upiPaid).toFixed(2)}
+                  </span>
+                </div>
+              )}
 
 
-      {/* TOTALS */}
+              {/* CREDIT */}
 
-      <div
-        className="
+              {/* {showPaymentAllocation && ( */}
+              <PaymentAllocation
+                totalAmount={calculation.grandTotal}
+                value={paymentAllocation}
+                onChange={setPaymentAllocation}
+                onPay={handlePaymentAllocation}
+                onCancel={() => {
+                  setShowPaymentSummary(false);
+
+                  setPaymentAllocation({
+                    cash: 0,
+                    card: 0,
+                    upi: 0,
+                    credit: 0,
+                  });
+                }}
+              />
+              {/* )} */}
+
+            </div>
+
+
+            {/* TOTALS */}
+
+            <div
+              className="
           border-t
           border-zinc-700
           px-3
           py-2
         "
-      >
+            >
 
-        <div
-          className="
+              <div
+                className="
             flex
             items-center
             justify-between
             text-xs
           "
-        >
-          <span className="text-zinc-400">
-            PAID
-          </span>
+              >
+                <span className="text-zinc-400">
+                  PAID
+                </span>
 
-          <span className="font-semibold text-green-400">
-            ₹{Number(paidAmount || 0).toFixed(2)}
-          </span>
-        </div>
+                <span className="font-semibold text-green-400">
+                  ₹{Number(paidAmount || 0).toFixed(2)}
+                </span>
+              </div>
 
 
-        <div
-          className="
+              <div
+                className="
             mt-1
             flex
             items-center
             justify-between
             text-xs
           "
-        >
-          <span className="text-zinc-400">
-            DUE
-          </span>
+              >
+                <span className="text-zinc-400">
+                  DUE
+                </span>
 
-          <span
-            className="
+                <span
+                  className="
               font-semibold
               text-red-400
             "
-          >
-            ₹{Number(dueAmount || 0).toFixed(2)}
-          </span>
-        </div>
+                >
+                  ₹{Number(dueAmount || 0).toFixed(2)}
+                </span>
+              </div>
 
-      </div>
+            </div>
 
-    </div>
-  )}
+          </div>
+        )}
 
 
-  {/* =================================================
+        {/* =================================================
       PAYMENT STATUS BADGE
   ================================================= */}
 
-  {(isPartialPayment || isCreditSale) && (
-    <button
-      type="button"
-      onClick={() =>
-        setShowPaymentSummary(
-          (prev) => !prev
-        )
-      }
-      className="
+        {(isPartialPayment || isCreditSale) && (
+          <button
+            type="button"
+            onClick={() =>
+              setShowPaymentSummary(
+                (prev) => !prev
+              )
+            }
+            className="
         absolute
         bottom-[100%]
         left-1/2
@@ -2422,50 +2704,49 @@ const isCreditSale =
         transition-colors
         hover:bg-zinc-700
       "
-    >
+          >
 
-      {/* UP ARROW */}
+            {/* UP ARROW */}
 
-      <span
-        className={`
+            <span
+              className={`
           text-[11px]
           transition-transform
           duration-200
-          ${
-            showPaymentSummary
-              ? 'rotate-180'
-              : ''
-          }
+          ${showPaymentSummary
+                  ? 'rotate-180'
+                  : ''
+                }
         `}
-      >
-        ↑
-      </span>
+            >
+              ↑
+            </span>
 
 
-      {/* TITLE */}
+            {/* TITLE */}
 
-      <span>
-        {isCreditSale
-          ? 'CREDIT + Mix Pay'
-          : 'PARTIAL'}
-      </span>
+            <span>
+              {isCreditSale
+                ? 'CREDIT + Mix Pay'
+                : 'PARTIAL'}
+            </span>
 
-    </button>
-  )}
+          </button>
+        )}
 
 
-  {/* =================================================
+        {/* =================================================
       PAYMENT BUTTONS
   ================================================= */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
 
-  <div className="flex items-center gap-2">
+            {/* PRINT */}
 
-    {/* PRINT */}
-
-    <button
-      type="button"
-      onClick={printBill}
-      className={`
+            <button
+              type="button"
+              onClick={printBill}
+              className={`
         h-8
         w-fit
         rounded
@@ -2474,23 +2755,23 @@ const isCreditSale =
         font-semibold
         ${POS_THEME.BillButton}
       `}
-    >
-      PRINT
-    </button>
+            >
+              PRINT
+            </button>
 
 
-    {/* CASH */}
+            {/* CASH */}
 
-    <button
-      type="button"
-      onClick={() =>
-        handleCheckout('CASH')
-      }
-      disabled={
-        processing ||
-        billItems.length === 0
-      }
-      className="
+            <button
+              type="button"
+              onClick={() =>
+                handleCheckout('CASH')
+              }
+              disabled={
+                processing ||
+                billItems.length === 0
+              }
+              className="
         h-8
         w-fit
         rounded-md
@@ -2504,25 +2785,25 @@ const isCreditSale =
         disabled:cursor-not-allowed
         disabled:opacity-50
       "
-    >
-      {processing
-        ? 'PROCESSING...'
-        : 'CASH'}
-    </button>
+            >
+              {processing
+                ? 'PROCESSING...'
+                : 'CASH'}
+            </button>
 
 
-    {/* CARD */}
+            {/* CARD */}
 
-    <button
-      type="button"
-      onClick={() =>
-        handleCheckout('CARD')
-      }
-      disabled={
-        processing ||
-        billItems.length === 0
-      }
-      className="
+            <button
+              type="button"
+              onClick={() =>
+                handleCheckout('CARD')
+              }
+              disabled={
+                processing ||
+                billItems.length === 0
+              }
+              className="
         h-8
         w-fit
         rounded-md
@@ -2536,23 +2817,23 @@ const isCreditSale =
         disabled:cursor-not-allowed
         disabled:opacity-50
       "
-    >
-      CARD
-    </button>
+            >
+              CARD
+            </button>
 
 
-    {/* UPI */}
+            {/* UPI */}
 
-    <button
-      type="button"
-      onClick={() =>
-        handleCheckout('UPI')
-      }
-      disabled={
-        processing ||
-        billItems.length === 0
-      }
-      className="
+            <button
+              type="button"
+              onClick={() =>
+                handleCheckout('UPI')
+              }
+              disabled={
+                processing ||
+                billItems.length === 0
+              }
+              className="
         h-8
         w-fit
         rounded-md
@@ -2566,25 +2847,25 @@ const isCreditSale =
         disabled:cursor-not-allowed
         disabled:opacity-50
       "
-    >
-      UPI
-    </button>
+            >
+              UPI
+            </button>
 
 
-    {/* MORE */}
+            {/* MORE */}
 
-{/* =================================================
+            {/* =================================================
     MORE STATUS STRIP
 ================================================= */}
 
-<button
-  type="button"
-  onClick={() =>
-    setShowMoreMenu(
-      (prev) => !prev
-    )
-  }
-  className="
+            <button
+              type="button"
+              onClick={() =>
+                setShowMoreMenu(
+                  (prev) => !prev
+                )
+              }
+              className="
     absolute
     bottom-[100%]
     right-2
@@ -2608,30 +2889,30 @@ const isCreditSale =
     transition-colors
     hover:bg-zinc-700
   "
->
-  {/* ARROW */}
+            >
+              {/* ARROW */}
 
-  <span
-    className="
+              <span
+                className="
       text-[11px]
       transition-transform
       duration-200
     "
-  >
-    ↑
-  </span>
+              >
+                ↑
+              </span>
 
-  {/* TITLE */}
+              {/* TITLE */}
 
-  <span>
-    MORE
-  </span>
+              <span>
+                MORE
+              </span>
 
-</button>
+            </button>
 
             {showMoreMenu && (
-  <div
-    className="
+              <div
+                className="
       absolute
       bottom-[100%]
       right-2
@@ -2645,19 +2926,19 @@ const isCreditSale =
       p-1
       shadow-xl
     "
-  >
+              >
 
-    {/* =========================================
+                {/* =========================================
         COMPLIMENTARY
     ========================================= */}
 
-    <button
-      type="button"
-  onClick={() => {
-  setShowMoreMenu(false);
-  setShowComplimentaryMenu(true);
-}}
-      className="
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    setShowComplimentaryMenu(true);
+                  }}
+                  className="
         flex
         w-full
         items-center
@@ -2671,23 +2952,23 @@ const isCreditSale =
         hover:bg-zinc-700
         transition-colors
       "
-    >
-      Complimentary
-    </button>
+                >
+                  Complimentary
+                </button>
 
 
-    {/* =========================================
+                {/* =========================================
         DRIVER
     ========================================= */}
 
-    <button
-      type="button"
-      onClick={() => {
-       handleComplimentaryCheckout('DRIVER')
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleComplimentaryCheckout('DRIVER')
 
-        setShowMoreMenu(false);
-      }}
-      className="
+                    setShowMoreMenu(false);
+                  }}
+                  className="
         flex
         w-full
         items-center
@@ -2701,23 +2982,23 @@ const isCreditSale =
         hover:bg-zinc-700
         transition-colors
       "
-    >
-      Driver
-    </button>
+                >
+                  Driver
+                </button>
 
 
-    {/* =========================================
+                {/* =========================================
         FRIEND
     ========================================= */}
 
-    <button
-      type="button"
-      onClick={() => {
-        handleComplimentaryCheckout('FRIEND')
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleComplimentaryCheckout('FRIEND')
 
-        setShowMoreMenu(false);
-      }}
-      className="
+                    setShowMoreMenu(false);
+                  }}
+                  className="
         flex
         w-full
         items-center
@@ -2731,23 +3012,23 @@ const isCreditSale =
         hover:bg-zinc-700
         transition-colors
       "
-    >
-      Friend
-    </button>
+                >
+                  Friend
+                </button>
 
 
-    {/* =========================================
+                {/* =========================================
         FAMILY
     ========================================= */}
 
-    <button
-      type="button"
-      onClick={() => {
-       handleComplimentaryCheckout('FAMILY')
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleComplimentaryCheckout('FAMILY')
 
-        setShowMoreMenu(false);
-      }}
-      className="
+                    setShowMoreMenu(false);
+                  }}
+                  className="
         flex
         w-full
         items-center
@@ -2761,23 +3042,23 @@ const isCreditSale =
         hover:bg-zinc-700
         transition-colors
       "
-    >
-      Family
-    </button>
+                >
+                  Family
+                </button>
 
 
-    {/* =========================================
+                {/* =========================================
         STAFF
     ========================================= */}
 
-    <button
-      type="button"
-      onClick={() => {
-       handleComplimentaryCheckout('STAFF')
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleComplimentaryCheckout('STAFF')
 
-        setShowMoreMenu(false);
-      }}
-      className="
+                    setShowMoreMenu(false);
+                  }}
+                  className="
         flex
         w-full
         items-center
@@ -2791,23 +3072,23 @@ const isCreditSale =
         hover:bg-zinc-700
         transition-colors
       "
-    >
-      Staff
-    </button>
+                >
+                  Staff
+                </button>
 
 
-    {/* =========================================
+                {/* =========================================
         OWNER
     ========================================= */}
 
-    <button
-      type="button"
-      onClick={() => {
-       handleComplimentaryCheckout('OWNER')
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleComplimentaryCheckout('OWNER')
 
-        setShowMoreMenu(false);
-      }}
-      className="
+                    setShowMoreMenu(false);
+                  }}
+                  className="
         flex
         w-full
         items-center
@@ -2821,18 +3102,51 @@ const isCreditSale =
         hover:bg-zinc-700
         transition-colors
       "
-    >
-      Owner
-    </button>
+                >
+                  Owner
+                </button>
 
-  </div>
-)}
+              </div>
+            )}
 
-  </div>
+          </div>
 
-  {/* KEEP YOUR EXISTING MORE MENU HERE */}
+          {/* CASH */}
 
-</div>
+          <button
+            type="button"
+            onClick={() => {
+              setCancelBillReason('');
+              setShowCancelBillConfirm(true);
+            }
+            }
+            disabled={
+              processing ||
+              billItems.length === 0
+            }
+            className="
+        h-8
+        w-fit
+        rounded-md
+        bg-green-600
+        px-3
+        text-xs
+        font-semibold
+        text-white
+        transition-colors
+        hover:bg-green-700
+        disabled:cursor-not-allowed
+        disabled:opacity-50
+      "
+          >
+            {processing
+              ? 'PROCESSING...'
+              : 'CANCEL'}
+          </button>
+        </div>
+        {/* KEEP YOUR EXISTING MORE MENU HERE */}
+
+      </div>
 
 
       {/* =================================================
@@ -2840,92 +3154,92 @@ const isCreditSale =
           ${background.border}
       ================================================= */}
 
-  <div
-  className={`
+      <div
+        className={`
     space-y-1
     px-3
     py-2
     text-[12px]
   `}
->
-  {/* =====================================================
+      >
+        {/* =====================================================
       SUBTOTAL
   ===================================================== */}
 
-  <div
-    className="
+        <div
+          className="
       flex
       items-center
       justify-between
       py-0.5
     "
-  >
-    <span className="opacity-55">
-      Subtotal
-    </span>
+        >
+          <span className="opacity-55">
+            Subtotal
+          </span>
 
-    <span className="font-medium opacity-75">
-      ₹{calculation.itemSubtotal.toFixed(2)}
-    </span>
-  </div>
+          <span className="font-medium opacity-75">
+            ₹{calculation.itemSubtotal.toFixed(2)}
+          </span>
+        </div>
 
 
-  {/* =====================================================
+        {/* =====================================================
       TAX
   ===================================================== */}
 
-  <div
-    className="
+        <div
+          className="
       flex
       items-center
       justify-between
       py-0.5
     "
-  >
-    <span className="opacity-55">
-      Tax
-    </span>
+        >
+          <span className="opacity-55">
+            Tax
+          </span>
 
-    <span className="font-medium opacity-70">
-      ₹{calculation.itemTax.toFixed(2)}
-    </span>
-  </div>
+          <span className="font-medium opacity-70">
+            ₹{calculation.itemTax.toFixed(2)}
+          </span>
+        </div>
 
 
-  {/* =====================================================
+        {/* =====================================================
       DISCOUNT
   ===================================================== */}
 
-  <div
-    className="
+        <div
+          className="
       flex
       items-center
       justify-between
       gap-2
       py-1
     "
-  >
+        >
 
-    {/* LEFT */}
+          {/* LEFT */}
 
-    <div
-      className="
+          <div
+            className="
         flex
         min-w-0
         items-center
         gap-2
       "
-    >
+          >
 
-      <span className="shrink-0 opacity-55">
-        Discount
-      </span>
+            <span className="shrink-0 opacity-55">
+              Discount
+            </span>
 
 
-      {/* FLAT */}
+            {/* FLAT */}
 
-      <div
-        className={`
+            <div
+              className={`
           flex
           h-7
           w-[68px]
@@ -2935,40 +3249,40 @@ const isCreditSale =
           ${background.border}
           bg-black/[0.025]
         `}
-      >
+            >
 
-        <span className="pl-2 text-[10px] opacity-35">
-          ₹
-        </span>
+              <span className="pl-2 text-[10px] opacity-35">
+                ₹
+              </span>
 
-    <input
-  type="number"
-  min="0"
-  step="0.01"
-  value={discount === 0 ? '' : discount}
-  onChange={(e) => {
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={discount === 0 ? '' : discount}
+                onChange={(e) => {
 
-    const value =
-      e.target.value === ''
-        ? 0
-        : Number(e.target.value);
+                  const value =
+                    e.target.value === ''
+                      ? 0
+                      : Number(e.target.value);
 
-    setBillDraft({
+                  setBillDraft({
 
-      ...billDraft,
+                    ...billDraft,
 
-      discount: value,
+                    discount: value,
 
-      discountPercent:
-        value > 0
-          ? 0
-          : billDraft.discountPercent,
+                    discountPercent:
+                      value > 0
+                        ? 0
+                        : billDraft.discountPercent,
 
-    });
+                  });
 
-  }}
-  placeholder="0"
-  className={`
+                }}
+                placeholder="0"
+                className={`
     h-full
     w-full
     bg-transparent
@@ -2982,22 +3296,22 @@ const isCreditSale =
     [&::-webkit-inner-spin-button]:appearance-none
     [&::-webkit-outer-spin-button]:appearance-none
   `}
-/>
+              />
 
-      </div>
-
-
-      {/* OR */}
-
-      <span className="text-[9px] opacity-25">
-        OR
-      </span>
+            </div>
 
 
-      {/* PERCENT */}
+            {/* OR */}
 
-      <div
-        className={`
+            <span className="text-[9px] opacity-25">
+              OR
+            </span>
+
+
+            {/* PERCENT */}
+
+            <div
+              className={`
           flex
           h-7
           w-[62px]
@@ -3007,41 +3321,41 @@ const isCreditSale =
           ${background.border}
           bg-black/[0.025]
         `}
-      >
+            >
 
-      <input
-  type="number"
-  min="0"
-  max="100"
-  step="0.01"
-  value={
-    discountPercent === 0
-      ? ''
-      : discountPercent
-  }
-  onChange={(e) => {
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={
+                  discountPercent === 0
+                    ? ''
+                    : discountPercent
+                }
+                onChange={(e) => {
 
-    const value =
-      e.target.value === ''
-        ? 0
-        : Number(e.target.value);
+                  const value =
+                    e.target.value === ''
+                      ? 0
+                      : Number(e.target.value);
 
-    setBillDraft({
+                  setBillDraft({
 
-      ...billDraft,
+                    ...billDraft,
 
-      discountPercent: value,
+                    discountPercent: value,
 
-      discount:
-        value > 0
-          ? 0
-          : billDraft.discount,
+                    discount:
+                      value > 0
+                        ? 0
+                        : billDraft.discount,
 
-    });
+                  });
 
-  }}
-  placeholder="0"
-  className={`
+                }}
+                placeholder="0"
+                className={`
     h-full
     w-full
     bg-transparent
@@ -3055,63 +3369,63 @@ const isCreditSale =
     [&::-webkit-inner-spin-button]:appearance-none
     [&::-webkit-outer-spin-button]:appearance-none
   `}
-/>
+              />
 
-        <span className="pr-2 text-[10px] opacity-40">
-          %
-        </span>
+              <span className="pr-2 text-[10px] opacity-40">
+                %
+              </span>
 
-      </div>
+            </div>
 
-    </div>
+          </div>
 
 
-    {/* CALCULATED DISCOUNT */}
+          {/* CALCULATED DISCOUNT */}
 
-    <span
-      className="
+          <span
+            className="
         shrink-0
         font-medium
         opacity-70
       "
-    >
-      − ₹{calculation.discount.toFixed(2)}
-    </span>
+          >
+            − ₹{calculation.discount.toFixed(2)}
+          </span>
 
-  </div>
+        </div>
 
 
-  {/* =====================================================
+        {/* =====================================================
       DELIVERY
   ===================================================== */}
 
-  <div
-    className="
+        <div
+          className="
       flex
       items-center
       justify-between
       gap-2
       py-1
     "
-  >
+        >
 
-    {/* LEFT */}
+          {/* LEFT */}
 
-    <div
-      className="
+          <div
+            className="
         flex
         items-center
         gap-2
       "
-    >
+          >
 
-      <span className="opacity-55">
-        Delivery
-      </span>
+            <span className="opacity-55">
+              Delivery
+            </span>
 
 
-      <div
-        className={`
+            <div
+              className={`
           flex
           h-7
           w-[72px]
@@ -3121,40 +3435,40 @@ const isCreditSale =
           ${background.border}
           bg-black/[0.025]
         `}
-      >
+            >
 
-        <span className="pl-2 text-[10px] opacity-35">
-          ₹
-        </span>
+              <span className="pl-2 text-[10px] opacity-35">
+                ₹
+              </span>
 
-    <input
-  type="number"
-  min="0"
-  step="0.01"
-  value={
-    deliveryFee === 0
-      ? ''
-      : deliveryFee
-  }
-  onChange={(e) => {
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={
+                  deliveryFee === 0
+                    ? ''
+                    : deliveryFee
+                }
+                onChange={(e) => {
 
-    const value =
-      e.target.value === ''
-        ? 0
-        : Number(e.target.value);
+                  const value =
+                    e.target.value === ''
+                      ? 0
+                      : Number(e.target.value);
 
-    setBillDraft({
+                  setBillDraft({
 
-      ...billDraft,
+                    ...billDraft,
 
-      deliveryFee:
-        value,
+                    deliveryFee:
+                      value,
 
-    });
+                  });
 
-  }}
-  placeholder="0"
-  className={`
+                }}
+                placeholder="0"
+                className={`
     h-full
     w-full
     bg-transparent
@@ -3168,34 +3482,34 @@ const isCreditSale =
     [&::-webkit-inner-spin-button]:appearance-none
     [&::-webkit-outer-spin-button]:appearance-none
   `}
-/>
+              />
 
-      </div>
+            </div>
 
-    </div>
+          </div>
 
 
-    {/* DELIVERY TOTAL */}
+          {/* DELIVERY TOTAL */}
 
-    <span
-      className="
+          <span
+            className="
         shrink-0
         font-medium
         opacity-70
       "
-    >
-      ₹{calculation.deliveryFee.toFixed(2)}
-    </span>
+          >
+            ₹{calculation.deliveryFee.toFixed(2)}
+          </span>
 
-  </div>
+        </div>
 
 
-  {/* =====================================================
+        {/* =====================================================
       GRAND TOTAL
   ===================================================== */}
 
-  <div
-    className={`
+        <div
+          className={`
       mt-1
       flex
       items-center
@@ -3204,31 +3518,31 @@ const isCreditSale =
       ${background.border}
       pt-2
     `}
-  >
+        >
 
-    <span
-      className="
+          <span
+            className="
         text-[13px]
         font-semibold
         opacity-85
       "
-    >
-      Grand Total
-    </span>
+          >
+            Grand Total
+          </span>
 
-    <span
-      className="
+          <span
+            className="
         text-[15px]
         font-bold
         opacity-95
       "
-    >
-      ₹{calculation.grandTotal.toFixed(2)}
-    </span>
+          >
+            ₹{calculation.grandTotal.toFixed(2)}
+          </span>
 
-  </div>
+        </div>
 
-</div>
+      </div>
 
       {/* =================================================
           ERROR
@@ -3250,6 +3564,110 @@ const isCreditSale =
           {error}
         </div>
 
+      )}
+
+      {showCancelBillConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+
+          <div
+            className={`
+        w-full
+        max-w-md
+        rounded-2xl
+        border
+        ${background.border}
+        ${background.className}
+        p-6
+        shadow-2xl
+      `}
+          >
+
+            <h2 className="text-lg font-bold">
+              Cancel Bill?
+            </h2>
+
+            <p className="mt-2 text-sm opacity-70">
+              Please enter a reason for cancelling this bill.
+            </p>
+
+            <div className="mt-5">
+
+              <label className="mb-2 block text-sm font-semibold">
+                Cancellation Reason
+              </label>
+
+              <textarea
+                value={cancelBillReason}
+                onChange={(e) => {
+                  setCancelBillReason(e.target.value)
+
+                }}
+                placeholder="Enter cancellation reason..."
+                rows={4}
+                className="
+            w-full
+            rounded-xl
+            border
+            bg-transparent
+            px-4
+            py-3
+            text-sm
+            outline-none
+            resize-none
+          "
+              />
+
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancelBillConfirm(false);
+                  setCancelBillReason('');
+                }}
+                className="
+            rounded-xl
+            border
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+          "
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={!cancelBillReason.trim()}
+                onClick={() => {
+                  // We will connect the actual cancel API here next
+                  handleCancel('CANCEL', cancelBillReason)
+                  setShowCancelBillConfirm(false);
+                }}
+                className="
+            rounded-xl
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+            text-white
+            disabled:opacity-50
+          "
+                style={{
+                  backgroundColor: theme.primary,
+                }}
+              >
+                Confirm Cancel
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
       )}
 
     </div>

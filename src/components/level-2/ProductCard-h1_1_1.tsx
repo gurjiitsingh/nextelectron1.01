@@ -16,7 +16,7 @@ import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
 export default function ProductCardHorizontical({
   product,
   variants,
-  
+
   modifierGroups,
   productModifiers,
 }: {
@@ -27,33 +27,33 @@ export default function ProductCardHorizontical({
   productModifiers: any[];
 
 }) {
-const router = useRouter();
+  const router = useRouter();
   type ModifierItem = TnewModifierItemSchema & {
     id: string;
   };
-const { theme, background } = usePosTheme();
+  const { theme, background } = usePosTheme();
   const { settings } = UseSiteContext();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ProductType | null>(null);
 
   const {
-  activeTable,
-  activeOrder,
-} = usePosSession();
+    activeTable,
+    activeOrder,
+  } = usePosSession();
 
-// =====================================================
-// CURRENT CART PARTITION
-// =====================================================
+  // =====================================================
+  // CURRENT CART PARTITION
+  // =====================================================
 
-const currentPartition =
-  activeOrder?.orderType === 'DINE_IN'
-    ? activeTable?.tableId ?? ''
-    : activeOrder?.orderNo ?? '';
+  const currentPartition =
+    activeOrder?.orderType === 'DINE_IN'
+      ? activeTable?.tableId ?? ''
+      : activeOrder?.orderNo ?? '';
 
-const currentDisplayName =
-  activeOrder?.orderType === 'DINE_IN'
-    ? activeTable?.tableName ?? ''
-    : activeOrder?.orderNo ?? '';
+  const currentDisplayName =
+    activeOrder?.orderType === 'DINE_IN'
+      ? activeTable?.tableName ?? ''
+      : activeOrder?.orderNo ?? '';
 
   const { addProductToCart } = useCartContext();
 
@@ -168,17 +168,17 @@ const currentDisplayName =
     // POS session
     sessionId: 'DEFAULT',
 
-     
 
-   // =====================================================
-// ORDER / TABLE
-// =====================================================
 
-tableId:
-  currentPartition || null,
+    // =====================================================
+    // ORDER / TABLE
+    // =====================================================
 
-tableName:
-  currentDisplayName || null,
+    tableId:
+      currentPartition || null,
+
+    tableName:
+      currentDisplayName || null,
 
     // user snapshot
     createdById: '',
@@ -249,60 +249,60 @@ tableName:
 
   // ---------------- UI ----------------
 
-const handleAdd = () => {
-  // =====================================================
-  // NO ACTIVE ORDER
-  // =====================================================
+  const handleAdd = () => {
+    // =====================================================
+    // NO ACTIVE ORDER
+    // =====================================================
 
-  if (!activeOrder) {
-    alert('Please select an order type first.');
-    return;
-  }
+    if (!activeOrder) {
+      alert('Please select an order type first.');
+      return;
+    }
 
-  // =====================================================
-  // DINE IN REQUIRES TABLE
-  // =====================================================
+    // =====================================================
+    // DINE IN REQUIRES TABLE
+    // =====================================================
 
-  if (
-    activeOrder.orderType === 'DINE_IN' &&
-    !activeTable?.tableId
-  ) {
-    router.push('/tables');
-    return;
-  }
+    if (
+      activeOrder.orderType === 'DINE_IN' &&
+      !activeTable?.tableId
+    ) {
+      router.push('/tables');
+      return;
+    }
 
-  // =====================================================
-  // TAKEAWAY / DELIVERY REQUIRE ORDER NUMBER
-  // =====================================================
+    // =====================================================
+    // TAKEAWAY / DELIVERY REQUIRE ORDER NUMBER
+    // =====================================================
 
-  if (
-    activeOrder.orderType !== 'DINE_IN' &&
-    !activeOrder.orderNo
-  ) {
-    alert('Order number is not available yet.');
-    return;
-  }
+    if (
+      activeOrder.orderType !== 'DINE_IN' &&
+      !activeOrder.orderNo
+    ) {
+      alert('Order number is not available yet.');
+      return;
+    }
 
-  // =====================================================
-  // ADD TO CART
-  // =====================================================
+    // =====================================================
+    // ADD TO CART
+    // =====================================================
 
-  setRightSidebarView('cart');
+    setRightSidebarView('cart');
 
-  addProductToCart(cartProduct);
-};
+    addProductToCart(cartProduct);
+  };
 
 
   return (
     <>
-      
-<button
-  type="button"
-  onClick={handleAdd}
-  style={{
-    borderColor: undefined,
-  }}
-  className={`
+
+      <button
+        type="button"
+        onClick={handleAdd}
+        style={{
+          borderColor: undefined,
+        }}
+        className={`
     group
     w-[160px]
     min-h-[90px]
@@ -319,12 +319,18 @@ const handleAdd = () => {
     flex-col
     justify-between
   `}
->
+      >
         {/* Name */}
-        <div className="flex items-start justify-between gap-1">
-          <h3 className="text-[10px]    leading-snug line-clamp-2">
-            {product.name}
-          </h3>
+        <div className="flex flex-col items-start justify-between gap-3">
+          <div className="flex gap-2 row-wrap">
+            <h3 className="text-[10px]    leading-snug line-clamp-2">
+              {product.name}
+            </h3>
+            <div className="text-[8px]">{product.searchCode}</div>
+          </div>
+          <p className="text-[10px]    leading-snug line-clamp-2">
+            <span className="text-[7px]">Rs</span> {product.price}
+          </p>
 
           {shouldOpenPopup && (
             <span className="text-[11px] font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">

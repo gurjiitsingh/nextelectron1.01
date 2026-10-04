@@ -813,7 +813,7 @@ CREATE TABLE IF NOT EXISTS pos_order_items (
   itemSubtotal REAL NOT NULL DEFAULT 0,
 
   currency TEXT,
-  paymentStatus TEXT,
+  status TEXT,
 
   taxRate REAL NOT NULL DEFAULT 0,
   taxType TEXT NOT NULL DEFAULT 'exclusive',
@@ -849,11 +849,11 @@ ON pos_order_items(createdAt);
 CREATE INDEX IF NOT EXISTS idx_pos_order_items_categoryName
 ON pos_order_items(categoryName);
 
-CREATE INDEX IF NOT EXISTS idx_pos_order_items_paymentStatus
-ON pos_order_items(paymentStatus);
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_status
+ON pos_order_items(status);
 
-CREATE INDEX IF NOT EXISTS idx_pos_order_items_paymentStatus_createdAt
-ON pos_order_items(paymentStatus, createdAt);
+CREATE INDEX IF NOT EXISTS idx_pos_order_items_status_createdAt
+ON pos_order_items(satus, createdAt);
 
 
 -- =====================================================

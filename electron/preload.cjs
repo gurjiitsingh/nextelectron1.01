@@ -311,6 +311,14 @@ onKotReceived: (callback) => {
       input
     ),
 
+  cancelBill: (input) =>
+    ipcRenderer.invoke(
+      'bill:cancel',
+      input
+    ),
+
+    
+
   clearKotByTable: (tableNo) =>
     ipcRenderer.invoke(
       'clear-kot-by-table',

@@ -13,14 +13,14 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-const { syncAll } = require('./sync/syncAll.cjs');
+// const { syncAll } = require('./sync/syncAll.cjs');
 const {
   uploadOrderCounter,
 } = require('./sync/orderCounterUpload.cjs');
 
-const {
-  syncPendingOrders,
-} = require('./sync/orderSyncRepository.cjs');
+// const {
+//   syncPendingOrders,
+// } = require('./sync/orderSyncRepository.cjs');
 const {
   registerPosTerminal,
   getLocalIPAddress,
@@ -104,6 +104,7 @@ const kotRepo =
 
 const {
   createBillFromKitchen,
+  cancelBillFromKitchen,
   getBillableKotItems,
 } = require('./db/billingRepo.cjs');
 
@@ -115,14 +116,14 @@ const {
 
 
 
-const {
-  fetchClientWebApi,
-} = require("./lib/clientWebApi.cjs");
+// const {
+//   fetchClientWebApi,
+// } = require("./lib/clientWebApi.cjs");
 
-const {
-  saveFirebaseConfig,
-  getFirebaseConfig,
-} = require("./db/firebaseConfigRepo.cjs");
+// const {
+//   saveFirebaseConfig,
+//   getFirebaseConfig,
+// } = require("./db/firebaseConfigRepo.cjs");
 
 
 
@@ -847,6 +848,37 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  'bill:cancel',
+  async (_event, input) => {
+    try {
+
+    //       broadcastLanEvent({
+    //   type: "TEST",
+    //   message: "OK"
+    // });
+      const result =
+        await cancelBillFromKitchen(
+          input
+        );
+
+      if (result?.success !== false) {
+        tableRepo.refreshAllTableCartVisualStates();
+        tableRepo.refreshAllTableBillVisualStates();
+      }
+
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to create bill',
+      };
+    }
+  }
+);
+
+ipcMain.handle(
   'bill:update-item-quantity',
   async (_event, args) => {
     try {
@@ -1050,12 +1082,12 @@ ipcMain.handle(
 // SYNC
 // =====================================================
 
-ipcMain.handle(
-  'sync:all',
-  async () => {
-    return syncAll();
-  }
-);
+// ipcMain.handle(
+//   'sync:all',
+//   async () => {
+//     return syncAll();
+//   }
+// );
 
 
 // =====================================================
