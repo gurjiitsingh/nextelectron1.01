@@ -41,13 +41,16 @@ async function handleFetch() {
       )
     );
 
-    setMessage(
-      "Web API fetched and saved successfully"
+    // setMessage(
+    //   "Web API fetched and saved successfully"
+    // );
+     setMessage(
+      "Saved successfully..."
     );
 
   } catch (error) {
     console.error(
-      "Firebase initialization error:",
+      "initialization error:",
       error
     );
 
@@ -88,7 +91,7 @@ async function handleFetch() {
         disabled={loading}
         className="rounded-md bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? "Fetching..." : "Fetch Web API"}
+        {loading ? "Fetching..." : "Start Fetch"}
       </button>
 
       {/* Message */}
@@ -102,15 +105,15 @@ async function handleFetch() {
       {webApi && (
         <div className="mt-6">
           <label className="block text-sm font-medium mb-2">
-            Web Firebase Configuration
+            Configuration Done....
           </label>
 
-          <textarea
+          {/* <textarea
             value={webApi}
             readOnly
             rows={15}
             className="w-full rounded-md border bg-gray-50 p-3 font-mono text-sm"
-          />
+          /> */}
         </div>
       )}
     </div>

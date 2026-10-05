@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {
   useState,
 } from 'react';
@@ -344,6 +345,17 @@ export default function SyncPage() {
               py-1.5
             "
           >
+             <span
+              className="
+                hidden
+                text-[11px]
+                font-medium
+                text-slate-500
+                sm:block
+              "
+            >
+             <Link href={"/settings/init"}>Init</Link>
+            </span>
 
             <StatusDot
               status={

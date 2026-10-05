@@ -853,7 +853,7 @@ CREATE INDEX IF NOT EXISTS idx_pos_order_items_status
 ON pos_order_items(status);
 
 CREATE INDEX IF NOT EXISTS idx_pos_order_items_status_createdAt
-ON pos_order_items(satus, createdAt);
+ON pos_order_items(status, createdAt);
 
 
 -- =====================================================

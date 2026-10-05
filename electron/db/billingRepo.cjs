@@ -146,7 +146,7 @@ async function createBillFromKitchen(input) {
     // ===================================================
     // BUSINESS DATE
     // ===================================================
-    orderDate = businessDate,
+    orderDate,
     businessDate,
 
 
@@ -486,8 +486,8 @@ async function createBillFromKitchen(input) {
         currency:
           currency,
 
-        paymentStatus:
-          paymentStatus,
+        status:"DONE",
+         // paymentStatus,
 
         // ---------------------------------------------
         // TAX
@@ -1027,7 +1027,7 @@ async function createBillFromKitchen(input) {
             itemSubtotal,
 
             currency,
-            paymentStatus,
+           status,
 
             taxRate,
             taxType,
@@ -1075,7 +1075,7 @@ async function createBillFromKitchen(input) {
             @itemSubtotal,
 
             @currency,
-            @paymentStatus,
+          @status,
 
             @taxRate,
             @taxType,
@@ -1550,7 +1550,7 @@ async function createBillFromKitchen(input) {
 // =====================================================
 
 async function cancelBillFromKitchen(input) {
-
+const status = "CANCEL"
   const {
 
     // ===================================================
@@ -1920,8 +1920,7 @@ async function cancelBillFromKitchen(input) {
         basePrice;
 
 
-      const finalTotal =
-        itemSubtotal;
+      const finalTotal =  itemSubtotal;
 
 
       return {
@@ -1980,8 +1979,7 @@ async function cancelBillFromKitchen(input) {
         currency:
           currency,
 
-        paymentStatus:
-          paymentStatus,
+        status:"CANCEL",
 
         // ---------------------------------------------
         // TAX
@@ -2507,7 +2505,7 @@ async function cancelBillFromKitchen(input) {
             itemSubtotal,
 
             currency,
-            status: "CANCEL",
+            status,
 
             taxRate,
             taxType,

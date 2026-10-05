@@ -13,14 +13,14 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-// const { syncAll } = require('./sync/syncAll.cjs');
+const { syncAll } = require('./sync/syncAll.cjs');
 const {
   uploadOrderCounter,
 } = require('./sync/orderCounterUpload.cjs');
 
-// const {
-//   syncPendingOrders,
-// } = require('./sync/orderSyncRepository.cjs');
+const {
+  syncPendingOrders,
+} = require('./sync/orderSyncRepository.cjs');
 const {
   registerPosTerminal,
   getLocalIPAddress,
@@ -116,14 +116,14 @@ const {
 
 
 
-// const {
-//   fetchClientWebApi,
-// } = require("./lib/clientWebApi.cjs");
+const {
+  fetchClientWebApi,
+} = require("./lib/clientWebApi.cjs");
 
-// const {
-//   saveFirebaseConfig,
-//   getFirebaseConfig,
-// } = require("./db/firebaseConfigRepo.cjs");
+const {
+  saveFirebaseConfig,
+  getFirebaseConfig,
+} = require("./db/firebaseConfigRepo.cjs");
 
 
 
@@ -1082,12 +1082,12 @@ ipcMain.handle(
 // SYNC
 // =====================================================
 
-// ipcMain.handle(
-//   'sync:all',
-//   async () => {
-//     return syncAll();
-//   }
-// );
+ipcMain.handle(
+  'sync:all',
+  async () => {
+    return syncAll();
+  }
+);
 
 
 // =====================================================

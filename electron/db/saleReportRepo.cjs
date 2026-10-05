@@ -6,6 +6,19 @@ const { db } = require('./sqlite.cjs');
 
 function getSalesReport(realDate) {
 
+  const allItems = db
+  .prepare(`
+    SELECT *
+    FROM pos_order_items
+    ORDER BY createdAt DESC
+  `)
+  .all();
+
+console.log("=== ALL POS ORDER ITEMS ===");
+console.log(JSON.stringify(allItems, null, 2));
+
+console.table(allItems);
+
   // ===================================================
   // OVERALL SALES
   // ===================================================
@@ -141,41 +154,43 @@ const paymentStats = db
   // CATEGORY SALES
   // ===================================================
 
-  const categorySales = db
-    .prepare(`
-      SELECT
+ const categorySales = db
+  .prepare(`
+    SELECT
 
-        oi.categoryId AS categoryId,
+      oi.categoryId AS categoryId,
 
-        oi.categoryName AS categoryName,
+      oi.categoryName AS categoryName,
 
-        COALESCE(
-          SUM(oi.quantity),
-          0
-        ) AS quantity,
+      COALESCE(
+        SUM(oi.quantity),
+        0
+      ) AS quantity,
 
-        COALESCE(
-          SUM(oi.finalTotal),
-          0
-        ) AS sales
+      COALESCE(
+        SUM(oi.finalTotal),
+        0
+      ) AS sales
 
-      FROM pos_order_items oi
+    FROM pos_order_items oi
 
-      INNER JOIN pos_order_master om
-        ON om.id = oi.orderMasterId
+    INNER JOIN pos_order_master om
+      ON om.id = oi.orderMasterId
 
-      WHERE om.realDate = ?
+    WHERE om.realDate = ?
 
-        AND UPPER(om.orderStatus) = 'COMPLETED'
+      AND UPPER(om.orderStatus) = 'COMPLETED'
 
-      GROUP BY
-        oi.categoryId,
-        oi.categoryName
+      AND UPPER(oi.status) = 'DONE'
 
-      ORDER BY
-        sales DESC
-    `)
-    .all(realDate);
+    GROUP BY
+      oi.categoryId,
+      oi.categoryName
+
+    ORDER BY
+      sales DESC
+  `)
+  .all(realDate);
 
 
   // ===================================================
@@ -211,7 +226,7 @@ const paymentStats = db
 
       WHERE om.realDate = ?
 
-        AND UPPER(om.orderStatus) = 'COMPLETED'
+        AND UPPER(oi.status) = 'DONE'
 
       GROUP BY
         oi.productId,

@@ -1,12 +1,5 @@
 import "@/app/globals.css";
 
-import { Inter } from "next/font/google";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
 export default function RootLayout({
   children,
 }: {
@@ -21,7 +14,7 @@ export default function RootLayout({
       <head />
 
       <body
-        className={`${inter.className} bg-white text-[#2b2b2b]`}
+        className="bg-white text-[#2b2b2b]"
         suppressHydrationWarning
       >
         {children}

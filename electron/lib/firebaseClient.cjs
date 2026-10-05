@@ -10,59 +10,90 @@ const {
 
 const {
   getFirebaseConfig,
-} = require("../db/firebaseConfigRepo.cjs"); 
+} = require("../db/firebaseConfigRepo.cjs");
 
 
-const savedConfig = getFirebaseConfig();
+let firestore = null;
 
 
- 
+function initializeFirebase() {
+
+  if (firestore) {
+    return firestore;
+  }
+
+  const savedConfig = getFirebaseConfig();
+
+  if (!savedConfig) {
+    throw new Error(
+      "Firebase configuration not found in local database."
+    );
+  }
+
   const firebaseConfig = {
-  apiKey:
-    savedConfig?.apiKey ||
-    'AIzaSyAOFaFrogsiaUYjfRb8nqYogrfrfw0AWzY',
 
-  authDomain:
-    savedConfig?.authDomain ||
-    'food-demo-d69f0.firebaseapp.com',
+    apiKey:
+      savedConfig.apiKey || "",
 
-  databaseURL:
-    savedConfig?.databaseURL ||
-    '',
+    authDomain:
+      savedConfig.authDomain || "",
 
-  projectId:
-    savedConfig?.projectId ||
-    'food-demo-d69f0',
+    databaseURL:
+      savedConfig.databaseURL || "",
 
-  storageBucket:
-    savedConfig?.storageBucket ||
-    'food-demo-d69f0.firebasestorage.app',
+    projectId:
+      savedConfig.projectId || "",
 
-  messagingSenderId:
-    savedConfig?.messagingSenderId ||
-    '694719081868',
+    storageBucket:
+      savedConfig.storageBucket || "",
 
-  appId:
-    savedConfig?.appId ||
-    '1:694719081868:web:c9ad72f4238f48c5fbbaa9',
+    messagingSenderId:
+      savedConfig.messagingSenderId || "",
 
-  measurementId:
-    savedConfig?.measurementId ||
-    'G-RYLQPYK7T4',
-};
+    appId:
+      savedConfig.appId || "",
+
+    measurementId:
+      savedConfig.measurementId || "",
+  };
 
 
+  const app =
+    getApps().length > 0
+      ? getApp()
+      : initializeApp(firebaseConfig);
 
 
-const app =
-  getApps().length > 0
-    ? getApp()
-    : initializeApp(firebaseConfig);
+  firestore = getFirestore(app);
 
 
-const firestore = getFirestore(app);
+  console.log(
+    "🔥 FIREBASE INITIALIZED FROM LOCAL DATABASE"
+  );
+
+
+  return firestore;
+}
+
+
+function getFirestoreClient() {
+
+  if (!firestore) {
+    throw new Error(
+      "Firebase is not initialized. Call initializeFirebase() first."
+    );
+  }
+
+  return firestore;
+}
 
 
 module.exports = {
-  firestore,
+  initializeFirebase,
+  getFirestoreClient,
+
+  // Keep this export because your existing sync files use it.
+  get firestore() {
+    return firestore;
+  },
 };
