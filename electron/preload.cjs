@@ -486,7 +486,17 @@ getPosIPAddress: () =>
     ),
 
 
+// =====================================================
+// TRANSACTIONS
+// =====================================================
 
+addCashTransaction: (
+  data
+) =>
+  ipcRenderer.invoke(
+    'cashTransaction:add',
+    data
+  ),
 
     // =====================================================
   // GET ALL USERS

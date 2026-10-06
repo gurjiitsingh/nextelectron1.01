@@ -6,7 +6,7 @@ import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import { useRouter } from 'next/navigation';
 
 export default function DayClosingPage() {
-const router = useRouter();
+  const router = useRouter();
   const {
     background,
     theme,
@@ -32,15 +32,43 @@ const router = useRouter();
 
   const [closing, setClosing] =
     useState(false);
-const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [message, setMessage] =
     useState('');
 
   const [error, setError] =
     useState('');
- 
-const [pendingActualCash, setPendingActualCash] = useState(0);
-const [pendingDifference, setPendingDifference] = useState(0);
+
+  const [pendingActualCash, setPendingActualCash] = useState(0);
+  const [pendingDifference, setPendingDifference] = useState(0);
+
+
+
+
+
+  const [showCashTransaction, setShowCashTransaction] =
+    useState(false);
+
+  const [cashTransactionType, setCashTransactionType] =
+    useState<
+      'TOPUP' |
+      'OTHER_IN' |
+      'WITHDRAWAL' |
+      'EXPENSE' |
+      'REFUND'
+    >('TOPUP');
+
+  const [cashTransactionAmount, setCashTransactionAmount] =
+    useState('');
+
+  const [cashTransactionReason, setCashTransactionReason] =
+    useState('');
+
+  const [cashTransactionNotes, setCashTransactionNotes] =
+    useState('');
+
+  const [savingCashTransaction, setSavingCashTransaction] =
+    useState(false);
 
   // =====================================================
   // LOAD CURRENT BUSINESS DAY
@@ -70,7 +98,7 @@ const [pendingDifference, setPendingDifference] = useState(0);
 
       if (!result?.success) {
 
-      
+
       }
 
       const day =
@@ -90,7 +118,7 @@ const [pendingDifference, setPendingDifference] = useState(0);
 
     } catch (e: any) {
 
-     
+
 
       setError(
         e?.message ||
@@ -132,7 +160,7 @@ const [pendingDifference, setPendingDifference] = useState(0);
 
       if (!result?.success) {
 
-     
+
       }
 
       setSummary(
@@ -188,7 +216,9 @@ const [pendingDifference, setPendingDifference] = useState(0);
     );
 
   const expectedCash =
-    openingCash + cashSales;
+  Number(
+    summary?.expectedCash || 0
+  );
 
   const actualCashValue =
     Number(actualCash || 0);
@@ -254,100 +284,100 @@ const [pendingDifference, setPendingDifference] = useState(0);
   // CLOSE DAY
   // =====================================================
 
-  
 
-async function handleCloseDay() {
 
-  if (closing) {
-    return;
-  }
+  async function handleCloseDay() {
 
-  setError('');
-  setMessage('');
-
-  if (!businessDay) {
-    setError('Business day is not loaded.');
-    return;
-  }
-
-  if (!actualCash.trim()) {
-    setError('Please enter actual cash counted.');
-    return;
-  }
-
-  const difference =
-    actualCashValue - expectedCash;
-
-  setPendingActualCash(actualCashValue);
-  setPendingDifference(difference);
-
-  setShowCloseConfirm(true);
-}
-
-async function confirmCloseDay() {
-
-  setShowCloseConfirm(false);
-
-  if (closing) {
-    return;
-  }
-
-  try {
-
-    setClosing(true);
-
-    const result =
-      await window.posApi.closeBusinessDay({
-
-        actualCash:
-          pendingActualCash,
-
-        notes,
-
-        closedById: '',
-        closedByName: '',
-
-      });
-
-    console.log(
-      'CLOSE DAY RESULT:',
-      result
-    );
-
-    if (!result?.success) {
-      throw new Error(
-        result?.message ||
-        'Failed to close business day'
-      );
+    if (closing) {
+      return;
     }
 
-    setMessage(
-      'Business day closed successfully.'
-    );
+    setError('');
+    setMessage('');
 
-    setActualCash('');
-    setNotes('');
+    if (!businessDay) {
+      setError('Business day is not loaded.');
+      return;
+    }
 
-    await loadBusinessDay();
+    if (!actualCash.trim()) {
+      setError('Please enter actual cash counted.');
+      return;
+    }
 
-  } catch (e: any) {
+    const difference =
+      actualCashValue - expectedCash;
 
-    console.error(
-      'CLOSE DAY FAILED',
-      e
-    );
+    setPendingActualCash(actualCashValue);
+    setPendingDifference(difference);
 
-    setError(
-      e?.message ||
-      'Failed to close business day'
-    );
-
-  } finally {
-
-    setClosing(false);
-
+    setShowCloseConfirm(true);
   }
-}
+
+  async function confirmCloseDay() {
+
+    setShowCloseConfirm(false);
+
+    if (closing) {
+      return;
+    }
+
+    try {
+
+      setClosing(true);
+
+      const result =
+        await window.posApi.closeBusinessDay({
+
+          actualCash:
+            pendingActualCash,
+
+          notes,
+
+          closedById: '',
+          closedByName: '',
+
+        });
+
+      console.log(
+        'CLOSE DAY RESULT:',
+        result
+      );
+
+      if (!result?.success) {
+        throw new Error(
+          result?.message ||
+          'Failed to close business day'
+        );
+      }
+
+      setMessage(
+        'Business day closed successfully.'
+      );
+
+      setActualCash('');
+      setNotes('');
+
+      await loadBusinessDay();
+
+    } catch (e: any) {
+
+      console.error(
+        'CLOSE DAY FAILED',
+        e
+      );
+
+      setError(
+        e?.message ||
+        'Failed to close business day'
+      );
+
+    } finally {
+
+      setClosing(false);
+
+    }
+  }
   // =====================================================
   // MONEY FORMAT
   // =====================================================
@@ -422,6 +452,115 @@ async function confirmCloseDay() {
   }
 
 
+
+
+  async function handleAddCashTransaction() {
+
+    if (savingCashTransaction) return;
+
+    setError('');
+    setMessage('');
+
+    const amount =
+      Number(cashTransactionAmount);
+
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      setError(
+        'Please enter a valid amount.'
+      );
+      return;
+    }
+
+    if (
+      !cashTransactionReason.trim()
+    ) {
+      setError(
+        'Please enter a reason.'
+      );
+      return;
+    }
+
+    try {
+
+      setSavingCashTransaction(true);
+
+      const result =
+        await window.posApi.addCashTransaction({
+          type:
+            cashTransactionType,
+
+          amount:
+            amount,
+
+          reason:
+            cashTransactionReason.trim(),
+
+          notes:
+            cashTransactionNotes.trim(),
+
+          createdById:
+            '',
+
+          createdByName:
+            '',
+        });
+
+      if (!result?.success) {
+
+        setError(
+          result?.error ||
+          'Failed to add cash transaction.'
+        );
+
+        return;
+      }
+
+      setShowCashTransaction(false);
+
+      setCashTransactionAmount('');
+      setCashTransactionReason('');
+      setCashTransactionNotes('');
+      setCashTransactionType('TOPUP');
+
+      setMessage(
+        'Cash transaction added successfully.'
+      );
+
+      // Reload current business day / summary
+      const businessDayResult =
+  await window.posApi.getCurrentBusinessDay();
+
+if (businessDayResult?.success) {
+  const day = businessDayResult.data;
+
+  setBusinessDay(day);
+
+  if (day?.businessDate) {
+    setSelectedDate(day.businessDate);
+
+    await loadSummary(
+      day.businessDate
+    );
+  }
+}
+
+    } catch (e: any) {
+
+      setError(
+        e?.message ||
+        'Failed to add cash transaction.'
+      );
+
+    } finally {
+
+      setSavingCashTransaction(false);
+
+    }
+  }
+
   // =====================================================
   // LOADING
   // =====================================================
@@ -466,8 +605,8 @@ async function confirmCloseDay() {
 
   return (
 
-<div
-  className={`
+    <div
+      className={`
     h-[calc(100vh-60px)]
     min-h-0
     overflow-y-scroll
@@ -478,7 +617,7 @@ async function confirmCloseDay() {
     pb-14
     md:p-5
   `}
->
+    >
 
       {/* =================================================
           HEADER
@@ -512,7 +651,7 @@ async function confirmCloseDay() {
           >
             Business Day Closing
           </h1>
-          
+
 
           <p
             className="
@@ -536,8 +675,8 @@ async function confirmCloseDay() {
           "
         >
 
-     <label
-  className={`
+          <label
+            className={`
     flex
     h-10
     items-center
@@ -547,17 +686,17 @@ async function confirmCloseDay() {
     ${background.border}
     px-3
   `}
->
-  <input
-    type="date"
-    value={selectedDate}
-    onChange={(e) => {
-      console.log("DATE:", e.target.value);
-      setSelectedDate(e.target.value);
-    }}
-    className="h-10 rounded-xl border px-3"
-  />
-</label>
+          >
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                console.log("DATE:", e.target.value);
+                setSelectedDate(e.target.value);
+              }}
+              className="h-10 rounded-xl border px-3"
+            />
+          </label>
 
 
           <button
@@ -584,10 +723,10 @@ async function confirmCloseDay() {
           </button>
 
           <button
-  type="button"
-  onClick={() => router.push('/orders/byBusinessDate')}
-  disabled={loading}
-  className="
+            type="button"
+            onClick={() => router.push('/orders/byBusinessDate')}
+            disabled={loading}
+            className="
     h-10
     rounded-xl
     px-4
@@ -598,12 +737,12 @@ async function confirmCloseDay() {
     hover:opacity-90
     disabled:opacity-50
   "
-  style={{
-    backgroundColor: theme.primary,
-  }}
->
-  Order by Business Date
-</button>
+            style={{
+              backgroundColor: theme.primary,
+            }}
+          >
+            Order by Business Date
+          </button>
 
         </div>
 
@@ -658,6 +797,102 @@ async function confirmCloseDay() {
       )}
 
 
+
+
+
+
+
+
+
+<SectionCard
+  title="Cash Transactions"
+  subtitle="Manage cash movements for the current business day"
+  background={background}
+>
+  <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+
+    <button
+      type="button"
+      onClick={() => {
+        setCashTransactionType('TOPUP');
+        setShowCashTransaction(true);
+        setError('');
+        setMessage('');
+      }}
+      className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
+      style={{
+        borderColor: background.border,
+      }}
+    >
+      + Cash Deposit
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setCashTransactionType('OTHER_IN');
+        setShowCashTransaction(true);
+        setError('');
+        setMessage('');
+      }}
+      className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
+      style={{
+        borderColor: background.border,
+      }}
+    >
+      + Other Cash In
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setCashTransactionType('WITHDRAWAL');
+        setShowCashTransaction(true);
+        setError('');
+        setMessage('');
+      }}
+      className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
+      style={{
+        borderColor: background.border,
+      }}
+    >
+      − Cash Withdrawal
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setCashTransactionType('EXPENSE');
+        setShowCashTransaction(true);
+        setError('');
+        setMessage('');
+      }}
+      className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
+      style={{
+        borderColor: background.border,
+      }}
+    >
+      − Cash Expense
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setCashTransactionType('REFUND');
+        setShowCashTransaction(true);
+        setError('');
+        setMessage('');
+      }}
+      className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
+      style={{
+        borderColor: background.border,
+      }}
+    >
+      − Cash Refund
+    </button>
+
+  </div>
+</SectionCard>
       {/* =================================================
           TOP SUMMARY
       ================================================= */}
@@ -913,15 +1148,15 @@ async function confirmCloseDay() {
                 Actual Cash Counted
               </label>
 
-<input
-  type="number"
-  inputMode="decimal"
-  step="0.01"
-  min="0"
-  value={actualCash}
-  onChange={(e) => setActualCash(e.target.value)}
-  placeholder="0.00"
-  className={`
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                value={actualCash}
+                onChange={(e) => setActualCash(e.target.value)}
+                placeholder="0.00"
+                className={`
     h-11
     w-full
     rounded-xl
@@ -937,7 +1172,7 @@ async function confirmCloseDay() {
     [&::-webkit-inner-spin-button]:appearance-none
     [&::-webkit-outer-spin-button]:appearance-none
   `}
-/>
+              />
 
             </div>
 
@@ -1037,7 +1272,110 @@ async function confirmCloseDay() {
 
       </div>
 
-{showCloseConfirm && (
+      {showCloseConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+
+          <div
+            className={`
+        w-full
+        max-w-md
+        rounded-2xl
+        border
+        ${background.border}
+        ${background.className}
+        p-6
+        shadow-2xl
+      `}
+          >
+
+            <h2 className="text-lg font-bold">
+              Close Business Day?
+            </h2>
+
+            <div className="mt-4 space-y-2 text-sm">
+
+              <div className="flex justify-between">
+                <span className="opacity-60">
+                  Expected Cash
+                </span>
+
+                <span className="font-semibold">
+                  {money(expectedCash)}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="opacity-60">
+                  Actual Cash
+                </span>
+
+                <span className="font-semibold">
+                  {money(pendingActualCash)}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="opacity-60">
+                  Difference
+                </span>
+
+                <span className="font-semibold">
+                  {money(pendingDifference)}
+                </span>
+              </div>
+
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowCloseConfirm(false)
+                }
+                className="
+            rounded-xl
+            border
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+          "
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmCloseDay}
+                disabled={closing}
+                className="
+            rounded-xl
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+            text-white
+            disabled:opacity-50
+          "
+                style={{
+                  backgroundColor: theme.primary,
+                }}
+              >
+                {closing
+                  ? 'Closing...'
+                  : 'Confirm'}
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+
+{showCashTransaction && (
   <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
 
     <div
@@ -1054,53 +1392,144 @@ async function confirmCloseDay() {
     >
 
       <h2 className="text-lg font-bold">
-        Close Business Day?
+        {cashTransactionType === 'TOPUP'
+          ? 'Cash Deposit'
+          : cashTransactionType === 'OTHER_IN'
+          ? 'Other Cash In'
+          : cashTransactionType === 'WITHDRAWAL'
+          ? 'Cash Withdrawal'
+          : cashTransactionType === 'EXPENSE'
+          ? 'Cash Expense'
+          : 'Cash Refund'}
       </h2>
 
-      <div className="mt-4 space-y-2 text-sm">
+      <p className="mt-1 text-sm opacity-70">
+        Add cash transaction for business day{' '}
+        {businessDay?.businessDate}
+      </p>
 
-        <div className="flex justify-between">
-          <span className="opacity-60">
-            Expected Cash
-          </span>
 
-          <span className="font-semibold">
-            {money(expectedCash)}
-          </span>
-        </div>
+      {/* AMOUNT */}
 
-        <div className="flex justify-between">
-          <span className="opacity-60">
-            Actual Cash
-          </span>
+      <div className="mt-5">
 
-          <span className="font-semibold">
-            {money(pendingActualCash)}
-          </span>
-        </div>
+        <label className="mb-2 block text-sm font-semibold">
+          Amount
+        </label>
 
-        <div className="flex justify-between">
-          <span className="opacity-60">
-            Difference
-          </span>
-
-          <span className="font-semibold">
-            {money(pendingDifference)}
-          </span>
-        </div>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={cashTransactionAmount}
+          onChange={(e) =>
+            setCashTransactionAmount(
+              e.target.value
+            )
+          }
+          placeholder="Enter amount"
+          autoFocus
+          className={`
+            h-11
+            w-full
+            rounded-xl
+            border
+            ${background.border}
+            bg-transparent
+            px-3
+            outline-none
+          `}
+        />
 
       </div>
+
+
+      {/* REASON */}
+
+      <div className="mt-4">
+
+        <label className="mb-2 block text-sm font-semibold">
+          Reason
+        </label>
+
+        <input
+          type="text"
+          value={cashTransactionReason}
+          onChange={(e) =>
+            setCashTransactionReason(
+              e.target.value
+            )
+          }
+          placeholder="Enter reason"
+          className={`
+            h-11
+            w-full
+            rounded-xl
+            border
+            ${background.border}
+            bg-transparent
+            px-3
+            outline-none
+          `}
+        />
+
+      </div>
+
+
+      {/* NOTES */}
+
+      <div className="mt-4">
+
+        <label className="mb-2 block text-sm font-semibold">
+          Notes
+        </label>
+
+        <textarea
+          value={cashTransactionNotes}
+          onChange={(e) =>
+            setCashTransactionNotes(
+              e.target.value
+            )
+          }
+          placeholder="Optional notes"
+          rows={3}
+          className={`
+            w-full
+            rounded-xl
+            border
+            ${background.border}
+            bg-transparent
+            px-3
+            py-2
+            outline-none
+          `}
+        />
+
+      </div>
+
+
+      {/* BUTTONS */}
 
       <div className="mt-6 flex justify-end gap-3">
 
         <button
           type="button"
-          onClick={() =>
-            setShowCloseConfirm(false)
-          }
+          onClick={() => {
+
+            if (savingCashTransaction) return;
+
+            setShowCashTransaction(false);
+
+            setCashTransactionAmount('');
+            setCashTransactionReason('');
+            setCashTransactionNotes('');
+            setCashTransactionType('TOPUP');
+
+          }}
           className="
             rounded-xl
             border
+            border-gray-300
             px-5
             py-2.5
             text-sm
@@ -1110,10 +1539,11 @@ async function confirmCloseDay() {
           Cancel
         </button>
 
+
         <button
           type="button"
-          onClick={confirmCloseDay}
-          disabled={closing}
+          disabled={savingCashTransaction}
+          onClick={handleAddCashTransaction}
           className="
             rounded-xl
             px-5
@@ -1121,15 +1551,17 @@ async function confirmCloseDay() {
             text-sm
             font-semibold
             text-white
+            disabled:cursor-not-allowed
             disabled:opacity-50
           "
           style={{
-            backgroundColor: theme.primary,
+            backgroundColor:
+              theme.primary,
           }}
         >
-          {closing
-            ? 'Closing...'
-            : 'Confirm'}
+          {savingCashTransaction
+            ? 'Saving...'
+            : 'Save Transaction'}
         </button>
 
       </div>
@@ -1138,9 +1570,6 @@ async function confirmCloseDay() {
 
   </div>
 )}
-
-
-
 
     </div>
   );

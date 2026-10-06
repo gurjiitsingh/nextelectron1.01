@@ -1376,6 +1376,99 @@ ipcMain.handle(
    }
  );
 
+ // =====================================================
+// CASH TRANSACTIONS
+// =====================================================
+
+// addCashTransaction: (
+//   data
+// ) =>
+//   ipcRenderer.invoke(
+//     'cashTransaction:add',
+//     data
+//   ),
+
+
+
+// =====================================================
+// ADD CASH TRANSACTION
+// =====================================================
+
+ipcMain.handle(
+  'cashTransaction:add',
+  async (
+    _event,
+    data
+  ) => {
+
+    try {
+
+      console.log(
+        '===================================='
+      );
+
+      console.log(
+        'CASH TRANSACTION REQUEST'
+      );
+
+      console.log(
+        'DATA:',
+        data
+      );
+
+      console.log(
+        '===================================='
+      );
+
+      const result =
+        dayClosingRepo.addCashTransaction({
+          type:
+            data?.type || '',
+
+          amount:
+            Number(
+              data?.amount || 0
+            ),
+
+          reason:
+            data?.reason || '',
+
+          notes:
+            data?.notes || '',
+
+          createdById:
+            data?.createdById || '',
+
+          createdByName:
+            data?.createdByName || '',
+        });
+
+      console.log(
+        'CASH TRANSACTION ADDED:',
+        result
+      );
+
+      return {
+        success: true,
+        data: result,
+      };
+
+    } catch (e) {
+
+      console.error(
+        'CASH TRANSACTION FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
 
 // =====================================================
 // SALE REPORT

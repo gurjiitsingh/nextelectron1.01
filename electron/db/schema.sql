@@ -1228,6 +1228,43 @@ ON order_serial_map(srno);
   ON pos_day_closing (businessDate);
  
 
+-- =====================================================
+-- CASH TRANSACTIONS
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS pos_cash_transactions (
+
+    id TEXT PRIMARY KEY,
+
+    businessDate TEXT NOT NULL,
+
+    type TEXT NOT NULL,
+
+    amount REAL NOT NULL,
+
+    reason TEXT NOT NULL DEFAULT '',
+
+    notes TEXT NOT NULL DEFAULT '',
+
+    createdById TEXT NOT NULL DEFAULT '',
+
+    createdByName TEXT NOT NULL DEFAULT '',
+
+    createdAt INTEGER NOT NULL
+
+);
+
+-- =====================================================
+-- CASH TRANSACTIONS INDEXES
+-- =====================================================
+
+CREATE INDEX IF NOT EXISTS
+idx_pos_cash_transactions_businessDate
+ON pos_cash_transactions (businessDate);
+
+CREATE INDEX IF NOT EXISTS
+idx_pos_cash_transactions_type
+ON pos_cash_transactions (type);
 
 -- =====================================================
 -- FIRE STORE
@@ -1248,3 +1285,9 @@ ON order_serial_map(srno);
 
   updatedAt INTEGER NOT NULL
 );
+
+
+
+
+
+

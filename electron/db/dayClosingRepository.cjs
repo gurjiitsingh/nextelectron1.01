@@ -167,13 +167,9 @@ function canCreateNextBusinessDay() {
 }
 
 
-// =====================================================
-// GET SALES SUMMARY
-// =====================================================
-
-// =====================================================
-// GET SALES SUMMARY
-// =====================================================
+// ===================================================
+// SUMMARY
+// ===================================================
 
 function getSummary(businessDate) {
 
@@ -313,11 +309,80 @@ function getSummary(businessDate) {
   //
   // Therefore we cannot reliably calculate this yet.
   //
-  // Keep it 0 until you define how a complimentary
-  // order is identified.
-  //
 
   const complimentarySales = 0;
+
+
+  // ===================================================
+  // CASH MOVEMENTS
+  // ===================================================
+
+  const cashMovement =
+    getCashMovementSummary(
+      businessDate
+    );
+
+
+  // ===================================================
+  // CASH VALUES
+  // ===================================================
+
+  const cashSales =
+    Number(
+      paymentStats?.cashSales || 0
+    );
+
+  const cashTopup =
+    Number(
+      cashMovement?.cashTopup || 0
+    );
+
+  const otherCashIn =
+    Number(
+      cashMovement?.otherCashIn || 0
+    );
+
+  const cashExpenses =
+    Number(
+      cashMovement?.cashExpenses || 0
+    );
+
+  const cashWithdrawals =
+    Number(
+      cashMovement?.cashWithdrawals || 0
+    );
+
+  const cashRefunds =
+    Number(
+      cashMovement?.cashRefunds || 0
+    );
+
+
+  // ===================================================
+  // OPENING CASH
+  // ===================================================
+
+  const businessDay =
+    getCurrentBusinessDay();
+
+  const openingCash =
+    Number(
+      businessDay?.openingCash || 0
+    );
+
+
+  // ===================================================
+  // EXPECTED CASH
+  // ===================================================
+
+  const expectedCash =
+    openingCash
+    + cashSales
+    + cashTopup
+    + otherCashIn
+    - cashExpenses
+    - cashWithdrawals
+    - cashRefunds;
 
 
   // ===================================================
@@ -351,10 +416,12 @@ function getSummary(businessDate) {
         complimentarySales || 0
       ),
 
-    cashSales:
-      Number(
-        paymentStats?.cashSales || 0
-      ),
+
+    // =================================================
+    // PAYMENT SALES
+    // =================================================
+
+    cashSales,
 
     cardSales:
       Number(
@@ -376,12 +443,40 @@ function getSummary(businessDate) {
         creditStats?.creditSales || 0
       ),
 
+
+    // =================================================
+    // CASH MOVEMENTS
+    // =================================================
+
+    cashTopup,
+
+    otherCashIn,
+
+    cashExpenses,
+
+    cashWithdrawals,
+
+    cashRefunds,
+
+
+    // =================================================
+    // CASH BALANCE
+    // =================================================
+
+    openingCash,
+
+    expectedCash,
+
+
+    // =================================================
+    // REFUND
+    // =================================================
+
     totalRefund:
-      0,
+      cashRefunds,
 
   };
 }
-
 
 // =====================================================
 // GET EXPECTED CASH
@@ -944,6 +1039,164 @@ if (!canCreateNextBusinessDay()) {
 }
 
 
+
+
+
+// =====================================================
+// TRANSACTIONS
+// =====================================================
+
+
+function addCashTransaction({
+  type,
+  amount,
+  reason = '',
+  notes = '',
+  createdById = '',
+  createdByName = ''
+}) {
+  const businessDay = getCurrentBusinessDay();
+
+  if (!businessDay) {
+    throw new Error('No current business day found');
+  }
+
+  if (Number(businessDay.isClosed) === 1) {
+    throw new Error('Business day is closed');
+  }
+
+  const numericAmount = Number(amount);
+
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    throw new Error('Amount must be greater than 0');
+  }
+
+  const allowedTypes = [
+    'TOPUP',
+    'WITHDRAWAL',
+    'EXPENSE',
+    'OTHER_IN',
+    'REFUND'
+  ];
+
+  if (!allowedTypes.includes(type)) {
+    throw new Error(`Invalid cash transaction type: ${type}`);
+  }
+
+  const now = Date.now();
+
+  const id = `CASH-${now}-${Math.random()
+    .toString(36)
+    .substring(2, 8)}`;
+
+  db.prepare(`
+    INSERT INTO pos_cash_transactions (
+      id,
+      businessDate,
+      type,
+      amount,
+      reason,
+      notes,
+      createdById,
+      createdByName,
+      createdAt
+    )
+    VALUES (
+      @id,
+      @businessDate,
+      @type,
+      @amount,
+      @reason,
+      @notes,
+      @createdById,
+      @createdByName,
+      @createdAt
+    )
+  `).run({
+    id,
+    businessDate: businessDay.businessDate,
+    type,
+    amount: numericAmount,
+    reason,
+    notes,
+    createdById,
+    createdByName,
+    createdAt: now
+  });
+
+  return {
+    success: true,
+    id,
+    businessDate: businessDay.businessDate,
+    type,
+    amount: numericAmount
+  };
+}
+
+function getCashTransactions(businessDate) {
+  return db.prepare(`
+    SELECT
+      id,
+      businessDate,
+      type,
+      amount,
+      reason,
+      notes,
+      createdById,
+      createdByName,
+      createdAt
+    FROM pos_cash_transactions
+    WHERE businessDate = ?
+    ORDER BY createdAt ASC
+  `).all(businessDate);
+}
+
+function getCashMovementSummary(businessDate) {
+  const rows = db.prepare(`
+    SELECT
+      type,
+      COALESCE(SUM(amount), 0) AS total
+    FROM pos_cash_transactions
+    WHERE businessDate = ?
+    GROUP BY type
+  `).all(businessDate);
+
+  const result = {
+    cashTopup: 0,
+    otherCashIn: 0,
+    cashExpenses: 0,
+    cashWithdrawals: 0,
+    cashRefunds: 0
+  };
+
+  for (const row of rows) {
+    const total = Number(row.total || 0);
+
+    switch (row.type) {
+      case 'TOPUP':
+        result.cashTopup = total;
+        break;
+
+      case 'OTHER_IN':
+        result.otherCashIn = total;
+        break;
+
+      case 'EXPENSE':
+        result.cashExpenses = total;
+        break;
+
+      case 'WITHDRAWAL':
+        result.cashWithdrawals = total;
+        break;
+
+      case 'REFUND':
+        result.cashRefunds = total;
+        break;
+    }
+  }
+
+  return result;
+}
 // =====================================================
 // EXPORT
 // =====================================================
@@ -967,5 +1220,11 @@ module.exports = {
   alreadyClosed,
 
   closeBusinessDay,
+
+  addCashTransaction,
+
+  getCashTransactions,
+  
+  getCashMovementSummary,
 
 };
