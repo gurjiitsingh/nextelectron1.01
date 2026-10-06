@@ -1265,6 +1265,46 @@ CREATE INDEX IF NOT EXISTS
 idx_pos_cash_transactions_type
 ON pos_cash_transactions (type);
 
+
+
+-- =====================================================
+-- POS SHIFT
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS pos_shift (
+
+    id TEXT PRIMARY KEY,
+
+    businessDate TEXT NOT NULL,
+
+    shiftNumber INTEGER NOT NULL,
+
+    openedAt INTEGER NOT NULL,
+    closedAt INTEGER,
+
+    openedById TEXT NOT NULL,
+    openedByName TEXT NOT NULL,
+
+    closedById TEXT,
+    closedByName TEXT,
+
+    openingCash REAL NOT NULL DEFAULT 0,
+
+    expectedCash REAL NOT NULL DEFAULT 0,
+
+    actualCash REAL,
+
+    cashHandedOver REAL,
+
+    cashDifference REAL,
+
+    status TEXT NOT NULL DEFAULT 'OPEN',
+
+    notes TEXT NOT NULL DEFAULT '',
+
+    createdAt INTEGER NOT NULL
+);
+
 -- =====================================================
 -- FIRE STORE
 -- =====================================================
