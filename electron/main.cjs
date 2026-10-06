@@ -1302,80 +1302,88 @@ ipcMain.handle(
  // CLOSE BUSINESS DAY
  // =====================================================
  
- ipcMain.handle(
-   'dayClosing:close',
-   async (
-     _event,
-     data
-   ) => {
- 
-     try {
- 
-       console.log(
-         '===================================='
-       );
- 
-       console.log(
-         'DAY CLOSING REQUEST'
-       );
- 
-       console.log(
-         'DATA:',
-         data
-       );
- 
-       console.log(
-         '===================================='
-       );
- 
- 
-       const result =
-         dayClosingRepo
-           .closeBusinessDay({
-             actualCash:
-               Number(
-                 data?.actualCash || 0
-               ),
- 
-             notes:
-               data?.notes || '',
- 
-             closedById:
-               data?.closedById || '',
- 
-             closedByName:
-               data?.closedByName || '',
-           });
- 
- 
-       console.log(
-         'DAY CLOSED SUCCESSFULLY:',
-         result
-       );
- 
- 
-       return {
-         success: true,
-         data: result,
-       };
- 
-     } catch (e) {
- 
-       console.error(
-         'DAY CLOSING FAILED',
-         e
-       );
- 
-       return {
-         success: false,
-         error:
-           e?.message ||
-           String(e),
-       };
-     }
-   }
- );
+ipcMain.handle(
+  'dayClosing:close',
+  async (
+    _event,
+    data
+  ) => {
 
+    try {
+
+      console.log(
+        '===================================='
+      );
+
+      console.log(
+        'DAY CLOSING REQUEST'
+      );
+
+      console.log(
+        'DATA:',
+        data
+      );
+
+      console.log(
+        '===================================='
+      );
+
+
+      const result =
+        dayClosingRepo
+          .closeBusinessDay({
+
+            actualCash:
+              Number(
+                data?.actualCash || 0
+              ),
+
+            cashHandedOver:
+              Number(
+                data?.cashHandedOver || 0
+              ),
+
+            notes:
+              data?.notes || '',
+
+            closedById:
+              data?.closedById || '',
+
+            closedByName:
+              data?.closedByName || '',
+
+          });
+
+
+      console.log(
+        'DAY CLOSED SUCCESSFULLY:',
+        result
+      );
+
+
+      return {
+        success: true,
+        data: result,
+      };
+
+    } catch (e) {
+
+      console.error(
+        'DAY CLOSING FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+
+    }
+
+  }
+);
  // =====================================================
 // CASH TRANSACTIONS
 // =====================================================

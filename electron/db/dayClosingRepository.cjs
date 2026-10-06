@@ -569,6 +569,8 @@ function closeBusinessDay({
 
   actualCash,
 
+  cashHandedOver = 0,
+
   notes = '',
 
   closedById = '',
@@ -593,44 +595,44 @@ function closeBusinessDay({
         businessDay.businessDate;
 
 
-    
-
-// ===============================================
-// ALREADY CLOSED
-// ===============================================
-
-if (
-  alreadyClosed(
-    businessDate
-  )
-) {
-
-  return {
-    success: true,
-    alreadyClosed: true,
-    businessDate,
-    message: 'Business day is already closed.',
-  };
-
-}
 
 
-   
+      // ===============================================
+      // ALREADY CLOSED
+      // ===============================================
 
-   // ===============================================
-// PREVENT FUTURE BUSINESS DAY
-// ===============================================
+      if (
+        alreadyClosed(
+          businessDate
+        )
+      ) {
 
-if (!canCreateNextBusinessDay()) {
+        return {
+          success: true,
+          alreadyClosed: true,
+          businessDate,
+          message: 'Business day is already closed.',
+        };
 
-  return {
-    success: true,
-    alreadyPrepared: true,
-    businessDate,
-    message: 'Business day is already prepared for the next day.',
-  };
+      }
 
-}
+
+
+
+      // ===============================================
+      // PREVENT FUTURE BUSINESS DAY
+      // ===============================================
+
+      if (!canCreateNextBusinessDay()) {
+
+        return {
+          success: true,
+          alreadyPrepared: true,
+          businessDate,
+          message: 'Business day is already prepared for the next day.',
+        };
+
+      }
 
       // ===============================================
       // SALES SUMMARY
@@ -664,16 +666,39 @@ if (!canCreateNextBusinessDay()) {
           actualCash || 0
         );
 
+      const handedOverCash =
+        Number(
+          cashHandedOver || 0
+        );
 
       const cashDifference =
         countedCash -
         expectedCash;
 
+      const cashLeftInDrawer =
+        countedCash -
+        handedOverCash;
 
       const now =
         Date.now();
 
 
+      if (
+        !Number.isFinite(handedOverCash) ||
+        handedOverCash < 0
+      ) {
+        throw new Error(
+          'Cash handed over must be a valid amount.'
+        );
+      }
+
+      if (
+        handedOverCash > countedCash
+      ) {
+        throw new Error(
+          'Cash handed over cannot be greater than actual cash counted.'
+        );
+      }
       // ===============================================
       // DAY CLOSING HISTORY
       // ===============================================
@@ -703,7 +728,7 @@ if (!canCreateNextBusinessDay()) {
 
             expectedCash,
             actualCash,
-
+cashHandedOver,
             cashDifference,
 
             totalSales,
@@ -747,7 +772,7 @@ if (!canCreateNextBusinessDay()) {
 
             @expectedCash,
             @actualCash,
-
+            @cashHandedOver,
             @cashDifference,
 
             @totalSales,
@@ -804,6 +829,8 @@ if (!canCreateNextBusinessDay()) {
 
           actualCash:
             countedCash,
+          cashHandedOver:
+            handedOverCash,
 
           cashDifference,
 
@@ -915,16 +942,16 @@ if (!canCreateNextBusinessDay()) {
       let nextDate;
 
 
- if (currentDate > today) {
+      if (currentDate > today) {
 
-  return {
-    success: true,
-    alreadyPrepared: true,
-    businessDate,
-    message: 'Business day is already prepared for the next day.',
-  };
+        return {
+          success: true,
+          alreadyPrepared: true,
+          businessDate,
+          message: 'Business day is already prepared for the next day.',
+        };
 
-}
+      }
 
 
       if (
@@ -999,7 +1026,7 @@ if (!canCreateNextBusinessDay()) {
             closedByName || '',
 
           openingCash:
-            countedCash,
+            cashLeftInDrawer,
 
           updatedAt:
             now,
@@ -1224,7 +1251,7 @@ module.exports = {
   addCashTransaction,
 
   getCashTransactions,
-  
+
   getCashMovementSummary,
 
 };

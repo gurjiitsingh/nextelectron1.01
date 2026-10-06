@@ -69,6 +69,8 @@ export default function DayClosingPage() {
 
   const [savingCashTransaction, setSavingCashTransaction] =
     useState(false);
+  const [cashHandedOver, setCashHandedOver] =
+  useState('');  
 
   // =====================================================
   // LOAD CURRENT BUSINESS DAY
@@ -215,7 +217,7 @@ export default function DayClosingPage() {
       summary?.cashSales || 0
     );
 
-  const expectedCash =
+const expectedCash =
   Number(
     summary?.expectedCash || 0
   );
@@ -229,7 +231,11 @@ export default function DayClosingPage() {
       : actualCashValue -
       expectedCash;
 
-
+const cashLeftInDrawer =
+  actualCash === ''
+    ? 0
+    : actualCashValue -
+      Number(cashHandedOver || 0);
   // =====================================================
   // TOTALS
   // =====================================================
@@ -286,34 +292,90 @@ export default function DayClosingPage() {
 
 
 
-  async function handleCloseDay() {
+async function handleCloseDay() {
 
-    if (closing) {
-      return;
-    }
-
-    setError('');
-    setMessage('');
-
-    if (!businessDay) {
-      setError('Business day is not loaded.');
-      return;
-    }
-
-    if (!actualCash.trim()) {
-      setError('Please enter actual cash counted.');
-      return;
-    }
-
-    const difference =
-      actualCashValue - expectedCash;
-
-    setPendingActualCash(actualCashValue);
-    setPendingDifference(difference);
-
-    setShowCloseConfirm(true);
+  if (closing) {
+    return;
   }
 
+  setError('');
+  setMessage('');
+
+  if (!businessDay) {
+    setError(
+      'Business day is not loaded.'
+    );
+    return;
+  }
+
+  if (!actualCash.trim()) {
+    setError(
+      'Please enter actual cash counted.'
+    );
+    return;
+  }
+
+  const countedCash =
+    Number(actualCash);
+
+  const handedOver =
+    Number(cashHandedOver || 0);
+
+
+  if (
+    !Number.isFinite(countedCash) ||
+    countedCash < 0
+  ) {
+    setError(
+      'Please enter a valid actual cash amount.'
+    );
+    return;
+  }
+
+
+  if (
+    !Number.isFinite(handedOver) ||
+    handedOver < 0
+  ) {
+    setError(
+      'Please enter a valid cash handed over amount.'
+    );
+    return;
+  }
+
+
+  if (
+    handedOver > countedCash
+  ) {
+    setError(
+      'Cash handed over cannot be greater than actual cash counted.'
+    );
+    return;
+  }
+
+
+  const difference =
+    countedCash -
+    expectedCash;
+
+
+  const leftInDrawer =
+    countedCash -
+    handedOver;
+
+
+  setPendingActualCash(
+    countedCash
+  );
+
+  setPendingDifference(
+    difference
+  );
+
+  setShowCloseConfirm(
+    true
+  );
+}
   async function confirmCloseDay() {
 
     setShowCloseConfirm(false);
@@ -327,17 +389,25 @@ export default function DayClosingPage() {
       setClosing(true);
 
       const result =
-        await window.posApi.closeBusinessDay({
+   await window.posApi.closeBusinessDay({
 
-          actualCash:
-            pendingActualCash,
+  actualCash:
+    pendingActualCash,
 
-          notes,
+  cashHandedOver:
+    Number(
+      cashHandedOver || 0
+    ),
 
-          closedById: '',
-          closedByName: '',
+  notes,
 
-        });
+  closedById:
+    '',
+
+  closedByName:
+    '',
+
+});
 
       console.log(
         'CLOSE DAY RESULT:',
@@ -523,6 +593,7 @@ export default function DayClosingPage() {
       setCashTransactionAmount('');
       setCashTransactionReason('');
       setCashTransactionNotes('');
+      setCashHandedOver('')
       setCashTransactionType('TOPUP');
 
       setMessage(
@@ -808,10 +879,11 @@ if (businessDayResult?.success) {
   title="Cash Transactions"
   subtitle="Manage cash movements for the current business day"
   background={background}
+ 
 >
   <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
 
-    <button
+    {/* <button
       type="button"
       onClick={() => {
         setCashTransactionType('TOPUP');
@@ -825,7 +897,7 @@ if (businessDayResult?.success) {
       }}
     >
       + Cash Deposit
-    </button>
+    </button> */}
 
     <button
       type="button"
@@ -840,7 +912,7 @@ if (businessDayResult?.success) {
         borderColor: background.border,
       }}
     >
-      + Other Cash In
+      + Cash In
     </button>
 
     <button
@@ -875,7 +947,7 @@ if (businessDayResult?.success) {
       − Cash Expense
     </button>
 
-    <button
+    {/* <button
       type="button"
       onClick={() => {
         setCashTransactionType('REFUND');
@@ -889,7 +961,7 @@ if (businessDayResult?.success) {
       }}
     >
       − Cash Refund
-    </button>
+    </button> */}
 
   </div>
 </SectionCard>
@@ -899,7 +971,7 @@ if (businessDayResult?.success) {
 
       <div
         className="
-          mb-4
+          my-4
           grid
           grid-cols-2
           gap-3
@@ -1092,185 +1164,267 @@ if (businessDayResult?.success) {
           CASH COUNT
       ================================================= */}
 
-      <div className="mt-4">
+   <div className="mt-4">
 
-        <SectionCard
-          title="Cash Count"
-          background={background}
+  <SectionCard
+    title="Cash Count"
+    background={background}
+  >
+
+    <div
+      className="
+        grid
+        gap-3
+        md:grid-cols-3
+      "
+    >
+
+      <MoneyBox
+        title="Opening Cash"
+        value={openingCash}
+      />
+
+      <MoneyBox
+        title="Expected Cash"
+        value={expectedCash}
+      />
+
+      <MoneyBox
+        title="Cash Difference"
+        value={cashDifference}
+      />
+
+    </div>
+
+
+    <div
+      className="
+        mt-4
+        grid
+        gap-3
+        md:grid-cols-3
+      "
+    >
+
+      {/* =================================================
+          ACTUAL CASH COUNTED
+      ================================================= */}
+
+      <div>
+
+        <label
+          className="
+            mb-1.5
+            block
+            text-xs
+            font-semibold
+            opacity-60
+          "
         >
+          Actual Cash Counted
+        </label>
 
-          <div
-            className="
-              grid
-              gap-3
-              md:grid-cols-3
-            "
-          >
+        <input
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          value={actualCash}
+          onChange={(e) => {
 
-            <MoneyBox
-              title="Opening Cash"
-              value={openingCash}
-            />
+            const value =
+              e.target.value;
 
-            <MoneyBox
-              title="Expected Cash"
-              value={expectedCash}
-            />
+            setActualCash(value);
 
-            <MoneyBox
-              title="Cash Difference"
-              value={cashDifference}
-            />
+            // Default:
+            // Cash Handed Over = Actual Cash Counted
+            setCashHandedOver(value);
 
-          </div>
+          }}
+          placeholder="0.00"
+          className={`
+            h-11
+            w-full
+            rounded-xl
+            border
+            ${background.border}
+            bg-transparent
+            px-3
+            text-sm
+            font-semibold
+            outline-none
 
-
-          <div
-            className="
-              mt-4
-              grid
-              gap-3
-              md:grid-cols-2
-            "
-          >
-
-            <div>
-
-              <label
-                className="
-                  mb-1.5
-                  block
-                  text-xs
-                  font-semibold
-                  opacity-60
-                "
-              >
-                Actual Cash Counted
-              </label>
-
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0"
-                value={actualCash}
-                onChange={(e) => setActualCash(e.target.value)}
-                placeholder="0.00"
-                className={`
-    h-11
-    w-full
-    rounded-xl
-    border
-    ${background.border}
-    bg-transparent
-    px-3
-    text-sm
-    font-semibold
-    outline-none
-
-    [appearance:textfield]
-    [&::-webkit-inner-spin-button]:appearance-none
-    [&::-webkit-outer-spin-button]:appearance-none
-  `}
-              />
-
-            </div>
-
-
-            <div>
-
-              <label
-                className="
-                  mb-1.5
-                  block
-                  text-xs
-                  font-semibold
-                  opacity-60
-                "
-              >
-                Notes
-              </label>
-
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) =>
-                  setNotes(
-                    e.target.value
-                  )
-                }
-                placeholder="Optional notes"
-                className={`
-                  h-11
-                  w-full
-                  rounded-xl
-                  border
-                  ${background.border}
-                  bg-transparent
-                  px-3
-                  text-sm
-                  outline-none
-                `}
-              />
-
-            </div>
-
-          </div>
-
-
-          {/* =================================================
-              CLOSE BUTTON
-          ================================================= */}
-
-          <div
-            className="
-              mt-4
-              flex
-              justify-end
-            "
-          >
-
-            <button
-              type="button"
-              onClick={handleCloseDay}
-              disabled={
-                closing ||
-                !businessDay
-              }
-              className="
-                flex
-                h-11
-                items-center
-                gap-2
-                rounded-xl
-                px-5
-                text-sm
-                font-bold
-                text-white
-                transition
-                hover:opacity-90
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-              style={{
-                backgroundColor:
-                  theme.primary,
-              }}
-            >
-
-              🔒
-
-              {closing
-                ? 'Closing Day...'
-                : 'Close Business Day'}
-
-            </button>
-
-          </div>
-
-        </SectionCard>
+            [appearance:textfield]
+            [&::-webkit-inner-spin-button]:appearance-none
+            [&::-webkit-outer-spin-button]:appearance-none
+          `}
+        />
 
       </div>
+
+
+      {/* =================================================
+          CASH HANDED OVER
+      ================================================= */}
+
+      <div>
+
+        <label
+          className="
+            mb-1.5
+            block
+            text-xs
+            font-semibold
+            opacity-60
+          "
+        >
+          Cash Handed Over
+        </label>
+
+        <input
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          max={
+            actualCash === ''
+              ? undefined
+              : actualCashValue
+          }
+          value={cashHandedOver}
+          onChange={(e) =>
+            setCashHandedOver(
+              e.target.value
+            )
+          }
+          placeholder="0.00"
+          className={`
+            h-11
+            w-full
+            rounded-xl
+            border
+            ${background.border}
+            bg-transparent
+            px-3
+            text-sm
+            font-semibold
+            outline-none
+
+            [appearance:textfield]
+            [&::-webkit-inner-spin-button]:appearance-none
+            [&::-webkit-outer-spin-button]:appearance-none
+          `}
+        />
+
+        <div className="mt-1 text-xs opacity-50">
+          Default is Actual Cash Counted
+        </div>
+
+      </div>
+
+
+      {/* =================================================
+          NOTES
+      ================================================= */}
+
+      <div>
+
+        <label
+          className="
+            mb-1.5
+            block
+            text-xs
+            font-semibold
+            opacity-60
+          "
+        >
+          Notes
+        </label>
+
+        <input
+          type="text"
+          value={notes}
+          onChange={(e) =>
+            setNotes(
+              e.target.value
+            )
+          }
+          placeholder="Optional notes"
+          className={`
+            h-11
+            w-full
+            rounded-xl
+            border
+            ${background.border}
+            bg-transparent
+            px-3
+            text-sm
+            outline-none
+          `}
+        />
+
+      </div>
+
+    </div>
+
+
+   
+
+
+    {/* =================================================
+        CLOSE BUTTON
+    ================================================= */}
+
+    <div
+      className="
+        mt-4
+        flex
+        justify-end
+      "
+    >
+
+      <button
+        type="button"
+        onClick={handleCloseDay}
+        disabled={
+          closing ||
+          !businessDay
+        }
+        className="
+          flex
+          h-11
+          items-center
+          gap-2
+          rounded-xl
+          px-5
+          text-sm
+          font-bold
+          text-white
+          transition
+          hover:opacity-90
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+        "
+        style={{
+          backgroundColor:
+            theme.primary,
+        }}
+      >
+
+        🔒
+
+        {closing
+          ? 'Closing Day...'
+          : 'Close Business Day'}
+
+      </button>
+
+    </div>
+
+  </SectionCard>
+
+</div>
 
       {showCloseConfirm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">

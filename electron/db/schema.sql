@@ -1164,22 +1164,19 @@ ON order_serial_map(srno);
  
 
  
-  CREATE TABLE IF NOT EXISTS pos_day_closing (
+ CREATE TABLE IF NOT EXISTS pos_day_closing (
 
     id TEXT PRIMARY KEY,
 
     businessDate TEXT NOT NULL,
 
     openedAt INTEGER NOT NULL,
-
     closedAt INTEGER NOT NULL,
 
     openedById TEXT NOT NULL,
-
     openedByName TEXT NOT NULL,
 
     closedById TEXT NOT NULL,
-
     closedByName TEXT NOT NULL,
 
     openingCash REAL NOT NULL,
@@ -1187,6 +1184,8 @@ ON order_serial_map(srno);
     expectedCash REAL NOT NULL,
 
     actualCash REAL NOT NULL,
+
+    cashHandedOver REAL NOT NULL DEFAULT 0,
 
     cashDifference REAL NOT NULL,
 
@@ -1216,7 +1215,7 @@ ON order_serial_map(srno);
 
     createdAt INTEGER NOT NULL
 
-  );
+);
  
 -- =====================================================
 -- DAY CLOSING DATE INDEX
