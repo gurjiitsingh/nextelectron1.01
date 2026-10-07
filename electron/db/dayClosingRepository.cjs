@@ -37,90 +37,40 @@ function getTodayBusinessDate() {
 
 function getCurrentBusinessDay() {
 
-  const row =
-    db
-      .prepare(`
-        SELECT *
-        FROM pos_business_day
-        WHERE id = 'CURRENT'
-        LIMIT 1
-      `)
-      .get();
-
-
-  if (row) {
-    return row;
-  }
-
-
-  // ===================================================
-  // SAFETY:
-  // CREATE INITIAL BUSINESS DAY
-  // ===================================================
-
-  const now =
-    Date.now();
-
-  const businessDate =
-    getTodayBusinessDate();
-
-
-  db
+  return db
     .prepare(`
-      INSERT INTO pos_business_day (
-
-        id,
-        businessDate,
-        openedAt,
-        openedById,
-        openedByName,
-        openingCash,
-        isClosed,
-        closedAt,
-        closedById,
-        closedByName,
-        status,
-        updatedAt
-
-      )
-      VALUES (
-
-        'CURRENT',
-        @businessDate,
-        @openedAt,
-        '',
-        '',
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-        'OPEN',
-        @updatedAt
-
-      )
+      SELECT *
+      FROM pos_business_day
+      WHERE status = 'OPEN'
+      ORDER BY businessDate DESC
+      LIMIT 1
     `)
-    .run({
+    .get();
+}
 
-      businessDate,
 
-      openedAt:
-        now,
+// =====================================================
+// GET BUSINESS DAY BY DATE
+// =====================================================
 
-      updatedAt:
-        now,
+function getBusinessDayByDate(
+  businessDate
+) {
 
-    });
-
+  if (!businessDate) {
+    return undefined;
+  }
 
   return db
     .prepare(`
       SELECT *
       FROM pos_business_day
-      WHERE id = 'CURRENT'
+      WHERE businessDate = ?
       LIMIT 1
     `)
-    .get();
+    .get(
+      businessDate
+    );
 }
 
 
@@ -132,6 +82,10 @@ function getBusinessDate() {
 
   const businessDay =
     getCurrentBusinessDay();
+
+  if (!businessDay) {
+    return null;
+  }
 
   return businessDay.businessDate;
 }
@@ -146,10 +100,12 @@ function canCreateNextBusinessDay() {
   const current =
     getCurrentBusinessDay();
 
-
   const today =
     getTodayBusinessDate();
 
+  if (!current) {
+    return true;
+  }
 
   /*
     Current = today
@@ -167,11 +123,13 @@ function canCreateNextBusinessDay() {
 }
 
 
-// ===================================================
+// =====================================================
 // SUMMARY
-// ===================================================
+// =====================================================
 
-function getSummary(businessDate) {
+function getSummary(
+  businessDate
+) {
 
   // ===================================================
   // ORDER SUMMARY
@@ -204,7 +162,9 @@ function getSummary(businessDate) {
         WHERE businessDate = ?
 
       `)
-      .get(businessDate);
+      .get(
+        businessDate
+      );
 
 
   // ===================================================
@@ -272,7 +232,9 @@ function getSummary(businessDate) {
           AND UPPER(status) != 'VOIDED'
 
       `)
-      .get(businessDate);
+      .get(
+        businessDate
+      );
 
 
   // ===================================================
@@ -296,21 +258,17 @@ function getSummary(businessDate) {
           AND UPPER(paymentMode) = 'CREDIT'
 
       `)
-      .get(businessDate);
+      .get(
+        businessDate
+      );
 
 
   // ===================================================
   // COMPLIMENTARY SALES
   // ===================================================
-  //
-  // IMPORTANT:
-  // Your pos_order_master table currently does NOT
-  // have a "complimentary" column.
-  //
-  // Therefore we cannot reliably calculate this yet.
-  //
 
-  const complimentarySales = 0;
+  const complimentarySales =
+    0;
 
 
   // ===================================================
@@ -362,8 +320,21 @@ function getSummary(businessDate) {
   // OPENING CASH
   // ===================================================
 
+  /*
+    IMPORTANT:
+
+    Opening cash must belong to the selected
+    businessDate.
+
+    Do NOT use current OPEN business day here,
+    because this function can be called for
+    historical dates.
+  */
+
   const businessDay =
-    getCurrentBusinessDay();
+    getBusinessDayByDate(
+      businessDate
+    );
 
   const openingCash =
     Number(
@@ -387,7 +358,7 @@ function getSummary(businessDate) {
 
   // ===================================================
   // RETURN SUMMARY
-  // ===================================================
+  // =====================================================
 
   return {
 
@@ -478,6 +449,7 @@ function getSummary(businessDate) {
   };
 }
 
+
 // =====================================================
 // GET EXPECTED CASH
 // =====================================================
@@ -486,19 +458,14 @@ function getExpectedCash(
   businessDate
 ) {
 
-  const businessDay =
-    getCurrentBusinessDay();
-
-
   const summary =
     getSummary(
       businessDate
     );
 
-
   return (
     Number(
-      businessDay.openingCash || 0
+      summary.openingCash || 0
     ) +
     Number(
       summary.cashSales || 0
@@ -535,6 +502,44 @@ function getClosingByDate(
     .prepare(`
       SELECT *
       FROM pos_day_closing
+      WHERE businessDate = ?
+      LIMIT 1
+    `)
+    .get(
+      businessDate
+    );
+}
+
+
+// =====================================================
+// GET BUSINESS INFO BY DATE
+// =====================================================
+
+function getBusinessInfoByDate(
+  businessDate
+) {
+
+  /*
+    Business lifecycle information belongs to
+    pos_business_day.
+
+    pos_day_closing is only the closing snapshot.
+  */
+
+  return db
+    .prepare(`
+      SELECT
+        businessDate,
+        openedAt,
+        openedById,
+        openedByName,
+        openingCash,
+        closedAt,
+        closedById,
+        closedByName,
+        isClosed,
+        status
+      FROM pos_business_day
       WHERE businessDate = ?
       LIMIT 1
     `)
@@ -584,19 +589,47 @@ function closeBusinessDay({
 
 
       // ===============================================
-      // CURRENT BUSINESS DAY
+      // CURRENT OPEN BUSINESS DAY
       // ===============================================
 
       const businessDay =
         getCurrentBusinessDay();
 
+      if (!businessDay) {
+
+        throw new Error(
+          'No open business day found.'
+        );
+
+      }
+
 
       const businessDate =
         businessDay.businessDate;
 
+      // ===============================================
+      // CALCULATE NEXT BUSINESS DATE
+      // ===============================================
+
+      const currentDate =
+        new Date(
+          `${businessDate}T00:00:00`
+        );
 
 
+      const today =
+        new Date();
 
+
+      today.setHours(
+        0,
+        0,
+        0,
+        0
+      );
+
+
+      let nextDate;
       // ===============================================
       // ALREADY CLOSED
       // ===============================================
@@ -611,12 +644,11 @@ function closeBusinessDay({
           success: true,
           alreadyClosed: true,
           businessDate,
-          message: 'Business day is already closed.',
+          message:
+            'Business day is already closed.',
         };
 
       }
-
-
 
 
       // ===============================================
@@ -629,10 +661,27 @@ function closeBusinessDay({
           success: true,
           alreadyPrepared: true,
           businessDate,
-          message: 'Business day is already prepared for the next day.',
+          message:
+            'Business day is already prepared for the next day.',
         };
 
       }
+
+
+            if (
+        currentDate > today
+      ) {
+
+        return {
+          success: true,
+          alreadyPrepared: true,
+          businessDate,
+          message:
+            'Business day is already prepared for the next day.',
+        };
+
+      }
+
 
       // ===============================================
       // SALES SUMMARY
@@ -654,6 +703,11 @@ function closeBusinessDay({
         );
 
 
+      /*
+        Keep the existing expected cash
+        behavior exactly as before.
+      */
+
       const expectedCash =
         openingCash +
         Number(
@@ -666,39 +720,57 @@ function closeBusinessDay({
           actualCash || 0
         );
 
+
       const handedOverCash =
         Number(
           cashHandedOver || 0
         );
 
+
       const cashDifference =
         countedCash -
         expectedCash;
+
 
       const cashLeftInDrawer =
         countedCash -
         handedOverCash;
 
+
       const now =
         Date.now();
 
 
+      // ===============================================
+      // VALIDATE HANDOVER CASH
+      // ===============================================
+
       if (
-        !Number.isFinite(handedOverCash) ||
+        !Number.isFinite(
+          handedOverCash
+        ) ||
         handedOverCash < 0
       ) {
+
         throw new Error(
           'Cash handed over must be a valid amount.'
         );
+
       }
 
+
       if (
-        handedOverCash > countedCash
+        handedOverCash >
+        countedCash
       ) {
+
         throw new Error(
           'Cash handed over cannot be greater than actual cash counted.'
         );
+
       }
+
+
       // ===============================================
       // DAY CLOSING HISTORY
       // ===============================================
@@ -728,7 +800,7 @@ function closeBusinessDay({
 
             expectedCash,
             actualCash,
-cashHandedOver,
+            cashHandedOver,
             cashDifference,
 
             totalSales,
@@ -829,6 +901,7 @@ cashHandedOver,
 
           actualCash:
             countedCash,
+
           cashHandedOver:
             handedOverCash,
 
@@ -898,9 +971,12 @@ cashHandedOver,
 
             updatedAt = @updatedAt
 
-          WHERE id = 'CURRENT'
+          WHERE id = @id
         `)
         .run({
+
+          id:
+            businessDay.id,
 
           closedAt:
             now,
@@ -917,41 +993,10 @@ cashHandedOver,
         });
 
 
-      // ===============================================
-      // CALCULATE NEXT BUSINESS DATE
-      // ===============================================
-
-      const currentDate =
-        new Date(
-          `${businessDate}T00:00:00`
-        );
 
 
-      const today =
-        new Date();
 
 
-      today.setHours(
-        0,
-        0,
-        0,
-        0
-      );
-
-
-      let nextDate;
-
-
-      if (currentDate > today) {
-
-        return {
-          success: true,
-          alreadyPrepared: true,
-          businessDate,
-          message: 'Business day is already prepared for the next day.',
-        };
-
-      }
 
 
       if (
@@ -981,58 +1026,108 @@ cashHandedOver,
       // CREATE NEXT BUSINESS DAY
       // ===============================================
 
-      db
-        .prepare(`
-          UPDATE pos_business_day
+      const existingNextDay =
+        getBusinessDayByDate(
+          nextDate
+        );
 
-          SET
 
-            businessDate = @businessDate,
+      if (!existingNextDay) {
 
-            openedAt = @openedAt,
+        db
+          .prepare(`
+            INSERT INTO pos_business_day (
 
-            openedById = @openedById,
+              id,
 
-            openedByName = @openedByName,
+              businessDate,
 
-            openingCash = @openingCash,
+              openedAt,
 
-            isClosed = 0,
+              openedById,
 
-            closedAt = NULL,
+              openedByName,
 
-            closedById = NULL,
+              openingCash,
 
-            closedByName = NULL,
+              isClosed,
 
-            status = 'OPEN',
+              closedAt,
 
-            updatedAt = @updatedAt
+              closedById,
 
-          WHERE id = 'CURRENT'
-        `)
-        .run({
+              closedByName,
 
-          businessDate:
-            nextDate,
+              status,
 
-          openedAt:
-            now,
+              updatedAt
 
-          openedById:
-            closedById || '',
+            )
+            VALUES (
 
-          openedByName:
-            closedByName || '',
+              @id,
 
-          openingCash:
-            cashLeftInDrawer,
+              @businessDate,
 
-          updatedAt:
-            now,
+              @openedAt,
 
-        });
+              @openedById,
 
+              @openedByName,
+
+              @openingCash,
+
+              0,
+
+              NULL,
+
+              NULL,
+
+              NULL,
+
+              'OPEN',
+
+              @updatedAt
+
+            )
+          `)
+          .run({
+
+            id:
+              nextDate,
+
+            businessDate:
+              nextDate,
+
+            openedAt:
+              now,
+
+            openedById:
+              closedById || '',
+
+            openedByName:
+              closedByName || '',
+
+            /*
+              Keep the existing behavior:
+              cash left after handover becomes
+              next day's opening cash.
+            */
+
+            openingCash:
+              cashLeftInDrawer,
+
+            updatedAt:
+              now,
+
+          });
+
+      }
+
+
+      // ===============================================
+      // RETURN
+      // ===============================================
 
       return {
 
@@ -1051,7 +1146,12 @@ cashHandedOver,
         actualCash:
           countedCash,
 
+        cashHandedOver:
+          handedOverCash,
+
         cashDifference,
+
+        cashLeftInDrawer,
 
         summary,
 
@@ -1066,164 +1166,344 @@ cashHandedOver,
 }
 
 
-
-
-
 // =====================================================
-// TRANSACTIONS
+// CASH TRANSACTIONS
 // =====================================================
-
 
 function addCashTransaction({
+
   type,
+
   amount,
+
   reason = '',
+
   notes = '',
+
   createdById = '',
+
   createdByName = ''
+
 }) {
-  const businessDay = getCurrentBusinessDay();
+
+  const businessDay =
+    getCurrentBusinessDay();
+
 
   if (!businessDay) {
-    throw new Error('No current business day found');
+
+    throw new Error(
+      'No current business day found'
+    );
+
   }
 
-  if (Number(businessDay.isClosed) === 1) {
-    throw new Error('Business day is closed');
+
+  if (
+    Number(
+      businessDay.isClosed
+    ) === 1
+  ) {
+
+    throw new Error(
+      'Business day is closed'
+    );
+
   }
 
-  const numericAmount = Number(amount);
 
-  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-    throw new Error('Amount must be greater than 0');
+  const numericAmount =
+    Number(amount);
+
+
+  if (
+    !Number.isFinite(
+      numericAmount
+    ) ||
+    numericAmount <= 0
+  ) {
+
+    throw new Error(
+      'Amount must be greater than 0'
+    );
+
   }
+
 
   const allowedTypes = [
+
     'TOPUP',
+
     'WITHDRAWAL',
+
     'EXPENSE',
+
     'OTHER_IN',
+
     'REFUND'
+
   ];
 
-  if (!allowedTypes.includes(type)) {
-    throw new Error(`Invalid cash transaction type: ${type}`);
+
+  if (
+    !allowedTypes.includes(type)
+  ) {
+
+    throw new Error(
+      `Invalid cash transaction type: ${type}`
+    );
+
   }
 
-  const now = Date.now();
 
-  const id = `CASH-${now}-${Math.random()
-    .toString(36)
-    .substring(2, 8)}`;
+  const now =
+    Date.now();
 
-  db.prepare(`
-    INSERT INTO pos_cash_transactions (
+
+  const id =
+    `CASH-${now}-${Math.random()
+      .toString(36)
+      .substring(2, 8)}`;
+
+
+  db
+    .prepare(`
+      INSERT INTO pos_cash_transactions (
+
+        id,
+
+        businessDate,
+
+        type,
+
+        amount,
+
+        reason,
+
+        notes,
+
+        createdById,
+
+        createdByName,
+
+        createdAt
+
+      )
+
+      VALUES (
+
+        @id,
+
+        @businessDate,
+
+        @type,
+
+        @amount,
+
+        @reason,
+
+        @notes,
+
+        @createdById,
+
+        @createdByName,
+
+        @createdAt
+
+      )
+    `)
+    .run({
+
       id,
-      businessDate,
+
+      businessDate:
+        businessDay.businessDate,
+
       type,
-      amount,
+
+      amount:
+        numericAmount,
+
       reason,
+
       notes,
+
       createdById,
+
       createdByName,
-      createdAt
-    )
-    VALUES (
-      @id,
-      @businessDate,
-      @type,
-      @amount,
-      @reason,
-      @notes,
-      @createdById,
-      @createdByName,
-      @createdAt
-    )
-  `).run({
-    id,
-    businessDate: businessDay.businessDate,
-    type,
-    amount: numericAmount,
-    reason,
-    notes,
-    createdById,
-    createdByName,
-    createdAt: now
-  });
+
+      createdAt:
+        now
+
+    });
+
 
   return {
-    success: true,
+
+    success:
+      true,
+
     id,
-    businessDate: businessDay.businessDate,
+
+    businessDate:
+      businessDay.businessDate,
+
     type,
-    amount: numericAmount
+
+    amount:
+      numericAmount
+
   };
+
 }
 
-function getCashTransactions(businessDate) {
-  return db.prepare(`
-    SELECT
-      id,
-      businessDate,
-      type,
-      amount,
-      reason,
-      notes,
-      createdById,
-      createdByName,
-      createdAt
-    FROM pos_cash_transactions
-    WHERE businessDate = ?
-    ORDER BY createdAt ASC
-  `).all(businessDate);
+
+function getCashTransactions(
+  businessDate
+) {
+
+  return db
+    .prepare(`
+      SELECT
+
+        id,
+
+        businessDate,
+
+        type,
+
+        amount,
+
+        reason,
+
+        notes,
+
+        createdById,
+
+        createdByName,
+
+        createdAt
+
+      FROM pos_cash_transactions
+
+      WHERE businessDate = ?
+
+      ORDER BY createdAt ASC
+
+    `)
+    .all(
+      businessDate
+    );
+
 }
 
-function getCashMovementSummary(businessDate) {
-  const rows = db.prepare(`
-    SELECT
-      type,
-      COALESCE(SUM(amount), 0) AS total
-    FROM pos_cash_transactions
-    WHERE businessDate = ?
-    GROUP BY type
-  `).all(businessDate);
+
+function getCashMovementSummary(
+  businessDate
+) {
+
+  const rows =
+    db
+      .prepare(`
+        SELECT
+
+          type,
+
+          COALESCE(
+            SUM(amount),
+            0
+          ) AS total
+
+        FROM pos_cash_transactions
+
+        WHERE businessDate = ?
+
+        GROUP BY type
+
+      `)
+      .all(
+        businessDate
+      );
+
 
   const result = {
+
     cashTopup: 0,
+
     otherCashIn: 0,
+
     cashExpenses: 0,
+
     cashWithdrawals: 0,
+
     cashRefunds: 0
+
   };
 
-  for (const row of rows) {
-    const total = Number(row.total || 0);
 
-    switch (row.type) {
+  for (
+    const row of rows
+  ) {
+
+    const total =
+      Number(
+        row.total || 0
+      );
+
+
+    switch (
+      row.type
+    ) {
+
       case 'TOPUP':
-        result.cashTopup = total;
+
+        result.cashTopup =
+          total;
+
         break;
+
 
       case 'OTHER_IN':
-        result.otherCashIn = total;
+
+        result.otherCashIn =
+          total;
+
         break;
+
 
       case 'EXPENSE':
-        result.cashExpenses = total;
+
+        result.cashExpenses =
+          total;
+
         break;
+
 
       case 'WITHDRAWAL':
-        result.cashWithdrawals = total;
+
+        result.cashWithdrawals =
+          total;
+
         break;
+
 
       case 'REFUND':
-        result.cashRefunds = total;
+
+        result.cashRefunds =
+          total;
+
         break;
+
     }
+
   }
 
+
   return result;
+
 }
+
+
 // =====================================================
 // EXPORT
 // =====================================================
@@ -1231,6 +1511,8 @@ function getCashMovementSummary(businessDate) {
 module.exports = {
 
   getCurrentBusinessDay,
+
+  getBusinessDayByDate,
 
   getBusinessDate,
 
@@ -1253,5 +1535,7 @@ module.exports = {
   getCashTransactions,
 
   getCashMovementSummary,
+
+  getBusinessInfoByDate,
 
 };

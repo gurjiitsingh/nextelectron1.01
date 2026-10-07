@@ -70,7 +70,7 @@ export default function DayClosingPage() {
   const [savingCashTransaction, setSavingCashTransaction] =
     useState(false);
   const [cashHandedOver, setCashHandedOver] =
-  useState('');  
+    useState('');
 
   // =====================================================
   // LOAD CURRENT BUSINESS DAY
@@ -81,59 +81,57 @@ export default function DayClosingPage() {
   }, []);
 
 
-  async function loadBusinessDay() {
+async function loadBusinessDay() {
+  try {
+    setLoading(true);
+    setError('');
+    setMessage('');
 
-    try {
+    const result =
+      await window.posApi.getCurrentBusinessDay();
 
-      setLoading(true);
-      setError('');
-      setMessage('');
+    console.log(
+      'CURRENT BUSINESS DAY:',
+      result
+    );
 
-      const result =
-        await window.posApi
-          .getCurrentBusinessDay();
-
-      console.log(
-        'CURRENT BUSINESS DAY:',
-        result
-      );
-
-      if (!result?.success) {
-
-
-      }
-
-      const day =
-        result.data;
-
-      setBusinessDay(day);
-
-      setSelectedDate(
-        day?.businessDate || ''
-      );
-
-      if (day?.businessDate) {
-        await loadSummary(
-          day.businessDate
-        );
-      }
-
-    } catch (e: any) {
-
-
-
+    if (!result?.success) {
       setError(
-        e?.message ||
-        'Failed to load business day'
+        result?.error ||
+        'Failed to load current business day'
       );
 
-    } finally {
-
-      setLoading(false);
-
+      return;
     }
-  }
 
+    const day =
+      result.data;
+
+    setBusinessDay(day);
+
+    setSelectedDate(
+      day?.businessDate || ''
+    );
+
+    if (day?.businessDate) {
+      await loadSummary(
+        day.businessDate
+      );
+    }
+
+  } catch (e: any) {
+
+    setError(
+      e?.message ||
+      'Failed to load business day'
+    );
+
+  } finally {
+
+    setLoading(false);
+
+  }
+}
 
   // =====================================================
   // LOAD SUMMARY
@@ -184,23 +182,69 @@ export default function DayClosingPage() {
   }
 
 
+async function loadBusinessInfo(
+  businessDate: string
+) {
+  if (!businessDate) {
+    return;
+  }
+
+  try {
+
+    const result =
+      await window.posApi.getBusinessInfoByDate(
+        businessDate
+      );
+
+    if (!result?.success) {
+      setBusinessDay(null);
+
+      setError(
+        result?.error ||
+        'Failed to load business information'
+      );
+
+      return;
+    }
+
+    setBusinessDay(
+      result.data || null
+    );
+
+  } catch (e: any) {
+
+    console.error(
+      'LOAD BUSINESS INFO FAILED',
+      e
+    );
+
+    setBusinessDay(null);
+
+    setError(
+      e?.message ||
+      'Failed to load business information'
+    );
+  }
+}
+
+
   // =====================================================
   // DATE CHANGE
   // =====================================================
 
-  async function handleDateChange(
-    value: string
-  ) {
+async function handleDateChange(
+  value: string
+) {
+  setSelectedDate(value);
 
-    setSelectedDate(value);
+  setError('');
+  setMessage('');
 
-    setError('');
-    setMessage('');
-
-    if (value) {
-      await loadSummary(value);
-    }
+  if (value) {
+    await loadSummary(value);
+    await loadBusinessInfo(value);
   }
+}
 
 
   // =====================================================
@@ -217,10 +261,10 @@ export default function DayClosingPage() {
       summary?.cashSales || 0
     );
 
-const expectedCash =
-  Number(
-    summary?.expectedCash || 0
-  );
+  const expectedCash =
+    Number(
+      summary?.expectedCash || 0
+    );
 
   const actualCashValue =
     Number(actualCash || 0);
@@ -231,10 +275,10 @@ const expectedCash =
       : actualCashValue -
       expectedCash;
 
-const cashLeftInDrawer =
-  actualCash === ''
-    ? 0
-    : actualCashValue -
+  const cashLeftInDrawer =
+    actualCash === ''
+      ? 0
+      : actualCashValue -
       Number(cashHandedOver || 0);
   // =====================================================
   // TOTALS
@@ -292,90 +336,90 @@ const cashLeftInDrawer =
 
 
 
-async function handleCloseDay() {
+  async function handleCloseDay() {
 
-  if (closing) {
-    return;
-  }
+    if (closing) {
+      return;
+    }
 
-  setError('');
-  setMessage('');
+    setError('');
+    setMessage('');
 
-  if (!businessDay) {
-    setError(
-      'Business day is not loaded.'
+    if (!businessDay) {
+      setError(
+        'Business day is not loaded.'
+      );
+      return;
+    }
+
+    if (!actualCash.trim()) {
+      setError(
+        'Please enter actual cash counted.'
+      );
+      return;
+    }
+
+    const countedCash =
+      Number(actualCash);
+
+    const handedOver =
+      Number(cashHandedOver || 0);
+
+
+    if (
+      !Number.isFinite(countedCash) ||
+      countedCash < 0
+    ) {
+      setError(
+        'Please enter a valid actual cash amount.'
+      );
+      return;
+    }
+
+
+    if (
+      !Number.isFinite(handedOver) ||
+      handedOver < 0
+    ) {
+      setError(
+        'Please enter a valid cash handed over amount.'
+      );
+      return;
+    }
+
+
+    if (
+      handedOver > countedCash
+    ) {
+      setError(
+        'Cash handed over cannot be greater than actual cash counted.'
+      );
+      return;
+    }
+
+
+    const difference =
+      countedCash -
+      expectedCash;
+
+
+    const leftInDrawer =
+      countedCash -
+      handedOver;
+
+
+    setPendingActualCash(
+      countedCash
     );
-    return;
-  }
 
-  if (!actualCash.trim()) {
-    setError(
-      'Please enter actual cash counted.'
+    setPendingDifference(
+      difference
     );
-    return;
-  }
 
-  const countedCash =
-    Number(actualCash);
-
-  const handedOver =
-    Number(cashHandedOver || 0);
-
-
-  if (
-    !Number.isFinite(countedCash) ||
-    countedCash < 0
-  ) {
-    setError(
-      'Please enter a valid actual cash amount.'
+    setShowCloseConfirm(
+      true
     );
-    return;
   }
-
-
-  if (
-    !Number.isFinite(handedOver) ||
-    handedOver < 0
-  ) {
-    setError(
-      'Please enter a valid cash handed over amount.'
-    );
-    return;
-  }
-
-
-  if (
-    handedOver > countedCash
-  ) {
-    setError(
-      'Cash handed over cannot be greater than actual cash counted.'
-    );
-    return;
-  }
-
-
-  const difference =
-    countedCash -
-    expectedCash;
-
-
-  const leftInDrawer =
-    countedCash -
-    handedOver;
-
-
-  setPendingActualCash(
-    countedCash
-  );
-
-  setPendingDifference(
-    difference
-  );
-
-  setShowCloseConfirm(
-    true
-  );
-}
   async function confirmCloseDay() {
 
     setShowCloseConfirm(false);
@@ -389,25 +433,25 @@ async function handleCloseDay() {
       setClosing(true);
 
       const result =
-   await window.posApi.closeBusinessDay({
+        await window.posApi.closeBusinessDay({
 
-  actualCash:
-    pendingActualCash,
+          actualCash:
+            pendingActualCash,
 
-  cashHandedOver:
-    Number(
-      cashHandedOver || 0
-    ),
+          cashHandedOver:
+            Number(
+              cashHandedOver || 0
+            ),
 
-  notes,
+          notes,
 
-  closedById:
-    '',
+          closedById:
+            '',
 
-  closedByName:
-    '',
+          closedByName:
+            '',
 
-});
+        });
 
       console.log(
         'CLOSE DAY RESULT:',
@@ -601,7 +645,7 @@ async function handleCloseDay() {
       );
 
       // Reload current business day / summary
-      const businessDayResult =
+const businessDayResult =
   await window.posApi.getCurrentBusinessDay();
 
 if (businessDayResult?.success) {
@@ -762,8 +806,7 @@ if (businessDayResult?.success) {
               type="date"
               value={selectedDate}
               onChange={(e) => {
-                console.log("DATE:", e.target.value);
-                setSelectedDate(e.target.value);
+                handleDateChange(e.target.value);
               }}
               className="h-10 rounded-xl border px-3"
             />
@@ -875,15 +918,15 @@ if (businessDayResult?.success) {
 
 
 
-<SectionCard
-  title="Cash Transactions"
-  subtitle="Manage cash movements for the current business day"
-  background={background}
- 
->
-  <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <SectionCard
+        title="Cash Transactions"
+        subtitle="Manage cash movements for the current business day"
+        background={background}
 
-    {/* <button
+      >
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+
+          {/* <button
       type="button"
       onClick={() => {
         setCashTransactionType('TOPUP');
@@ -899,55 +942,55 @@ if (businessDayResult?.success) {
       + Cash Deposit
     </button> */}
 
-    <button
-      type="button"
-      onClick={() => {
-        setCashTransactionType('OTHER_IN');
-        setShowCashTransaction(true);
-        setError('');
-        setMessage('');
-      }}
-      className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
-      style={{
-        borderColor: background.border,
-      }}
-    >
-      + Cash In
-    </button>
+          <button
+            type="button"
+            onClick={() => {
+              setCashTransactionType('OTHER_IN');
+              setShowCashTransaction(true);
+              setError('');
+              setMessage('');
+            }}
+            className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
+            style={{
+              borderColor: background.border,
+            }}
+          >
+            + Cash In
+          </button>
 
-    <button
-      type="button"
-      onClick={() => {
-        setCashTransactionType('WITHDRAWAL');
-        setShowCashTransaction(true);
-        setError('');
-        setMessage('');
-      }}
-      className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
-      style={{
-        borderColor: background.border,
-      }}
-    >
-      − Cash Withdrawal
-    </button>
+          <button
+            type="button"
+            onClick={() => {
+              setCashTransactionType('WITHDRAWAL');
+              setShowCashTransaction(true);
+              setError('');
+              setMessage('');
+            }}
+            className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
+            style={{
+              borderColor: background.border,
+            }}
+          >
+            − Cash Withdrawal
+          </button>
 
-    <button
-      type="button"
-      onClick={() => {
-        setCashTransactionType('EXPENSE');
-        setShowCashTransaction(true);
-        setError('');
-        setMessage('');
-      }}
-      className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
-      style={{
-        borderColor: background.border,
-      }}
-    >
-      − Cash Expense
-    </button>
+          <button
+            type="button"
+            onClick={() => {
+              setCashTransactionType('EXPENSE');
+              setShowCashTransaction(true);
+              setError('');
+              setMessage('');
+            }}
+            className="rounded-xl border px-4 py-4 text-sm font-semibold transition hover:opacity-80"
+            style={{
+              borderColor: background.border,
+            }}
+          >
+            − Cash Expense
+          </button>
 
-    {/* <button
+          {/* <button
       type="button"
       onClick={() => {
         setCashTransactionType('REFUND');
@@ -963,8 +1006,8 @@ if (businessDayResult?.success) {
       − Cash Refund
     </button> */}
 
-  </div>
-</SectionCard>
+        </div>
+      </SectionCard>
       {/* =================================================
           TOP SUMMARY
       ================================================= */}
@@ -1051,9 +1094,12 @@ if (businessDayResult?.success) {
 
           <InfoRow
             label="Opening Cash"
+            // value={money(
+            //   openingCash
+            // )}
             value={money(
-              openingCash
-            )}
+  businessDay?.openingCash || 0
+)}
           />
 
         </SectionCard>
@@ -1164,86 +1210,86 @@ if (businessDayResult?.success) {
           CASH COUNT
       ================================================= */}
 
-   <div className="mt-4">
+      <div className="mt-4">
 
-  <SectionCard
-    title="Cash Count"
-    background={background}
-  >
+        <SectionCard
+          title="Cash Count"
+          background={background}
+        >
 
-    <div
-      className="
+          <div
+            className="
         grid
         gap-3
         md:grid-cols-3
       "
-    >
+          >
 
-      <MoneyBox
-        title="Opening Cash"
-        value={openingCash}
-      />
+            <MoneyBox
+              title="Opening Cash"
+              value={openingCash}
+            />
 
-      <MoneyBox
-        title="Expected Cash"
-        value={expectedCash}
-      />
+            <MoneyBox
+              title="Expected Cash"
+              value={expectedCash}
+            />
 
-      <MoneyBox
-        title="Cash Difference"
-        value={cashDifference}
-      />
+            <MoneyBox
+              title="Cash Difference"
+              value={cashDifference}
+            />
 
-    </div>
+          </div>
 
 
-    <div
-      className="
+          <div
+            className="
         mt-4
         grid
         gap-3
         md:grid-cols-3
       "
-    >
+          >
 
-      {/* =================================================
+            {/* =================================================
           ACTUAL CASH COUNTED
       ================================================= */}
 
-      <div>
+            <div>
 
-        <label
-          className="
+              <label
+                className="
             mb-1.5
             block
             text-xs
             font-semibold
             opacity-60
           "
-        >
-          Actual Cash Counted
-        </label>
+              >
+                Actual Cash Counted
+              </label>
 
-        <input
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0"
-          value={actualCash}
-          onChange={(e) => {
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                value={actualCash}
+                onChange={(e) => {
 
-            const value =
-              e.target.value;
+                  const value =
+                    e.target.value;
 
-            setActualCash(value);
+                  setActualCash(value);
 
-            // Default:
-            // Cash Handed Over = Actual Cash Counted
-            setCashHandedOver(value);
+                  // Default:
+                  // Cash Handed Over = Actual Cash Counted
+                  setCashHandedOver(value);
 
-          }}
-          placeholder="0.00"
-          className={`
+                }}
+                placeholder="0.00"
+                className={`
             h-11
             w-full
             rounded-xl
@@ -1259,47 +1305,47 @@ if (businessDayResult?.success) {
             [&::-webkit-inner-spin-button]:appearance-none
             [&::-webkit-outer-spin-button]:appearance-none
           `}
-        />
+              />
 
-      </div>
+            </div>
 
 
-      {/* =================================================
+            {/* =================================================
           CASH HANDED OVER
       ================================================= */}
 
-      <div>
+            <div>
 
-        <label
-          className="
+              <label
+                className="
             mb-1.5
             block
             text-xs
             font-semibold
             opacity-60
           "
-        >
-          Cash Handed Over
-        </label>
+              >
+                Cash Handed Over
+              </label>
 
-        <input
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0"
-          max={
-            actualCash === ''
-              ? undefined
-              : actualCashValue
-          }
-          value={cashHandedOver}
-          onChange={(e) =>
-            setCashHandedOver(
-              e.target.value
-            )
-          }
-          placeholder="0.00"
-          className={`
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                max={
+                  actualCash === ''
+                    ? undefined
+                    : actualCashValue
+                }
+                value={cashHandedOver}
+                onChange={(e) =>
+                  setCashHandedOver(
+                    e.target.value
+                  )
+                }
+                placeholder="0.00"
+                className={`
             h-11
             w-full
             rounded-xl
@@ -1315,43 +1361,43 @@ if (businessDayResult?.success) {
             [&::-webkit-inner-spin-button]:appearance-none
             [&::-webkit-outer-spin-button]:appearance-none
           `}
-        />
+              />
 
-        <div className="mt-1 text-xs opacity-50">
-          Default is Actual Cash Counted
-        </div>
+              <div className="mt-1 text-xs opacity-50">
+                Default is Actual Cash Counted
+              </div>
 
-      </div>
+            </div>
 
 
-      {/* =================================================
+            {/* =================================================
           NOTES
       ================================================= */}
 
-      <div>
+            <div>
 
-        <label
-          className="
+              <label
+                className="
             mb-1.5
             block
             text-xs
             font-semibold
             opacity-60
           "
-        >
-          Notes
-        </label>
+              >
+                Notes
+              </label>
 
-        <input
-          type="text"
-          value={notes}
-          onChange={(e) =>
-            setNotes(
-              e.target.value
-            )
-          }
-          placeholder="Optional notes"
-          className={`
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) =>
+                  setNotes(
+                    e.target.value
+                  )
+                }
+                placeholder="Optional notes"
+                className={`
             h-11
             w-full
             rounded-xl
@@ -1362,36 +1408,36 @@ if (businessDayResult?.success) {
             text-sm
             outline-none
           `}
-        />
+              />
 
-      </div>
+            </div>
 
-    </div>
-
-
-   
+          </div>
 
 
-    {/* =================================================
+
+
+
+          {/* =================================================
         CLOSE BUTTON
     ================================================= */}
 
-    <div
-      className="
+          <div
+            className="
         mt-4
         flex
         justify-end
       "
-    >
+          >
 
-      <button
-        type="button"
-        onClick={handleCloseDay}
-        disabled={
-          closing ||
-          !businessDay
-        }
-        className="
+            <button
+              type="button"
+              onClick={handleCloseDay}
+              disabled={
+                closing ||
+                !businessDay
+              }
+              className="
           flex
           h-11
           items-center
@@ -1406,25 +1452,25 @@ if (businessDayResult?.success) {
           disabled:cursor-not-allowed
           disabled:opacity-50
         "
-        style={{
-          backgroundColor:
-            theme.primary,
-        }}
-      >
+              style={{
+                backgroundColor:
+                  theme.primary,
+              }}
+            >
 
-        🔒
+              🔒
 
-        {closing
-          ? 'Closing Day...'
-          : 'Close Business Day'}
+              {closing
+                ? 'Closing Day...'
+                : 'Close Business Day'}
 
-      </button>
+            </button>
 
-    </div>
+          </div>
 
-  </SectionCard>
+        </SectionCard>
 
-</div>
+      </div>
 
       {showCloseConfirm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
@@ -1529,11 +1575,11 @@ if (businessDayResult?.success) {
       )}
 
 
-{showCashTransaction && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+      {showCashTransaction && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
 
-    <div
-      className={`
+          <div
+            className={`
         w-full
         max-w-md
         rounded-2xl
@@ -1543,47 +1589,47 @@ if (businessDayResult?.success) {
         p-6
         shadow-2xl
       `}
-    >
+          >
 
-      <h2 className="text-lg font-bold">
-        {cashTransactionType === 'TOPUP'
-          ? 'Cash Deposit'
-          : cashTransactionType === 'OTHER_IN'
-          ? 'Other Cash In'
-          : cashTransactionType === 'WITHDRAWAL'
-          ? 'Cash Withdrawal'
-          : cashTransactionType === 'EXPENSE'
-          ? 'Cash Expense'
-          : 'Cash Refund'}
-      </h2>
+            <h2 className="text-lg font-bold">
+              {cashTransactionType === 'TOPUP'
+                ? 'Cash Deposit'
+                : cashTransactionType === 'OTHER_IN'
+                  ? 'Other Cash In'
+                  : cashTransactionType === 'WITHDRAWAL'
+                    ? 'Cash Withdrawal'
+                    : cashTransactionType === 'EXPENSE'
+                      ? 'Cash Expense'
+                      : 'Cash Refund'}
+            </h2>
 
-      <p className="mt-1 text-sm opacity-70">
-        Add cash transaction for business day{' '}
-        {businessDay?.businessDate}
-      </p>
+            <p className="mt-1 text-sm opacity-70">
+              Add cash transaction for business day{' '}
+              {businessDay?.businessDate}
+            </p>
 
 
-      {/* AMOUNT */}
+            {/* AMOUNT */}
 
-      <div className="mt-5">
+            <div className="mt-5">
 
-        <label className="mb-2 block text-sm font-semibold">
-          Amount
-        </label>
+              <label className="mb-2 block text-sm font-semibold">
+                Amount
+              </label>
 
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          value={cashTransactionAmount}
-          onChange={(e) =>
-            setCashTransactionAmount(
-              e.target.value
-            )
-          }
-          placeholder="Enter amount"
-          autoFocus
-          className={`
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={cashTransactionAmount}
+                onChange={(e) =>
+                  setCashTransactionAmount(
+                    e.target.value
+                  )
+                }
+                placeholder="Enter amount"
+                autoFocus
+                className={`
             h-11
             w-full
             rounded-xl
@@ -1593,29 +1639,29 @@ if (businessDayResult?.success) {
             px-3
             outline-none
           `}
-        />
+              />
 
-      </div>
+            </div>
 
 
-      {/* REASON */}
+            {/* REASON */}
 
-      <div className="mt-4">
+            <div className="mt-4">
 
-        <label className="mb-2 block text-sm font-semibold">
-          Reason
-        </label>
+              <label className="mb-2 block text-sm font-semibold">
+                Reason
+              </label>
 
-        <input
-          type="text"
-          value={cashTransactionReason}
-          onChange={(e) =>
-            setCashTransactionReason(
-              e.target.value
-            )
-          }
-          placeholder="Enter reason"
-          className={`
+              <input
+                type="text"
+                value={cashTransactionReason}
+                onChange={(e) =>
+                  setCashTransactionReason(
+                    e.target.value
+                  )
+                }
+                placeholder="Enter reason"
+                className={`
             h-11
             w-full
             rounded-xl
@@ -1625,29 +1671,29 @@ if (businessDayResult?.success) {
             px-3
             outline-none
           `}
-        />
+              />
 
-      </div>
+            </div>
 
 
-      {/* NOTES */}
+            {/* NOTES */}
 
-      <div className="mt-4">
+            <div className="mt-4">
 
-        <label className="mb-2 block text-sm font-semibold">
-          Notes
-        </label>
+              <label className="mb-2 block text-sm font-semibold">
+                Notes
+              </label>
 
-        <textarea
-          value={cashTransactionNotes}
-          onChange={(e) =>
-            setCashTransactionNotes(
-              e.target.value
-            )
-          }
-          placeholder="Optional notes"
-          rows={3}
-          className={`
+              <textarea
+                value={cashTransactionNotes}
+                onChange={(e) =>
+                  setCashTransactionNotes(
+                    e.target.value
+                  )
+                }
+                placeholder="Optional notes"
+                rows={3}
+                className={`
             w-full
             rounded-xl
             border
@@ -1657,30 +1703,30 @@ if (businessDayResult?.success) {
             py-2
             outline-none
           `}
-        />
+              />
 
-      </div>
+            </div>
 
 
-      {/* BUTTONS */}
+            {/* BUTTONS */}
 
-      <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-3">
 
-        <button
-          type="button"
-          onClick={() => {
+              <button
+                type="button"
+                onClick={() => {
 
-            if (savingCashTransaction) return;
+                  if (savingCashTransaction) return;
 
-            setShowCashTransaction(false);
+                  setShowCashTransaction(false);
 
-            setCashTransactionAmount('');
-            setCashTransactionReason('');
-            setCashTransactionNotes('');
-            setCashTransactionType('TOPUP');
+                  setCashTransactionAmount('');
+                  setCashTransactionReason('');
+                  setCashTransactionNotes('');
+                  setCashTransactionType('TOPUP');
 
-          }}
-          className="
+                }}
+                className="
             rounded-xl
             border
             border-gray-300
@@ -1689,16 +1735,16 @@ if (businessDayResult?.success) {
             text-sm
             font-semibold
           "
-        >
-          Cancel
-        </button>
+              >
+                Cancel
+              </button>
 
 
-        <button
-          type="button"
-          disabled={savingCashTransaction}
-          onClick={handleAddCashTransaction}
-          className="
+              <button
+                type="button"
+                disabled={savingCashTransaction}
+                onClick={handleAddCashTransaction}
+                className="
             rounded-xl
             px-5
             py-2.5
@@ -1708,22 +1754,22 @@ if (businessDayResult?.success) {
             disabled:cursor-not-allowed
             disabled:opacity-50
           "
-          style={{
-            backgroundColor:
-              theme.primary,
-          }}
-        >
-          {savingCashTransaction
-            ? 'Saving...'
-            : 'Save Transaction'}
-        </button>
+                style={{
+                  backgroundColor:
+                    theme.primary,
+                }}
+              >
+                {savingCashTransaction
+                  ? 'Saving...'
+                  : 'Save Transaction'}
+              </button>
 
-      </div>
+            </div>
 
-    </div>
+          </div>
 
-  </div>
-)}
+        </div>
+      )}
 
     </div>
   );

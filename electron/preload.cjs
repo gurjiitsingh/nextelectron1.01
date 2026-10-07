@@ -458,6 +458,14 @@ getPosIPAddress: () =>
     ),
 
 
+    getBusinessInfoByDate:
+  (businessDate) =>
+    ipcRenderer.invoke(
+      'dayClosing:getBusinessInfoByDate',
+      businessDate
+    ),
+
+
   // =====================================================
   // DAY CLOSING
   // =====================================================

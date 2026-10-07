@@ -1269,7 +1269,30 @@ ipcMain.handle(
   }
 );
 
-
+ipcMain.handle(
+  'dayClosing:getBusinessInfoByDate',
+  async (
+    _event,
+    businessDate
+  ) => {
+    try {
+      return {
+        success: true,
+        data:
+          dayClosingRepo.getBusinessInfoByDate(
+            businessDate
+          ),
+      };
+    } catch (e) {
+      return {
+        success: false,
+        error:
+          e?.message ||
+          String(e),
+      };
+    }
+  }
+);
 
 
 // =====================================================
