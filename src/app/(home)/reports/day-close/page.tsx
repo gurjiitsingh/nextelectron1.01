@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import { useRouter } from 'next/navigation';
+import { usePosAuth } from '@/store/PosAuthContext';
 
 export default function DayClosingPage() {
   const router = useRouter();
@@ -11,6 +12,10 @@ export default function DayClosingPage() {
     background,
     theme,
   } = usePosTheme();
+
+  const {
+  currentUser,
+} = usePosAuth();
 
   const [businessDay, setBusinessDay] =
     useState<any>(null);
@@ -445,11 +450,11 @@ async function handleDateChange(
 
           notes,
 
-          closedById:
-            '',
+           closedById:
+          currentUser?.userId || '',
 
-          closedByName:
-            '',
+        closedByName:
+          currentUser?.fullName || '',
 
         });
 

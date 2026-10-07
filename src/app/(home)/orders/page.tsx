@@ -14,21 +14,21 @@ export default function OrdersPage() {
 
   const router = useRouter();
   const dateInputRef =
-  useRef<HTMLInputElement>(null);
+    useRef<HTMLInputElement>(null);
   const [orders, setOrders] =
     useState<any[]>([]);
 
   const [loading, setLoading] =
     useState(true);
 
-    const [selectedOrder, setSelectedOrder] =
-  useState<any | null>(null);
+  const [selectedOrder, setSelectedOrder] =
+    useState<any | null>(null);
 
-const [selectedOrderItems, setSelectedOrderItems] =
-  useState<any[]>([]);
+  const [selectedOrderItems, setSelectedOrderItems] =
+    useState<any[]>([]);
 
-const [detailsLoading, setDetailsLoading] =
-  useState(false);
+  const [detailsLoading, setDetailsLoading] =
+    useState(false);
 
   const [selectedDate, setSelectedDate] =
     useState(() => {
@@ -50,11 +50,11 @@ const [detailsLoading, setDetailsLoading] =
       return `${year}-${month}-${day}`;
     });
 
-const {
-  theme,
-  background,
-  backgroundName,
-} = usePosTheme();
+  const {
+    theme,
+    background,
+    backgroundName,
+  } = usePosTheme();
 
   // =====================================================
   // LOAD ORDERS FROM SQLITE
@@ -68,7 +68,7 @@ const {
   async function loadOrders(
     date = selectedDate
   ) {
-  console.log('🔥 OrdersPage RENDERED');
+    console.log('🔥 OrdersPage RENDERED');
     try {
 
       setLoading(true);
@@ -285,8 +285,8 @@ const {
 
   return (
 
-<div
-  className={`
+    <div
+      className={`
     h-[calc(100vh-60px)]
     min-h-0
     overflow-y-auto
@@ -297,7 +297,7 @@ const {
     pb-14
     md:p-5
   `}
->
+    >
 
       {/* =================================================
           HEADER
@@ -345,17 +345,17 @@ const {
         </div>
 
 
-  
 
-     
-{/* =================================================
+
+
+        {/* =================================================
     DATE SEARCH
 ================================================= */}
 
-<div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
 
-  <div
-    className={`
+          <div
+            className={`
       relative
       flex
       h-10
@@ -368,57 +368,57 @@ const {
       transition
       hover:opacity-80
     `}
-    style={{
-      backgroundColor:
-        'rgba(255,255,255,0.02)',
-    }}
-  >
+            style={{
+              backgroundColor:
+                'rgba(255,255,255,0.02)',
+            }}
+          >
 
-    <span
-      className="
+            <span
+              className="
         pointer-events-none
         text-sm
         opacity-60
       "
-    >
-      📅
-    </span>
+            >
+              📅
+            </span>
 
-    <input
-      ref={dateInputRef}
-      type="date"
-      value={selectedDate}
-      onClick={(e) => {
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={selectedDate}
+              onClick={(e) => {
 
-        e.stopPropagation();
+                e.stopPropagation();
 
-        const input =
-          e.currentTarget;
+                const input =
+                  e.currentTarget;
 
-        if (
-          typeof input.showPicker ===
-          'function'
-        ) {
-          input.showPicker();
-        }
+                if (
+                  typeof input.showPicker ===
+                  'function'
+                ) {
+                  input.showPicker();
+                }
 
-      }}
-      onChange={(e) => {
+              }}
+              onChange={(e) => {
 
-        const value =
-          e.target.value;
+                const value =
+                  e.target.value;
 
-        console.log(
-          'DATE SELECTED:',
-          value
-        );
+                console.log(
+                  'DATE SELECTED:',
+                  value
+                );
 
-        if (value) {
-          setSelectedDate(value);
-        }
+                if (value) {
+                  setSelectedDate(value);
+                }
 
-      }}
-      className="
+              }}
+              className="
         min-w-[145px]
         cursor-pointer
         border-0
@@ -429,26 +429,26 @@ const {
         outline-none
         focus:outline-none
       "
- style={{
-  colorScheme:
-    backgroundName === 'darkSlate' ||
-    backgroundName === 'black' ||
-    backgroundName === 'dark'
-      ? 'dark'
-      : 'light',
-}}
-    />
+              style={{
+                colorScheme:
+                  backgroundName === 'darkSlate' ||
+                    backgroundName === 'black' ||
+                    backgroundName === 'dark'
+                    ? 'dark'
+                    : 'light',
+              }}
+            />
 
-  </div>
+          </div>
 
 
-  <button
-    type="button"
-    onClick={() =>
-      loadOrders(selectedDate)
-    }
-    disabled={loading}
-    className="
+          <button
+            type="button"
+            onClick={() =>
+              loadOrders(selectedDate)
+            }
+            disabled={loading}
+            className="
       h-10
       rounded-xl
       px-4
@@ -460,17 +460,17 @@ const {
       disabled:cursor-not-allowed
       disabled:opacity-50
     "
-    style={{
-      backgroundColor:
-        theme.primary,
-    }}
-  >
-    {loading
-      ? 'Loading...'
-      : '↻ Refresh'}
-  </button>
+            style={{
+              backgroundColor:
+                theme.primary,
+            }}
+          >
+            {loading
+              ? 'Loading...'
+              : '↻ Refresh'}
+          </button>
 
-</div>
+        </div>
 
 
       </div>
@@ -789,7 +789,7 @@ const {
                   <th className="px-4 py-3">
                     Type
                   </th>
-
+                  <th className="px-4 py-3 text-right">Finalized By</th>
                   <th className="px-4 py-3 text-right">
                     Total
                   </th>
@@ -824,23 +824,23 @@ const {
 
                     return (
 
-<tr
-  key={order.id}
-  onClick={() =>
-    router.push(
-      `/orders/detail?orderId=${encodeURIComponent(order.id)}`
-    )
-  }
-  className="
+                      <tr
+                        key={order.id}
+                        onClick={() =>
+                          router.push(
+                            `/orders/detail?orderId=${encodeURIComponent(order.id)}`
+                          )
+                        }
+                        className="
     cursor-pointer
     border-t
     transition
     hover:bg-black/[0.03]
   "
-  style={{
-    borderColor: background.line,
-  }}
->
+                        style={{
+                          borderColor: background.line,
+                        }}
+                      >
 
                         <td
                           className="
@@ -878,7 +878,14 @@ const {
                             '-'}
                         </td>
 
-
+                        <td className="
+                            px-4
+                            py-3
+                            text-right
+                            font-bold
+                          ">
+                          {order.finalizedByName}
+                        </td>
                         <td
                           className="
                             px-4
@@ -890,7 +897,7 @@ const {
                           ₹
                           {Number(
                             order.grandTotal ||
-                              0
+                            0
                           ).toFixed(2)}
                         </td>
 

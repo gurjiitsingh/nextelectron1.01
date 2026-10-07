@@ -108,6 +108,12 @@ const {
   getBillableKotItems,
 } = require('./db/billingRepo.cjs');
 
+const PosSessionRepository =
+  require("./db/posSessionRepository.cjs");
+
+  const posSessionRepository =
+  new PosSessionRepository(db);
+
 const {
   printManager,
 } = require('../shared/printer/PrintManager.cjs');
@@ -1635,6 +1641,8 @@ ipcMain.handle("users:getPosLoginUsers", async () => {
   }
 });
 
+
+
 // =====================================================
 // POS USER LOGIN
 // =====================================================
@@ -1642,12 +1650,58 @@ ipcMain.handle("users:getPosLoginUsers", async () => {
 ipcMain.handle(
   "users:login",
   async (_event, { userId, pin }) => {
+
     try {
-      return authRepository.loginUser(
-        userId,
-        pin
-      );
+
+      // ===============================================
+      // VERIFY USER
+      // ===============================================
+
+      const result =
+        authRepository.loginUser(
+          userId,
+          pin
+        );
+
+
+      // ===============================================
+      // LOGIN FAILED
+      // ===============================================
+
+      if (!result?.success) {
+        return result;
+      }
+
+
+      // ===============================================
+      // CREATE POS SESSION
+      // ===============================================
+
+      // const session =
+      //   posSessionRepository.createSession(
+      //     result.user
+      //   );
+
+
+      // ===============================================
+      // RETURN USER + SESSION
+      // ===============================================
+
+         const session =
+        posSessionRepository.createSession(
+          result.user
+        );
+
+      return {
+        success: true,
+
+        user: result.user,
+
+        session,
+      };
+
     } catch (error) {
+
       console.error(
         "POS user login failed:",
         error
@@ -1655,14 +1709,97 @@ ipcMain.handle(
 
       return {
         success: false,
+
         error:
-          error.message ||
-          "Login failed.",
+          error instanceof Error
+            ? error.message
+            : "Login failed.",
       };
     }
   }
 );
 
+
+
+// =====================================================
+// POS USER LOGOUT
+// =====================================================
+
+// ipcMain.handle(
+//   "users:logout",
+//   async () => {
+//     try {
+
+//       // No persistent POS session yet.
+//       // Session cleanup will be added later.
+
+//       return {
+//         success: true,
+//       };
+
+//     } catch (error) {
+
+//       console.error(
+//         "POS user logout failed:",
+//         error
+//       );
+
+//       return {
+//         success: false,
+//         error:
+//           error instanceof Error
+//             ? error.message
+//             : "Logout failed.",
+//       };
+//     }
+//   }
+// );
+
+// =====================================================
+// POS USER LOGOUT
+// =====================================================
+
+ipcMain.handle(
+  "users:logout",
+  async (_event, sessionId) => {
+
+    try {
+
+      if (sessionId) {
+
+        posSessionRepository.closeSession(
+          sessionId
+        );
+
+      } else {
+
+        posSessionRepository.closeActiveSession();
+
+      }
+
+
+      return {
+        success: true,
+      };
+
+    } catch (error) {
+
+      console.error(
+        "POS user logout failed:",
+        error
+      );
+
+      return {
+        success: false,
+
+        error:
+          error instanceof Error
+            ? error.message
+            : "Logout failed.",
+      };
+    }
+  }
+);
 
 
 

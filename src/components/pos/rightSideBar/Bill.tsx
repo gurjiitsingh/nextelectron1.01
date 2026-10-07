@@ -9,6 +9,7 @@ import { calculateBillAndroid } from '@/lib/pos/billing/calculator';
 import { POS_THEME } from '@/style/posTheme';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import PaymentAllocation, { PaymentAllocationValue } from './PaymentAllocationValue';
+import { usePosAuth } from '@/store/PosAuthContext';
 
 type PaymentAllocationProps = {
   totalAmount: number;
@@ -68,6 +69,11 @@ export default function Bill({
       upi: 0,
       credit: 0,
     });
+
+    const {
+  currentUser,
+  session,
+} = usePosAuth();
 
   const [showComplimentaryMenu, setShowComplimentaryMenu] =
     useState(false);
@@ -666,6 +672,19 @@ export default function Bill({
             calculation.deliveryTax,
 
 
+              // =============================================
+          // USER SNAPSHOT
+          // =============================================
+
+        
+
+          finalizedById:
+            currentUser?.userId || '',
+
+          finalizedByName:
+            currentUser?.fullName || '',
+
+
           // =============================================
           // PAYMENT
           // =============================================
@@ -732,12 +751,6 @@ export default function Bill({
           'Failed to create bill'
         );
       }
-
-
-      console.log(
-        'BILL CREATED:',
-        result
-      );
 
 
       // =================================================

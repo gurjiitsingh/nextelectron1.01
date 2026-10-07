@@ -3,9 +3,8 @@
 import {
   usePosAuth,
 } from "@/store/PosAuthContext";
-import LoginScreen from "../LoginScreen";
 
- 
+import LoginScreen from "../LoginScreen";
 
 
 // =====================================================
@@ -19,8 +18,8 @@ export default function PosAuthGate({
 }) {
 
   const {
-    currentUser,
-    isLoading,
+    isAuthenticated,
+    isInitializing,
   } = usePosAuth();
 
 
@@ -28,7 +27,8 @@ export default function PosAuthGate({
   // AUTH INITIALIZATION
   // ===================================================
 
-  if (isLoading) {
+  if (isInitializing) {
+
     return (
       <div
         className="
@@ -59,7 +59,8 @@ export default function PosAuthGate({
   // AUTHENTICATED
   // ===================================================
 
-  if (currentUser) {
+  if (isAuthenticated) {
+
     return (
       <div className="h-full w-full">
         {children}
@@ -69,7 +70,7 @@ export default function PosAuthGate({
 
 
   // ===================================================
-  // LOCKED POS
+  // LOGIN / LOCK SCREEN
   // ===================================================
 
   return (

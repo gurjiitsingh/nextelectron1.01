@@ -25,6 +25,7 @@ setLoading(true);
  
 
 }
+console.log("orders-------------------",orders)
 
 return ( <div className="p-4"> <div className="mb-4 flex items-center justify-between"> <h1 className="text-xl font-semibold">Orders</h1>
 
@@ -49,6 +50,7 @@ return ( <div className="p-4"> <div className="mb-4 flex items-center justify-be
             <th className="border-b px-3 py-2">Bill No</th>
             <th className="border-b px-3 py-2">Table</th>
              <th className="border-b px-3 py-2">Type</th>
+              <th className="border-b px-3 py-2">Finalized By</th>
             <th className="border-b px-3 py-2 text-right">Total</th>
             <th className="border-b px-3 py-2">Payment</th>
             <th className="border-b px-3 py-2">Status</th>
@@ -73,6 +75,9 @@ return ( <div className="p-4"> <div className="mb-4 flex items-center justify-be
 
               <td className="px-3 py-2">
                 {order.orderType}
+              </td>
+                  <td className="px-3 py-2">
+                {order.finalizedBy}
               </td>
 
               <td className="px-3 py-2 text-right font-semibold">

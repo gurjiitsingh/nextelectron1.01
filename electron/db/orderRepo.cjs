@@ -9,18 +9,18 @@ const { randomUUID } = require('crypto');
 function insertOrder(master, items) {
 
   const createdAt =
-  master.createdAt ?? Date.now();
+    master.createdAt ?? Date.now();
 
- const realDate =
-  getRealDate(createdAt);
+  const realDate =
+    getRealDate(createdAt);
 
   console.log('========== INSERT ORDER DATE DEBUG ==========');
-console.log({
-  createdAt,
-  createdAtISO: new Date(createdAt).toISOString(),
-  businessDate: master.businessDate,
-  realDate,
-});
+  console.log({
+    createdAt,
+    createdAtISO: new Date(createdAt).toISOString(),
+    businessDate: master.businessDate,
+    realDate,
+  });
 
   const insertMaster = db.prepare(`
     INSERT INTO pos_order_master (
@@ -265,8 +265,8 @@ console.log({
         master.businessDate ??
         getLocalBusinessDate(),
 
-        realDate:
-  realDate,
+      realDate:
+        realDate,
 
       createdAt:
         master.createdAt ??
@@ -492,58 +492,55 @@ function getRealDate(createdAt) {
 // =====================================================
 
 function getOrders(date) {
-
-
   const businessDate =
-    date ||
-    getLocalBusinessDate();
-
-
-  return db
+    date || getLocalBusinessDate();
+console.log("show----------------------------------")
+  const orders = db
     .prepare(`
       SELECT
-
         id,
         srno,
-
         orderType,
-
         tableNo,
         tableName,
-
         customerName,
         customerPhone,
-
         itemTotal,
         itemTax,
         taxTotal,
         discountTotal,
         grandTotal,
-
         paymentMode,
         paymentStatus,
-
         paidAmount,
         dueAmount,
-
+        createdById,
+        createdByName,
+        finalizedById,
+        finalizedByName,
         orderStatus,
-
         deviceId,
         deviceName,
         appVersion,
-
         businessDate,
         createdAt,
-
         syncStatus
-
       FROM pos_order_master
-
       WHERE businessDate = ?
-
       ORDER BY createdAt DESC
     `)
     .all(businessDate);
+
+  console.log(
+    "GET ORDERS FINALIZER:",
+    orders.map(order => ({
+      srno: order.srno,
+      finalizedById: order.finalizedById,
+      finalizedByName: order.finalizedByName,
+    }))
+  );
+
+  return orders;
 }
 
 function getOrdersByBusinessDate(date) {
@@ -573,6 +570,10 @@ function getOrdersByBusinessDate(date) {
 
         paidAmount,
         dueAmount,
+         createdById,
+        createdByName,
+        finalizedById,
+        finalizedByName,
 
         orderStatus,
 
@@ -597,6 +598,8 @@ function getOrdersByBusinessDate(date) {
 
 
 function getOrdersByRealDate(date) {
+
+  console.log("getOrdersByRealDate----------------------------------")
   const realDate =
     date || getLocalBusinessDate();
 
@@ -623,6 +626,10 @@ function getOrdersByRealDate(date) {
 
         paidAmount,
         dueAmount,
+         createdById,
+        createdByName,
+        finalizedById,
+        finalizedByName,
 
         orderStatus,
 
@@ -643,6 +650,8 @@ function getOrdersByRealDate(date) {
       ORDER BY createdAt DESC
     `)
     .all(realDate);
+
+ 
 }
 
 function generateNextPosOrderNumber(orderType) {
@@ -823,7 +832,7 @@ module.exports = {
 
   insertOrder,
   getTodayPosOrderNumbers,
-generateNextPosOrderNumber, 
+  generateNextPosOrderNumber,
   getOrdersByBusinessDate,
   getOrdersByRealDate,
 

@@ -110,6 +110,12 @@ declare global {
         deliveryFee?: number;
         deliveryTax?: number;
 
+                 // ADD THESE
+  createdById?: string;
+  createdByName?: string;
+  finalizedById?: string;
+  finalizedByName?: string;
+
         paymentMode?: string;
         paymentStatus?: string;
 
@@ -152,10 +158,16 @@ declare global {
         paidAmount?: number;
         dueAmount?: number;
 
+         // ADD THESE
+  createdById?: string;
+  createdByName?: string;
+  finalizedById?: string;
+  finalizedByName?: string;
+
         paymentStatus?: string;
       }>,
 
-      
+
       cancelBill: (input: {
         tableNo: string;
         tableName: string;
@@ -252,10 +264,10 @@ declare global {
         error?: string;
       }>;
 
-         syncAll:
+      syncAll:
       () => Promise<any>;
 
-    uploadOrders:
+      uploadOrders:
       () => Promise<{
         success: boolean;
         synced: number;
@@ -265,41 +277,41 @@ declare global {
 
 
       firebase: {
-  initialize: (
-    clientId: string
-  ) => Promise<{
-    success: boolean;
-    data?: any;
-    error?: string;
-  }>;
+        initialize: (
+          clientId: string
+        ) => Promise<{
+          success: boolean;
+          data?: any;
+          error?: string;
+        }>;
 
-  getConfig: () => Promise<{
-    success: boolean;
-    data?: any;
-    error?: string;
-  }>;
-};
-
-
-getPosIPAddress: () => Promise<{
-  success: boolean;
-  ipAddress?: string;
-  error?: string;
-}>;
+        getConfig: () => Promise<{
+          success: boolean;
+          data?: any;
+          error?: string;
+        }>;
+      };
 
 
+      getPosIPAddress: () => Promise<{
+        success: boolean;
+        ipAddress?: string;
+        error?: string;
+      }>;
 
 
-registerPosTerminal: () => Promise<{
-  success: boolean;
-  terminal?: {
-    ipAddress?: string;
-    port?: number;
-    terminalId?: string;
-    terminalName?: string;
-  };
-  error?: string;
-}>;
+
+
+      registerPosTerminal: () => Promise<{
+        success: boolean;
+        terminal?: {
+          ipAddress?: string;
+          port?: number;
+          terminalId?: string;
+          terminalName?: string;
+        };
+        error?: string;
+      }>;
 
       // =====================================================
       // PRINTER SETTINGS
@@ -340,12 +352,16 @@ registerPosTerminal: () => Promise<{
         data: {
           actualCash: number;
           notes?: string;
+          cashHandedOver?:number;
           closedById?: string;
           closedByName?: string;
         }
       ) => Promise<any>;
+      // ######################
+      //USER
+      // #######################
 
-            getAllUsers: () => Promise<any>;
+      getAllUsers: () => Promise<any>;
 
       getPosLoginUsers: () => Promise<{
         success: boolean;
@@ -361,11 +377,13 @@ registerPosTerminal: () => Promise<{
         error?: string;
       }>;
 
+
       loginUser: (data: {
         userId: string;
         pin: string;
       }) => Promise<{
         success: boolean;
+
         user?: {
           userId: string;
           outletId: string;
@@ -375,143 +393,167 @@ registerPosTerminal: () => Promise<{
           employeeId: string;
           role: string;
         };
+
+        session?: {
+          sessionId: string;
+          userId: string;
+          outletId: string;
+          fullName: string;
+          employeeId: string | null;
+          role: string | null;
+          loginAt: number;
+          logoutAt: number | null;
+          lastActivityAt: number;
+          isActive: number;
+        };
+
+        error?: string;
+      }>;
+
+      logoutUser: (
+        sessionId?: string
+      ) => Promise<{
+        success: boolean;
         error?: string;
       }>;
 
 
+
+
+
       updateBillItemQuantity: (args: {
-  tableNo: string;
-  billItemGroupKey: string;
-  quantity: number;
-}) => Promise<any>;
+        tableNo: string;
+        billItemGroupKey: string;
+        quantity: number;
+      }) => Promise<any>;
 
-createKot: (
-  kotBatch: any,
-  kotItems: {
-    categoryName: string;
-    productMode: string;
-    currentStock: number;
-    productId: string;
-    name: string;
-    categoryId: string;
-    sessionId: string;
-    tableNo: string;
-    tableName: string;
-    createdById: string;
-    createdByName: string;
-    parentId: string | null;
-    isVariant: boolean;
-    basePrice: number;
-    finalPrice: number;
-    modifierTotal: number;
-    quantity: number;
-    taxRate: number;
-    taxType: "inclusive" | "exclusive";
-    note: string;
-    modifiersJson: string;
-    createdAt: number;
-    source: string;
-    syncedToCloud: boolean;
-    syncedFromCloud: boolean;
-    id: string;
-    kotNumber: any;
-    kotBatchId: string;
-    status: string;
-    kitchenPrintReq: boolean;
-    kitchenPrinted: boolean;
-  }[]
-) => Promise<any>;
+      createKot: (
+        kotBatch: any,
+        kotItems: {
+          categoryName: string;
+          productMode: string;
+          currentStock: number;
+          productId: string;
+          name: string;
+          categoryId: string;
+          sessionId: string;
+          tableNo: string;
+          tableName: string;
+          createdById: string;
+          createdByName: string;
+          parentId: string | null;
+          isVariant: boolean;
+          basePrice: number;
+          finalPrice: number;
+          modifierTotal: number;
+          quantity: number;
+          taxRate: number;
+          taxType: "inclusive" | "exclusive";
+          note: string;
+          modifiersJson: string;
+          createdAt: number;
+          source: string;
+          syncedToCloud: boolean;
+          syncedFromCloud: boolean;
+          id: string;
+          kotNumber: any;
+          kotBatchId: string;
+          status: string;
+          kitchenPrintReq: boolean;
+          kitchenPrinted: boolean;
+        }[]
+      ) => Promise<any>;
 
-getKotHistory: () => Promise<any>;
+      getKotHistory: () => Promise<any>;
 
-getKotHistoryDetail: (
-  kotHistoryId: string
-) => Promise<any>;
+      getKotHistoryDetail: (
+        kotHistoryId: string
+      ) => Promise<any>;
 
-getOrdersByBusinessDate: (
-  date: string
-) => Promise<any>;
+      getOrdersByBusinessDate: (
+        date: string
+      ) => Promise<any>;
 
-getOrdersByRealDate: (
-  date: string
-) => Promise<any>;
-getSalesReport: (
-  businessDate: string
-) => Promise<any>;
+      getOrdersByRealDate: (
+        date: string
+      ) => Promise<any>;
+      getSalesReport: (
+        businessDate: string
+      ) => Promise<any>;
 
-onKotReceived: (
-  callback: (data: any) => void
-) => void;
+      onKotReceived: (
+        callback: (data: any) => void
+      ) => void;
 
-onKotReceived: (
-  callback: (data: any) => void
-) => () => void;
+      onKotReceived: (
+        callback: (data: any) => void
+      ) => () => void;
 
-generateNextPosOrderNumber: (
-  orderType: string
-) => Promise<string>;
+      generateNextPosOrderNumber: (
+        orderType: string
+      ) => Promise<string>;
 
-previewBillImage: (data: {
-  billNo: string;
-  orderNo: string;
-  tableNo: string;
-  tableName: string;
-  orderType: string;
-  paymentMode: string;
+      previewBillImage: (data: {
+        billNo: string;
+        orderNo: string;
+        tableNo: string;
+        tableName: string;
+        orderType: string;
+        paymentMode: string;
 
-  createdAt: number;
+        createdAt: number;
 
-  items: {
-    name: string;
-    quantity: number;
-    rate: number;
-    amount: number;
-    modifiers: any[];
-    modifiersJson: string;
-    note: string;
-  }[];
+        items: {
+          name: string;
+          quantity: number;
+          rate: number;
+          amount: number;
+          modifiers: any[];
+          modifiersJson: string;
+          note: string;
+        }[];
 
-  subtotal: number;
-  tax: number;
-  discount: number;
-  deliveryFee: number;
-  deliveryTax: number;
-  grandTotal: number;
+        subtotal: number;
+        tax: number;
+        discount: number;
+        deliveryFee: number;
+        deliveryTax: number;
+        grandTotal: number;
 
-  outletName: string;
-  addressLine1: string;
-  addressLine2: string;
-  addressLine3: string;
-  city: string;
+        outletName: string;
+        addressLine1: string;
+        addressLine2: string;
+        addressLine3: string;
+        city: string;
 
-  phone: string;
-  phone2: string;
-  gstVatNumber: string;
+        phone: string;
+        phone2: string;
+        gstVatNumber: string;
 
-  taxMode: string;
-  taxType: string;
-  countryCode: string;
+        taxMode: string;
+        taxType: string;
+        countryCode: string;
 
-  customerName: string;
-  customerPhone: string;
+        customerName: string;
+        customerPhone: string;
 
-  qrEnabled: boolean;
-  upiId: string;
-  qrTitle: string;
+        qrEnabled: boolean;
+        upiId: string;
+        qrTitle: string;
 
-  stewardName: string;
-  kotNumberText: string;
-}) => Promise<any>;
+        stewardName: string;
+        kotNumberText: string;
+      }) => Promise<any>;
 
-openFile: (
-  filePath: string
-) => Promise<void>;
+      openFile: (
+        filePath: string
+      ) => Promise<void>;
 
-generateNextKotNumber: () => Promise<string>;
+      generateNextKotNumber: () => Promise<string>;
 
-getTodayPosOrders: (
-  orderType: string
-) => Promise<any[]>;
+      getTodayPosOrders: (
+        orderType: string
+      ) => Promise<any[]>;
 
 
 

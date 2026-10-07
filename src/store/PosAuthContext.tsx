@@ -25,23 +25,58 @@ export type PosUser = {
 
 
 // =====================================================
+// POS SESSION
+// =====================================================
+
+export type PosSession = {
+  sessionId: string;
+  userId: string;
+  outletId: string;
+  fullName: string;
+  employeeId: string | null;
+  role: string | null;
+  loginAt: number;
+  logoutAt: number | null;
+  lastActivityAt: number;
+  isActive: number;
+};
+
+
+// =====================================================
+// LOGIN RESULT
+// =====================================================
+
+export type PosLoginResult = {
+  success: boolean;
+  user?: PosUser;
+  session?: PosSession;
+  error?: string;
+};
+
+
+// =====================================================
 // CONTEXT TYPE
 // =====================================================
 
 type PosAuthContextType = {
   currentUser: PosUser | null;
-  isLoggedIn: boolean;
-  isLoading: boolean;
+
+  session: PosSession | null;
+
+  isAuthenticated: boolean;
+
+  isInitializing: boolean;
+
+  isLoggingIn: boolean;
 
   login: (
     userId: string,
     pin: string
-  ) => Promise<{
-    success: boolean;
-    error?: string;
-  }>;
+  ) => Promise<PosLoginResult>;
 
-  logout: () => void;
+  logout: () => Promise<void>;
+
+  lock: () => void;
 };
 
 
@@ -64,11 +99,37 @@ export function PosAuthProvider({
 }: {
   children: ReactNode;
 }) {
+
+  // ===================================================
+  // CURRENT USER
+  // ===================================================
+
   const [currentUser, setCurrentUser] =
     useState<PosUser | null>(null);
 
-  const [isLoading, setIsLoading] =
+
+  // ===================================================
+  // CURRENT SESSION
+  // ===================================================
+
+  const [session, setSession] =
+    useState<PosSession | null>(null);
+
+
+  // ===================================================
+  // AUTH INITIALIZATION
+  // ===================================================
+
+  const [isInitializing, setIsInitializing] =
     useState(true);
+
+
+  // ===================================================
+  // LOGIN STATE
+  // ===================================================
+
+  const [isLoggingIn, setIsLoggingIn] =
+    useState(false);
 
 
   // ===================================================
@@ -76,13 +137,17 @@ export function PosAuthProvider({
   // ===================================================
 
   useEffect(() => {
-    // For now we intentionally do NOT persist
-    // the login session.
-    //
-    // Every time POS/Electron starts,
-    // user must login again.
 
-    setIsLoading(false);
+    // -------------------------------------------------
+    // We currently do NOT restore the session
+    // automatically when Electron starts.
+    //
+    // The user must login again after application
+    // restart.
+    // -------------------------------------------------
+
+    setIsInitializing(false);
+
   }, []);
 
 
@@ -93,9 +158,30 @@ export function PosAuthProvider({
   const login = async (
     userId: string,
     pin: string
-  ) => {
+  ): Promise<PosLoginResult> => {
+
+    // -------------------------------------------------
+    // Prevent duplicate login requests
+    // -------------------------------------------------
+
+    if (isLoggingIn) {
+
+      return {
+        success: false,
+        error: "Login already in progress.",
+      };
+
+    }
+
+
     try {
-      setIsLoading(true);
+
+      setIsLoggingIn(true);
+
+
+      // =================================================
+      // ELECTRON AUTHENTICATION
+      // =================================================
 
       const result =
         await window.posApi.loginUser({
@@ -103,31 +189,97 @@ export function PosAuthProvider({
           pin,
         });
 
+
+      // =================================================
+      // LOGIN FAILED
+      // =================================================
+
       if (!result?.success) {
+
+        setCurrentUser(null);
+
+        setSession(null);
+
         return {
           success: false,
           error:
             result?.error ||
-            "Login failed.",
+            "Invalid user or PIN.",
         };
+
       }
 
 
-      // ===============================================
-      // LOGIN SUCCESS
-      // ===============================================
+      // =================================================
+      // USER NOT RETURNED
+      // =================================================
 
-    setCurrentUser(result.user ?? null);
+      if (!result.user) {
+
+        setCurrentUser(null);
+
+        setSession(null);
+
+        return {
+          success: false,
+          error:
+            "Login succeeded but user information was not returned.",
+        };
+
+      }
+
+
+      // =================================================
+      // SESSION NOT RETURNED
+      // =================================================
+
+      if (!result.session) {
+
+        setCurrentUser(null);
+
+        setSession(null);
+
+        return {
+          success: false,
+          error:
+            "Login succeeded but POS session was not created.",
+        };
+
+      }
+
+
+      // =================================================
+      // LOGIN SUCCESS
+      // =================================================
+
+      setCurrentUser(
+        result.user
+      );
+
+      setSession(
+        result.session
+      );
+
 
       return {
         success: true,
+        user: result.user,
+        session: result.session,
       };
 
+
     } catch (error) {
+
       console.error(
         "POS login error:",
         error
       );
+
+
+      setCurrentUser(null);
+
+      setSession(null);
+
 
       return {
         success: false,
@@ -137,8 +289,11 @@ export function PosAuthProvider({
             : "Login failed.",
       };
 
+
     } finally {
-      setIsLoading(false);
+
+      setIsLoggingIn(false);
+
     }
   };
 
@@ -147,8 +302,65 @@ export function PosAuthProvider({
   // LOGOUT
   // ===================================================
 
-  const logout = () => {
+  const logout = async () => {
+
+    try {
+
+      // -------------------------------------------------
+      // Close the current Electron POS session.
+      // -------------------------------------------------
+
+      if (
+        window.posApi &&
+        typeof window.posApi.logoutUser ===
+          "function"
+      ) {
+
+        await window.posApi.logoutUser(
+          session?.sessionId
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "POS logout error:",
+        error
+      );
+
+    } finally {
+
+      // -------------------------------------------------
+      // Clear renderer authentication state.
+      // -------------------------------------------------
+
+      setCurrentUser(null);
+
+      setSession(null);
+
+    }
+  };
+
+
+  // ===================================================
+  // LOCK
+  // ===================================================
+
+  const lock = () => {
+
+    // -------------------------------------------------
+    // For now lock only clears renderer authentication.
+    //
+    // We will later implement a real locked state where
+    // the same session remains active and PIN is required
+    // to unlock it.
+    // -------------------------------------------------
+
     setCurrentUser(null);
+
+    setSession(null);
+
   };
 
 
@@ -157,14 +369,30 @@ export function PosAuthProvider({
   // ===================================================
 
   const value: PosAuthContextType = {
+
     currentUser,
-    isLoggedIn:
+
+    session,
+
+    isAuthenticated:
       currentUser !== null,
-    isLoading,
+
+    isInitializing,
+
+    isLoggingIn,
+
     login,
+
     logout,
+
+    lock,
+
   };
 
+
+  // ===================================================
+  // PROVIDER
+  // ===================================================
 
   return (
     <PosAuthContext.Provider
@@ -181,14 +409,19 @@ export function PosAuthProvider({
 // =====================================================
 
 export function usePosAuth() {
+
   const context =
     useContext(PosAuthContext);
 
+
   if (!context) {
+
     throw new Error(
       "usePosAuth must be used inside PosAuthProvider"
     );
+
   }
+
 
   return context;
 }

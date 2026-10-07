@@ -1305,6 +1305,26 @@ CREATE TABLE IF NOT EXISTS pos_shift (
     createdAt INTEGER NOT NULL
 );
 
+
+-- =====================================================
+-- POS SESSIONS
+-- =====================================================
+
+ 
+  CREATE TABLE IF NOT EXISTS pos_sessions (
+    sessionId TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    outletId TEXT NOT NULL,
+    fullName TEXT NOT NULL,
+    employeeId TEXT,
+    role TEXT,
+    loginAt INTEGER NOT NULL,
+    logoutAt INTEGER,
+    lastActivityAt INTEGER NOT NULL,
+    isActive INTEGER NOT NULL DEFAULT 1
+  );
+ 
+
 -- =====================================================
 -- FIRE STORE
 -- =====================================================

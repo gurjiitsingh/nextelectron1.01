@@ -56,6 +56,8 @@ function getBillableKotItems(tableNo) {
 // =====================================================
 
 async function createBillFromKitchen(input) {
+  console.log("input-----------------------",input)
+
 
   const {
 
@@ -112,7 +114,7 @@ async function createBillFromKitchen(input) {
     deliveryFee = 0,
     deliveryTax = 0,
 
-
+ 
     // ===================================================
     // PAYMENT
     // ===================================================
@@ -486,8 +488,8 @@ async function createBillFromKitchen(input) {
         currency:
           currency,
 
-        status:"DONE",
-         // paymentStatus,
+        status: "DONE",
+        // paymentStatus,
 
         // ---------------------------------------------
         // TAX
@@ -998,7 +1000,7 @@ async function createBillFromKitchen(input) {
       // =================================================
       // 2. INSERT ORDER ITEMS
       // =================================================
-
+      
       const insertItem =
         db.prepare(`
 
@@ -1550,7 +1552,7 @@ async function createBillFromKitchen(input) {
 // =====================================================
 
 async function cancelBillFromKitchen(input) {
-const status = "CANCEL"
+  const status = "CANCEL"
   const {
 
     // ===================================================
@@ -1641,8 +1643,8 @@ const status = "CANCEL"
     // BUSINESS DATE
     // ===================================================
     orderDate,
-    businessDate:finalBusinessDate,
-  
+    businessDate: finalBusinessDate,
+
 
     // ===================================================
     // EXTRA
@@ -1920,7 +1922,7 @@ const status = "CANCEL"
         basePrice;
 
 
-      const finalTotal =  itemSubtotal;
+      const finalTotal = itemSubtotal;
 
 
       return {
@@ -1979,7 +1981,7 @@ const status = "CANCEL"
         currency:
           currency,
 
-        status:"CANCEL",
+        status: "CANCEL",
 
         // ---------------------------------------------
         // TAX
@@ -2380,34 +2382,34 @@ const status = "CANCEL"
         // AMOUNTS
         // ---------------------------------------------
 
-        deliveryFee:0.0,
+        deliveryFee: 0.0,
 
-        deliveryTax:0.0,
+        deliveryTax: 0.0,
 
-        itemTotal:0.0,
-         // itemTotal,
+        itemTotal: 0.0,
+        // itemTotal,
 
-        itemTax:0.0,
+        itemTax: 0.0,
 
-        taxTotal:0.0,
+        taxTotal: 0.0,
 
-        discountTotal:0.0,
+        discountTotal: 0.0,
 
-        grandTotal:0.0,
+        grandTotal: 0.0,
 
 
         // ---------------------------------------------
         // PAYMENT
         // ---------------------------------------------
 
-        paymentMode:"FREE",
+        paymentMode: "FREE",
 
         paymentStatus:
           paymentStatus,
 
-        paidAmount:0.0,
+        paidAmount: 0.0,
 
-        dueAmount:0.0,
+        dueAmount: 0.0,
 
 
         // ---------------------------------------------
