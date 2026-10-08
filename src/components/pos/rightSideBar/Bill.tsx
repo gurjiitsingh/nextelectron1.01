@@ -10,6 +10,7 @@ import { POS_THEME } from '@/style/posTheme';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import PaymentAllocation, { PaymentAllocationValue } from './PaymentAllocationValue';
 import { usePosAuth } from '@/store/PosAuthContext';
+import BillItem from './BillItems';
 
 type PaymentAllocationProps = {
   totalAmount: number;
@@ -378,104 +379,120 @@ export default function Bill({
   // UPDATE BILL ITEM QUANTITY
   // =====================================================
 
-  async function updateBillItemQuantity(
-    item: any,
-    newQuantity: number
-  ) {
-    if (!item?.productId) {
-      return;
-    }
-
-    try {
-      setProcessing(true);
-      setError(null);
-
-      console.log(
-        'UPDATE BILL ITEM:',
-        {
-          productId: item.productId,
-          quantity: newQuantity,
-          tableNo: currentTableId,
-        }
-      );
-
-      // Quantity cannot go below zero
-      const quantity = Math.max(
-        0,
-        Number(newQuantity)
-      );
-
-      // =============================================
-      // DELETE ITEM
-      // =============================================
-
-      const result =
-        await window.posApi.updateBillItemQuantity({
-
-          tableNo:
-            currentTableId,
-
-          billItemGroupKey:
-            item.billItemGroupKey,
-
-          quantity,
-        });
-
-      if (!result?.success) {
-        throw new Error(
-          result?.error ||
-          'Failed to update item quantity'
-        );
-      }
-
-
-
-      // =============================================
-      // RELOAD
-      // =============================================
-
-      await loadBillItems();
-
-    } catch (e) {
-
-      console.error(
-        'FAILED TO UPDATE BILL ITEM:',
-        e
-      );
-
-      const message =
-        e instanceof Error
-          ? e.message
-          : String(e);
-
-      setError(
-        message ||
-        'Failed to update item'
-      );
-
-    } finally {
-
-      setProcessing(false);
-    }
+async function updateBillItemQuantity(
+  item: any,
+  newQuantity: number,
+  reason: string,
+  cancelKitchen: boolean
+) {
+  if (!item?.id) {
+    throw new Error("Bill item id is missing");
   }
+
+  try {
+    setProcessing(true);
+    setError(null);
+
+    const quantity = Math.max(
+      0,
+      Number(newQuantity)
+    );
+
+    const finalReason =
+      String(reason || "").trim();
+
+    if (!finalReason) {
+      throw new Error(
+        "Reason is required for decreasing quantity"
+      );
+    }
+
+    console.log("========================================");
+    console.log("UPDATE BILL ITEM QUANTITY - RENDERER");
+    console.log("========================================");
+
+    console.log("ITEM ID:", item.id);
+    console.log("TABLE:", currentTableId);
+    console.log("GROUP KEY:", item.billItemGroupKey);
+    console.log("CURRENT QUANTITY:", item.quantity);
+    console.log("NEW QUANTITY:", quantity);
+    console.log("REASON:", finalReason);
+    console.log("CANCEL KITCHEN:", cancelKitchen);
+
+    console.log("========================================");
+
+    const result =
+      await window.posApi.updateBillItemQuantity({
+        id: item.id,
+        tableNo: currentTableId,
+        billItemGroupKey: item.billItemGroupKey,
+        quantity,
+        reason: finalReason,
+        cancelKitchen,
+      });
+
+    console.log(
+      "UPDATE BILL ITEM RESULT:",
+      result
+    );
+
+    if (!result?.success) {
+      throw new Error(
+        result?.error ||
+          "Failed to update item quantity"
+      );
+    }
+
+    await loadBillItems();
+
+  } catch (e) {
+    console.error(
+      "FAILED TO UPDATE BILL ITEM:",
+      e
+    );
+
+    const message =
+      e instanceof Error
+        ? e.message
+        : String(e);
+
+    setError(
+      message || "Failed to update item"
+    );
+
+  } finally {
+    setProcessing(false);
+  }
+}
 
 
   // =====================================================
   // DECREASE
   // =====================================================
 
-  async function decreaseBillItem(item: any) {
-    const currentQuantity =
-      Number(item.quantity || 0);
+async function decreaseBillItem(
+  item: any,
+  newQuantity: number,
+  reason: string,
+  cancelKitchen: boolean
+) {
+  console.log("========================================");
+  console.log("PARENT - DECREASE BILL ITEM");
+  console.log("========================================");
+  console.log("ITEM:", item);
+  console.log("CURRENT QUANTITY:", item?.quantity);
+  console.log("NEW QUANTITY:", newQuantity);
+  console.log("REASON:", reason);
+  console.log("CANCEL KITCHEN:", cancelKitchen);
+  console.log("========================================");
 
-    const newQuantity =
-      currentQuantity - 1;
-
-    await updateBillItemQuantity(
-      item,
-      newQuantity
-    );
-  }
+  await updateBillItemQuantity(
+    item,
+    newQuantity,
+    reason,
+    cancelKitchen
+  );
+}
 
 
 
@@ -484,83 +501,134 @@ export default function Bill({
   // INCREASE
   // =====================================================
 
-  async function increaseBillItem(item: any) {
+ async function increaseBillItem(item: any) {
+  const currentQuantity =
+    Number(item?.quantity || 0);
+
+  const newQuantity =
+    currentQuantity + 1;
+
+  console.log("========================================");
+  console.log("INCREASE BILL ITEM");
+  console.log("========================================");
+
+  console.log("ITEM ID:", item?.id);
+  console.log("TABLE:", currentTableId);
+  console.log(
+    "GROUP KEY:",
+    item?.billItemGroupKey
+  );
+  console.log(
+    "CURRENT QUANTITY:",
+    currentQuantity
+  );
+  console.log(
+    "NEW QUANTITY:",
+    newQuantity
+  );
+
+  console.log("========================================");
+
+  try {
+    setProcessing(true);
+    setError(null);
+
+    const result =
+      await window.posApi.increaseBillItemQuantity({
+        id: item.id,
+        tableNo: currentTableId,
+        billItemGroupKey:
+          item.billItemGroupKey,
+        quantity: newQuantity,
+      });
 
     console.log(
-      '========================================'
+      "INCREASE RESULT:",
+      result
     );
 
-    console.log(
-      'INCREASE BILL ITEM - RAW ITEM:'
+    if (!result?.success) {
+      throw new Error(
+        result?.error ||
+          "Failed to increase item quantity"
+      );
+    }
+
+    await loadBillItems();
+
+  } catch (e) {
+    console.error(
+      "FAILED TO INCREASE BILL ITEM:",
+      e
     );
 
-    console.log(
-      item
+    const message =
+      e instanceof Error
+        ? e.message
+        : String(e);
+
+    setError(
+      message ||
+        "Failed to increase item"
     );
 
-    console.log(
-      'INCREASE BILL ITEM - JSON:'
-    );
-
-    console.log(
-      JSON.stringify(
-        item,
-        null,
-        2
-      )
-    );
-
-    console.log(
-      'INCREASE BILL ITEM - QUANTITY:',
-      item?.quantity
-    );
-
-    console.log(
-      'INCREASE BILL ITEM - PRODUCT ID:',
-      item?.productId
-    );
-
-    console.log(
-      'INCREASE BILL ITEM - GROUP KEY:',
-      item?.billItemGroupKey
-    );
-
-    console.log(
-      'INCREASE BILL ITEM - MODIFIERS:',
-      item?.modifiersJson
-    );
-
-    console.log(
-      'INCREASE BILL ITEM - NOTE:',
-      item?.note
-    );
-
-    console.log(
-      '========================================'
-    );
-
-    const currentQuantity =
-      Number(item.quantity || 0);
-
-    const newQuantity =
-      currentQuantity + 1;
-
-    console.log(
-      'CALCULATED QUANTITY:',
-      {
-        currentQuantity,
-        newQuantity,
-      }
-    );
-
-    await updateBillItemQuantity(
-      item,
-      newQuantity
-    );
+  } finally {
+    setProcessing(false);
   }
+}
 
 
+// =====================================================
+// DELETE BILL ITEM
+// =====================================================
 
+async function handleDeleteBillItem(
+  item: any,
+  reason: string,
+  cancelKitchen: boolean
+) {
+  try {
+    setProcessing(true);
+    setError(null);
+
+    console.log("========================================");
+    console.log("DELETE BILL ITEM");
+    console.log("========================================");
+    console.log("TABLE:", currentTableId);
+    console.log("ITEM ID:", item?.id);
+    console.log("PRODUCT ID:", item?.productId);
+    console.log("GROUP KEY:", item?.billItemGroupKey);
+    console.log("CURRENT QUANTITY:", item?.quantity);
+    console.log("REASON:", reason);
+    console.log("CANCEL KITCHEN:", cancelKitchen);
+    console.log("========================================");
+
+    const result = await window.posApi.deleteBillItemAll({
+      tableNo: currentTableId,
+      billItemGroupKey: item.billItemGroupKey,
+      reason,
+      cancelKitchen,
+    });
+
+    if (!result?.success) {
+      throw new Error(
+        result?.error || "Failed to delete bill item"
+      );
+    }
+
+    await loadBillItems();
+
+  } catch (e) {
+    console.error("FAILED TO DELETE BILL ITEM:", e);
+
+    const message =
+      e instanceof Error ? e.message : String(e);
+
+    setError(message || "Failed to delete item");
+  } finally {
+    setProcessing(false);
+  }
+}
   // =====================================================
   // FINALIZE BILL
   // =====================================================
@@ -1274,17 +1342,7 @@ export default function Bill({
         finalPaymentMode = 'MIXED';
       }
 
-      console.log(
-        'MULTIPLE PAYMENT CHECKOUT:',
-        {
-          totalAmount,
-          payments,
-          paidAmount,
-          credit,
-          paymentStatus,
-          finalPaymentMode,
-        }
-      );
+
 
       // =================================================
       // CREATE BILL
@@ -1372,10 +1430,7 @@ export default function Bill({
         );
       }
 
-      console.log(
-        'MULTIPLE PAYMENT BILL CREATED:',
-        result
-      );
+  
 
       // =================================================
       // MARK KOT HISTORY PAID
@@ -1465,10 +1520,7 @@ export default function Bill({
 
     } catch (e) {
 
-      console.error(
-        'MULTIPLE PAYMENT CHECKOUT FAILED:',
-        e
-      );
+ 
 
       const message =
         e instanceof Error
@@ -1899,10 +1951,7 @@ export default function Bill({
             '',
         });
 
-      console.log(
-        'BILL IMAGE PREVIEW RESULT:',
-        res
-      );
+   
 
       if (!res?.success) {
 
@@ -2187,257 +2236,23 @@ export default function Bill({
           ITEM LIST
       ================================================= */}
 
-      <div
-        className="
-          min-h-0
-          flex-1
-          overflow-y-auto
-          app-scrollbar
-        "
-      >
-
-        {loading ? (
-
-          <div className="flex h-full items-center justify-center">
-
-            <p className="text-sm opacity-50">
-              Loading...
-            </p>
-
-          </div>
-
-        ) : billItems.length === 0 ? (
-
-          <div className="flex h-full items-center justify-center">
-
-            <p className="text-sm opacity-50">
-              No bill items
-            </p>
-
-          </div>
-
-        ) : (
-
-          <div
-            className={`
-              divide-y
-              ${background.divide}
-            `}
-          >
-
-            {billItems.map((item) => (
-
-              <div
-                key={item.name}
-                className="
-      px-3
-      py-2
-    "
-              >
-
-                <div className="flex items-center">
-
-                  {/* ========================================= */}
-                  {/* ITEM NAME */}
-                  {/* ========================================= */}
-
-                  <div className="min-w-0 flex-1">
-
-                    <p
-                      className="
-            truncate
-            text-[11px]
-            font-medium
-            leading-tight
-            opacity-80
-          "
-                    >
-                      {item.name}
-                    </p>
-
-                    {item.note ? (
-
-                      <p
-                        className="
-              mt-0.5
-              truncate
-              text-[10px]
-              leading-tight
-              opacity-40
-            "
-                      >
-                        {item.note}
-                      </p>
-
-                    ) : null}
-
-                  </div>
-
-
-                  {/* ========================================= */}
-                  {/* QTY CONTROLS */}
-                  {/* ========================================= */}
-
-                  <div
-                    className="
-          ml-2
-          flex
-          shrink-0
-          items-center
-          gap-0.5
-        "
-                  >
-
-                    {/* DECREASE */}
-
-
-
-                    <button
-                      type="button"
-                      disabled={processing}
-                      className="
-    flex
-    h-5
-    w-5
-    items-center
-    justify-center
-    rounded
-    border
-    text-[12px]
-    font-medium
-    opacity-65
-    transition
-    hover:opacity-100
-    active:scale-95
-    disabled:cursor-not-allowed
-    disabled:opacity-30
-  "
-                      onClick={() =>
-                        decreaseBillItem(item)
-                      }
-                    >
-                      −
-                    </button>
-
-
-                    {/* QUANTITY */}
-
-                    <div
-                      className="
-    flex
-    min-w-[22px]
-    justify-center
-    text-[11px]
-    font-medium
-  "
-                    >
-                      {item.quantity}
-                    </div>
-
-
-                    {/* INCREASE */}
-
-                    <button
-                      type="button"
-                      disabled={processing}
-                      className="
-    flex
-    h-5
-    w-5
-    items-center
-    justify-center
-    rounded
-    border
-    text-[12px]
-    font-medium
-    opacity-65
-    transition
-    hover:opacity-100
-    active:scale-95
-    disabled:cursor-not-allowed
-    disabled:opacity-30
-  "
-                      onClick={() =>
-                        increaseBillItem(item)
-                      }
-                    >
-                      +
-                    </button>
-
-                  </div>
-
-
-                  {/* ========================================= */}
-                  {/* PRICE / TOTAL */}
-                  {/* ========================================= */}
-
-                  <div
-                    className="
-          ml-3
-          min-w-[70px]
-          shrink-0
-          text-right
-        "
-                  >
-
-                    {/* TOTAL */}
-
-                    <p
-                      className="
-            text-[12px]
-            font-semibold
-            leading-tight
-            tabular-nums
-            opacity-80
-          "
-                    >
-                      ₹
-                      {(
-                        (
-                          item.basePrice +
-                          (
-                            item.modifierTotal || 0
-                          )
-                        ) *
-                        item.quantity
-                      ).toFixed(2)}
-                    </p>
-
-
-                    {/* UNIT PRICE */}
-
-                    <p
-                      className="
-            mt-0.5
-            text-[9px]
-            leading-tight
-            tabular-nums
-            opacity-60
-          "
-                    >
-                      ₹
-                      {(
-                        item.basePrice +
-                        (
-                          item.modifierTotal || 0
-                        )
-                      ).toFixed(2)}
-                      {" / item"}
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        )}
-
-      </div>
+<div
+  className={`min-h-100
+    divide-y
+    ${background.divide}
+  `}
+>
+  {billItems.map((item) => (
+    <BillItem
+      key={item.id}
+      item={item}
+      processing={processing}
+      onDecrease={decreaseBillItem}
+      onIncrease={increaseBillItem}
+      onDelete={handleDeleteBillItem}
+    />
+  ))}
+</div>
 
 
 

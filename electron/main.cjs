@@ -885,11 +885,11 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  'bill:update-item-quantity',
+  "bill:update-item-quantity",
   async (_event, args) => {
     try {
       const result =
-        await billRepo.updateBillItemQuantity(
+        billRepo.updateBillItemQuantity(
           args
         );
 
@@ -898,7 +898,92 @@ ipcMain.handle(
       }
 
       return result;
+
     } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "bill:increase-item-quantity",
+  async (_event, args) => {
+    try {
+      const result =
+        billRepo.increaseBillItemQuantity(
+          args
+        );
+
+      if (result?.success !== false) {
+        tableRepo.refreshAllTableBillVisualStates();
+      }
+
+      return result;
+
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "pos:deleteBillItem",
+  async (_event, data) => {
+    try {
+      const {
+        tableNo,
+        billItemGroupKey,
+        reason,
+        cancelKitchen,
+      } = data;
+
+      if (!tableNo) {
+        return {
+          success: false,
+          error: "Table number is required",
+        };
+      }
+
+      if (!billItemGroupKey) {
+        return {
+          success: false,
+          error: "Bill item group key is required",
+        };
+      }
+
+      if (!reason || !String(reason).trim()) {
+        return {
+          success: false,
+          error: "Delete reason is required",
+        };
+      }
+
+      const result =  billRepo.deleteBillItem({
+        tableNo,
+        billItemGroupKey,
+        reason: String(reason).trim(),
+        cancelKitchen: Boolean(cancelKitchen),
+      });
+
+      return result;
+    } catch (error) {
+      console.error(
+        "IPC pos:deleteBillItem failed:",
+        error
+      );
+
       return {
         success: false,
         error:
@@ -935,6 +1020,9 @@ ipcMain.handle(
     }
   }
 );
+
+
+
 
 ipcMain.handle(
   'bill-items:list',

@@ -333,11 +333,21 @@ onKotReceived: (callback) => {
     args
   ),
 
+  increaseBillItemQuantity: (args) =>
+  ipcRenderer.invoke(
+    "bill:increase-item-quantity",
+    args
+  ),
+
 deleteBillItem: (args) =>
   ipcRenderer.invoke(
     'bill:delete-item',
     args
   ),
+
+
+  deleteBillItemAll: (data) =>
+  ipcRenderer.invoke("pos:deleteBillItem", data),
 
   // =====================================================
 // ORDERS

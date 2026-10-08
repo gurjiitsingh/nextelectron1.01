@@ -25,7 +25,7 @@ export default function RightSideBar() {
       className={`
         relative
         flex
-        h-[93%]
+        h-[100%]
         w-full
         flex-col
         overflow-hidden

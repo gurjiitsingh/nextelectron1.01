@@ -283,16 +283,16 @@ export const SideCart = () => {
               </div>
 
               <Link
-                href="/orders/local"
+                href="/orders"
                 onClick={handleLinkClick}
-                className={sidebarLinkClass("/orders/local")}
+                className={sidebarLinkClass("/orders")}
                 style={{
-                  color: isActive("/orders/local")
+                  color: isActive("/orders")
                     ? theme.primary
                     : background.text === "text-white"
                       ? "#FFFFFF"
                       : "#334155",
-                  fontWeight: isActive("/orders/local")
+                  fontWeight: isActive("/orders")
                     ? 700
                     : 500,
                 }}

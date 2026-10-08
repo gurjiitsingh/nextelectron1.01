@@ -2091,7 +2091,7 @@ return (
                       "
                     >
 
-                      <span>
+                      {/* <span>
                         Product ID:
                         <span className="ml-1 text-slate-500">
                           {item.productId || '-'}
@@ -2103,7 +2103,7 @@ return (
                         <span className="ml-1 text-slate-500">
                           {item.categoryId || '-'}
                         </span>
-                      </span>
+                      </span> */}
 
                       <span>
                         Source:

@@ -549,6 +549,7 @@ CREATE TABLE IF NOT EXISTS pos_bill_items (
   -- Pricing
   basePrice REAL NOT NULL,
   finalPrice REAL NOT NULL DEFAULT 0,
+  --discountEligible: Boolean = true,
   modifierTotal REAL NOT NULL DEFAULT 0,
   quantity INTEGER NOT NULL,
 
