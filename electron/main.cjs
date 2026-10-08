@@ -867,6 +867,92 @@ ipcMain.handle(
   }
 );
 
+
+ipcMain.handle(
+  "pos-bill:move-full-table",
+  async (
+    _event,
+    {
+      sourceTableNo,
+      sourceTableName,
+      destinationTableNo,
+      destinationTableName,
+    }
+  ) => {
+    try {
+      console.log("========================================");
+      console.log(
+        "[MOVE FULL TABLE IPC] START"
+      );
+
+      console.log(
+        "[MOVE FULL TABLE IPC] Source:",
+        sourceTableNo
+      );
+
+      console.log(
+        "[MOVE FULL TABLE IPC] Destination:",
+        destinationTableNo
+      );
+
+      const result =
+        billItemRepo.moveFullTableToTable(
+          sourceTableNo,
+          sourceTableName,
+          destinationTableNo,
+          destinationTableName
+        );
+
+      console.log(
+        "[MOVE FULL TABLE IPC] Result:",
+        result
+      );
+
+      if (result.success) {
+
+        console.log(
+          "[MOVE FULL TABLE IPC] Refreshing table cart states..."
+        );
+
+        tableRepo.refreshAllTableCartVisualStates();
+
+        console.log(
+          "[MOVE FULL TABLE IPC] Refreshing table bill states..."
+        );
+
+        tableRepo.refreshAllTableBillVisualStates();
+
+        console.log(
+          "[MOVE FULL TABLE IPC] Table states refreshed"
+        );
+      }
+
+      console.log(
+        "[MOVE FULL TABLE IPC] COMPLETE"
+      );
+
+      console.log("========================================");
+
+      return result;
+
+    } catch (error) {
+
+      console.error(
+        "[MOVE FULL TABLE IPC] ERROR:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      };
+    }
+  }
+);
+
 ipcMain.handle(
   'bill:create',
   async (_event, input) => {

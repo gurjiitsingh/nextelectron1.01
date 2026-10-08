@@ -1241,6 +1241,194 @@ function increaseBillItemQuantity({
   };
 }
 
+
+function moveFullTableToTable(
+  sourceTableNo,
+  sourceTableName,
+  destinationTableNo,
+  destinationTableName
+) {
+  console.log("========================================");
+  console.log("[MOVE FULL TABLE] START");
+  console.log("========================================");
+
+  console.log(
+    "[MOVE FULL TABLE] Source table:",
+    sourceTableNo
+  );
+
+  console.log(
+    "[MOVE FULL TABLE] Source table name:",
+    sourceTableName
+  );
+
+  console.log(
+    "[MOVE FULL TABLE] Destination table:",
+    destinationTableNo
+  );
+
+  console.log(
+    "[MOVE FULL TABLE] Destination table name:",
+    destinationTableName
+  );
+
+  if (!sourceTableNo) {
+    throw new Error(
+      "Source table number is required"
+    );
+  }
+
+  if (!destinationTableNo) {
+    throw new Error(
+      "Destination table number is required"
+    );
+  }
+
+  if (
+    String(sourceTableNo) ===
+    String(destinationTableNo)
+  ) {
+    throw new Error(
+      "Source and destination table cannot be the same"
+    );
+  }
+
+  // =====================================================
+  // GET ALL ITEMS FROM SOURCE TABLE
+  // =====================================================
+
+  const items = db
+    .prepare(`
+      SELECT
+        id,
+        tableNo,
+        tableName,
+        productId,
+        note,
+        modifiersJson,
+        billItemGroupKey
+      FROM pos_bill_items
+      WHERE tableNo = ?
+    `)
+    .all(sourceTableNo);
+
+  console.log(
+    "[MOVE FULL TABLE] Items found:",
+    items.length
+  );
+
+  if (items.length === 0) {
+    console.log(
+      "[MOVE FULL TABLE] No items found on source table"
+    );
+
+    return {
+      success: true,
+      movedCount: 0,
+      sourceTableNo,
+      destinationTableNo,
+    };
+  }
+
+  // =====================================================
+  // PREPARE UPDATE
+  // =====================================================
+
+  const updateItem = db.prepare(`
+    UPDATE pos_bill_items
+    SET
+      tableNo = ?,
+      tableName = ?,
+      billItemGroupKey = ?
+    WHERE id = ?
+  `);
+
+  // =====================================================
+  // TRANSACTION
+  // =====================================================
+
+  const migrateTransaction = db.transaction(() => {
+
+    for (const item of items) {
+
+      const normalizedModifiers =
+        normalizeModifiersJson(
+          item.modifiersJson
+        );
+
+      const newBillItemGroupKey = [
+        destinationTableNo ?? '',
+        item.productId,
+        item.note ?? '',
+        normalizedModifiers,
+      ].join('|');
+
+      console.log(
+        "[MOVE FULL TABLE] Moving item:",
+        {
+          id: item.id,
+          productId: item.productId,
+          oldTableNo: item.tableNo,
+          newTableNo: destinationTableNo,
+          oldGroupKey: item.billItemGroupKey,
+          newGroupKey: newBillItemGroupKey,
+        }
+      );
+
+      updateItem.run(
+        destinationTableNo,
+        destinationTableName ?? '',
+        newBillItemGroupKey,
+        item.id
+      );
+    }
+  });
+
+  migrateTransaction();
+
+  console.log(
+    "[MOVE FULL TABLE] Transaction completed"
+  );
+
+  // =====================================================
+  // VERIFY
+  // =====================================================
+
+  const movedItems = db
+    .prepare(`
+      SELECT
+        id,
+        tableNo,
+        tableName,
+        billItemGroupKey
+      FROM pos_bill_items
+      WHERE tableNo = ?
+    `)
+    .all(destinationTableNo);
+
+  console.log(
+    "[MOVE FULL TABLE] Destination items:",
+    movedItems.length
+  );
+
+  console.log("========================================");
+  console.log("[MOVE FULL TABLE] COMPLETE");
+  console.log("========================================");
+
+  return {
+    success: true,
+    movedCount: items.length,
+    sourceTableNo,
+    sourceTableName,
+    destinationTableNo,
+    destinationTableName,
+    
+  };
+}
+
+
+
+
 module.exports = {
    updateBillItemQuantity,
   insertBillItems,
@@ -1249,4 +1437,6 @@ module.exports = {
   deleteBillItem,
   increaseBillItemQuantity,
   moveBillItemToTable,
+ 
+  moveFullTableToTable,
 };

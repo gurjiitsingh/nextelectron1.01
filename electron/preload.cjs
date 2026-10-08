@@ -393,7 +393,13 @@ moveBillItemToTable: (data) =>
     "pos-bill-item:move-to-table",
     data
   ),
-  
+
+  moveFullTableToTable: (data) =>
+  ipcRenderer.invoke(
+    "pos-bill:move-full-table",
+    data
+  ),
+
   uploadOrders: () =>
   ipcRenderer.invoke(
     'orders:upload'
