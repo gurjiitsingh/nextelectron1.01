@@ -243,7 +243,13 @@ declare global {
         orderId: string
       ) => Promise<any[]>;
 
+// getOrderItems: (
+//   orderMasterId: string
+// ) => Promise<OrderItem[]>;
 
+getOrderDeletedItems: (
+  orderMasterId: string
+) => Promise<DeletedOrderItem[]>;
 
       uploadOrderCounter: () => Promise<{
         success: boolean;

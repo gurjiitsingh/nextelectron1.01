@@ -470,13 +470,13 @@ export default function OrdersPage() {
               : '↻ Refresh'}
           </button>
 
-          <button
+          {/* <button
   type="button"
   onClick={() => router.push("/orders/deleted-items")}
   className="rounded-md border px-3 py-2 text-sm"
 >
   Deleted Items
-</button>
+</button> */}
 
         </div>
 

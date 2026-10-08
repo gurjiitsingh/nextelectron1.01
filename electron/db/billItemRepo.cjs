@@ -553,7 +553,7 @@ function deleteBillItem({
   // ---------------------------------------------------
 
   const deletionNote =
-    `${String(reason).trim()} | Original Price: ${Number(
+    `${String(reason).trim()} | Deleted Qty: ${originalItem.quantity}  | Original Price: ${Number(
       originalItem.basePrice || 0
     )}`;
 
@@ -731,51 +731,7 @@ function deleteBillItem({
   };
 }
 
-function deleteBillItem_old({
-  tableNo,
-  billItemGroupKey,
-  reason,
-  cancelKitchen,
-}) {
-  if (!tableNo) {
-    throw new Error("tableNo is required");
-  }
 
-  if (!billItemGroupKey) {
-    throw new Error("billItemGroupKey is required");
-  }
-
-  if (!reason || !String(reason).trim()) {
-    throw new Error("Delete reason is required");
-  }
-
-  const result = db.prepare(`
-    UPDATE pos_bill_items
-
-    SET
-      status = ?,
-      reason = ?,
-      cancelKitchen = ?
-
-    WHERE
-      tableNo = ?
-      AND billItemGroupKey = ?
-      AND billed = 0
-      AND status = 'OPEN'
-  `).run(
-    "DELETED",
-    String(reason).trim(),
-    cancelKitchen ? 1 : 0,
-    tableNo,
-    billItemGroupKey
-  );
-
-  return {
-    success: true,
-    changes: result.changes,
-    deleted: result.changes > 0,
-  };
-}
 
 // =====================================================
 // UPDATE BILL ITEM QUANTITY
@@ -865,7 +821,7 @@ function updateBillItemQuantity({
     String(reason).trim();
 
   const deletionNote =
-    `${finalReason} | Original Price: ${Number(
+    `${finalReason} | ${deletedQuantity} delete out of ${currentQuantity} | item Original Price: ${Number(
       originalItem.basePrice || 0
     )}`;
 

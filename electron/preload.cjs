@@ -382,6 +382,11 @@ getOrderItems: (orderId) =>
     'orders:items',
     orderId
   ),
+getOrderDeletedItems: (orderId) =>
+  ipcRenderer.invoke(
+    'orders:DeletedItems',
+    orderId
+  ),
 
 
   uploadOrders: () =>

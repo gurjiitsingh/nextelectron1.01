@@ -45,7 +45,7 @@ function getBillableKotItems(tableNo) {
     FROM pos_bill_items
     WHERE tableNo = ?
       AND billed = 0
-      AND status = 'OPEN'
+     
     ORDER BY createdAt ASC
   `).all(tableNo);
 }
@@ -488,7 +488,10 @@ async function createBillFromKitchen(input) {
         currency:
           currency,
 
-        status: "DONE",
+        status:
+  kot.status === 'OPEN'
+    ? 'DONE'
+    : kot.status,
         // paymentStatus,
 
         // ---------------------------------------------

@@ -429,6 +429,22 @@ function getOrderItems(orderMasterId) {
       SELECT *
       FROM pos_order_items
       WHERE orderMasterId = ?
+       AND status = 'DONE'
+      ORDER BY createdAt ASC
+    `)
+    .all(orderMasterId);
+}
+
+
+
+function getOrderDeletedItems(orderMasterId) {
+  return db
+    .prepare(`
+      SELECT *
+      FROM pos_order_items
+      WHERE
+        orderMasterId = ?
+        AND status = 'DELETED'
       ORDER BY createdAt ASC
     `)
     .all(orderMasterId);
@@ -841,6 +857,7 @@ module.exports = {
   getOrderById,
 
   getOrderItems,
+  getOrderDeletedItems,
 
   getLocalBusinessDate,
 

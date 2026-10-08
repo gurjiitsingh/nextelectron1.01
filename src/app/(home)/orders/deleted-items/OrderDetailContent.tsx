@@ -184,7 +184,7 @@ export default function OrderDetailContent() {
 
 
       const orderItems =
-        await window.posApi.getOrderItems(
+        await window.posApi.getOrderDeletedItems(
           orderId!
         );
 
@@ -981,7 +981,7 @@ console.log("Order------------------",order)
           TOTALS
       ================================================= */}
 
-      <div
+      {/* <div
         className="
           flex
           justify-end
@@ -1096,7 +1096,7 @@ console.log("Order------------------",order)
 
         </div>
 
-      </div>
+      </div> */}
 
     </div>
 

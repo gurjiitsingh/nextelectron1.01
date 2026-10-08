@@ -263,7 +263,7 @@ export default function OrderDetailContent() {
     );
 
   }
-console.log("Order------------------",order)
+  console.log("Order------------------", order)
 
   // =====================================================
   // LOADING
@@ -789,25 +789,39 @@ console.log("Order------------------",order)
               background.line,
           }}
         >
-
-          <p
-            className="
+          <div className='flex justify-between items-center'>
+            <div>
+              <p
+                className="
               text-sm
               font-semibold
             "
-          >
-            Order Items
-          </p>
+              >
+                Order Items
+              </p>
 
-          <p
-            className="
+              <p
+                className="
               mt-0.5
               text-[11px]
               opacity-40
             "
-          >
-            {items.length} items
-          </p>
+              >
+                {items.length} items
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                          router.push(
+                            `/orders/deleted-items?orderId=${encodeURIComponent(order.id)}`
+                          )
+                        }
+              className="rounded-md border px-3 py-2 text-sm"
+            >
+              Deleted Items
+            </button>
+          </div>
 
         </div>
 
@@ -1043,7 +1057,7 @@ console.log("Order------------------",order)
               </span>
 
             </div>
-               <div className="flex justify-between">
+            <div className="flex justify-between">
 
               <span className="opacity-50">
                 Discount

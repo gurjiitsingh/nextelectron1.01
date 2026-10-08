@@ -1304,6 +1304,15 @@ ipcMain.handle(
 );
 
 
+ipcMain.handle(
+  'orders:DeletedItems',
+  async (_e, orderId) => {
+    return orderRepo.getOrderDeletedItems(
+      orderId
+    );
+  }
+);
+
 // =====================================================
 // ORDER SYNC IPC
 // =====================================================
