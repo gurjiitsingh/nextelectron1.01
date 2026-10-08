@@ -388,7 +388,12 @@ getOrderDeletedItems: (orderId) =>
     orderId
   ),
 
-
+moveBillItemToTable: (data) =>
+  ipcRenderer.invoke(
+    "pos-bill-item:move-to-table",
+    data
+  ),
+  
   uploadOrders: () =>
   ipcRenderer.invoke(
     'orders:upload'

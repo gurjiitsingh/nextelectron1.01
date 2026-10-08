@@ -56,7 +56,7 @@ function getBillableKotItems(tableNo) {
 // =====================================================
 
 async function createBillFromKitchen(input) {
-  console.log("input-----------------------",input)
+  console.log("input-----------------------", input)
 
 
   const {
@@ -114,7 +114,7 @@ async function createBillFromKitchen(input) {
     deliveryFee = 0,
     deliveryTax = 0,
 
- 
+
     // ===================================================
     // PAYMENT
     // ===================================================
@@ -489,9 +489,9 @@ async function createBillFromKitchen(input) {
           currency,
 
         status:
-  kot.status === 'OPEN'
-    ? 'DONE'
-    : kot.status,
+          kot.status === 'OPEN'
+            ? 'DONE'
+            : kot.status,
         // paymentStatus,
 
         // ---------------------------------------------
@@ -1003,7 +1003,7 @@ async function createBillFromKitchen(input) {
       // =================================================
       // 2. INSERT ORDER ITEMS
       // =================================================
-      
+
       const insertItem =
         db.prepare(`
 

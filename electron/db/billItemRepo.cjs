@@ -731,7 +731,60 @@ function deleteBillItem({
   };
 }
 
+function moveBillItemToTable(itemId, newTableNo, newTableName) {
+  const item = db
+    .prepare(`
+      SELECT
+        id,
+        tableNo,
+        tableName,
+        productId,
+        note,
+        modifiersJson
+      FROM pos_bill_items
+      WHERE id = ?
+    `)
+    .get(itemId);
 
+  if (!item) {
+    throw new Error(`Bill item not found: ${itemId}`);
+  }
+
+  const normalizedModifiers =
+    normalizeModifiersJson(item.modifiersJson);
+
+  const newBillItemGroupKey = [
+    newTableNo ?? '',
+    item.productId,
+    item.note ?? '',
+    normalizedModifiers,
+  ].join('|');
+
+  const result = db
+    .prepare(`
+      UPDATE pos_bill_items
+      SET
+        tableNo = ?,
+        tableName = ?,
+        billItemGroupKey = ?
+      WHERE id = ?
+    `)
+    .run(
+      newTableNo,
+      newTableName ?? '',
+      newBillItemGroupKey,
+      itemId
+    );
+
+  return {
+    success: result.changes > 0,
+    itemId,
+    oldTableNo: item.tableNo,
+    oldTableName: item.tableName,
+    newTableNo,
+    newTableName,
+  };
+}
 
 // =====================================================
 // UPDATE BILL ITEM QUANTITY
@@ -1195,4 +1248,5 @@ module.exports = {
   markBillItemsBilled,
   deleteBillItem,
   increaseBillItemQuantity,
+  moveBillItemToTable,
 };

@@ -800,7 +800,7 @@ ipcMain.handle(
   async (_e, items) => {
     try {
       const result =
-        await billItemRepo.insertBillItems(
+         billItemRepo.insertBillItems(
           items
         );
 
@@ -817,6 +817,51 @@ ipcMain.handle(
           error instanceof Error
             ? error.message
             : String(error),
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "pos-bill-item:move-to-table",
+  async (_event, {
+    itemId,
+    tableNo,
+    tableName,
+  }) => {
+    try {
+      const result =
+        billItemRepo.moveBillItemToTable(
+          itemId,
+          tableNo,
+          tableName
+        );
+
+      console.log(
+        "[MOVE ITEM IPC] Move result:",
+        result
+      );
+
+      if (result.success) {
+        tableRepo.refreshAllTableCartVisualStates();
+
+        tableRepo.refreshAllTableBillVisualStates();
+      }
+
+      return result;
+
+    } catch (error) {
+      console.error(
+        "[MOVE ITEM IPC] moveBillItemToTable error:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to move item",
       };
     }
   }
@@ -852,6 +897,8 @@ ipcMain.handle(
     }
   }
 );
+
+
 
 ipcMain.handle(
   'bill:cancel',

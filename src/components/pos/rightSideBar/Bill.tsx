@@ -2242,16 +2242,19 @@ async function handleDeleteBillItem(
     ${background.divide}
   `}
 >
-  {billItems.map((item) => (
-    <BillItem
-      key={item.id}
-      item={item}
-      processing={processing}
-      onDecrease={decreaseBillItem}
-      onIncrease={increaseBillItem}
-      onDelete={handleDeleteBillItem}
-    />
-  ))}
+{billItems.map((item) => (
+  <BillItem
+    key={item.id}
+    item={item}
+    processing={processing}
+    onDecrease={decreaseBillItem}
+    onIncrease={increaseBillItem}
+    onDelete={handleDeleteBillItem}
+    onMigrateSuccess={async () => {
+      await loadBillItems();
+    }}
+  />
+))}
 </div>
 
 

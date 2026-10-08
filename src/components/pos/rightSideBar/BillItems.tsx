@@ -21,7 +21,10 @@ type BillItemProps = {
     reason: string,
     cancelKitchen: boolean
   ) => void | Promise<void>;
-  onIncrease: (item: BillItemData) => void | Promise<void>;
+
+  onIncrease: (
+    item: BillItemData
+  ) => void | Promise<void>;
 
   onDelete?: (
     item: BillItemData,
@@ -33,6 +36,12 @@ type BillItemProps = {
     item: BillItemData,
     newQuantity: number
   ) => void | Promise<void>;
+
+  onMigrateSuccess?: (
+    item: BillItemData,
+    newTableNo: string,
+    newTableName: string
+  ) => void | Promise<void>;
 };
 
 export default function BillItem({
@@ -42,6 +51,7 @@ export default function BillItem({
   onIncrease,
   onDelete,
   onUpdateQuantity,
+  onMigrateSuccess,
 }: BillItemProps) {
   const [editOpen, setEditOpen] = useState(false);
 
@@ -53,6 +63,13 @@ export default function BillItem({
 
   const [reason, setReason] = useState("");
   const [cancelKitchen, setCancelKitchen] = useState(false);
+
+  const [migrateOpen, setMigrateOpen] = useState(false);
+  const [targetTableNo, setTargetTableNo] = useState("");
+  const [tables, setTables] = useState<any[]>([]);
+  const [loadingTables, setLoadingTables] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [selectedTableNo, setSelectedTableNo] = useState("");
 
   const handleDelete = async () => {
     const finalReason = reason.trim();
@@ -153,11 +170,339 @@ export default function BillItem({
     onIncrease(item);
   };
 
-  const handleMigrate = () => {
-    // TODO:
-    // Open migrate item to another table popup.
-    console.log("Migrate item:", item);
+  const handleMigrate = async () => {
+    setSelectedTableNo("");
+
+    await loadTables();
+
+    setMigrateOpen(true);
   };
+
+
+  async function loadTables() {
+    try {
+      setLoadingTables(true);
+
+      const rows = await window.posApi.getTables();
+
+      console.log(
+        "========== GET TABLES RESULT =========="
+      );
+
+      console.log("ROWS:", rows);
+
+      if (Array.isArray(rows)) {
+        rows.forEach((table, index) => {
+          console.log(
+            `TABLE [${index}]`,
+            table
+          );
+        });
+
+        setTables(rows);
+      } else {
+        setTables([]);
+      }
+
+    } catch (e) {
+      console.error(
+        "Failed to load tables",
+        e
+      );
+
+      setTables([]);
+
+    } finally {
+      setLoadingTables(false);
+    }
+  }
+
+  const handleConfirmMigrate = async () => {
+    if (!selectedTableNo) {
+      alert("Please select a target table.");
+      return;
+    }
+
+    if (
+      selectedTableNo === String(
+        (item as any)?.tableNo || ""
+      )
+    ) {
+      alert(
+        "Item is already on this table."
+      );
+      return;
+    }
+
+    const targetTable = tables.find(
+      (table) =>
+        String(table.id) ===
+        String(selectedTableNo)
+    );
+
+    if (!targetTable) {
+      alert("Target table not found.");
+      return;
+    }
+
+    try {
+      setMigrating(true);
+
+      console.log(
+        "========================================"
+      );
+      console.log(
+        "MIGRATE BILL ITEM"
+      );
+      console.log(
+        "========================================"
+      );
+
+      console.log("ITEM:", item);
+
+      console.log(
+        "FROM TABLE:",
+        (item as any)?.tableNo
+      );
+
+      console.log(
+        "FROM TABLE NAME:",
+        (item as any)?.tableName
+      );
+
+      console.log(
+        "TO TABLE:",
+        targetTable.id
+      );
+
+      console.log(
+        "TO TABLE NAME:",
+        targetTable.tableName
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      const result =
+        await window.posApi.migrateBillItem({
+          id: item.id,
+
+          currentTableNo:
+            (item as any)?.tableNo,
+
+          currentBillItemGroupKey:
+            (item as any)?.billItemGroupKey,
+
+          targetTableNo:
+            String(targetTable.id),
+
+          targetTableName:
+            targetTable.tableName || "",
+        });
+
+      console.log(
+        "MIGRATE RESULT:",
+        result
+      );
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error ||
+          "Failed to migrate item"
+        );
+      }
+
+      setMigrateOpen(false);
+      setSelectedTableNo("");
+
+      if (onMigrateSuccess) {
+        await onMigrateSuccess(item);
+      }
+
+    } catch (e) {
+      console.error(
+        "FAILED TO MIGRATE BILL ITEM:",
+        e
+      );
+
+      alert(
+        e instanceof Error
+          ? e.message
+          : String(e)
+      );
+
+    } finally {
+      setMigrating(false);
+    }
+  };
+
+const handleMoveItem = async (
+  newTableNo: string
+) => {
+  if (!item?.id) {
+    console.error(
+      "[MOVE ITEM UI] Missing bill item id"
+    );
+    return;
+  }
+
+  if (!newTableNo) {
+    console.error(
+      "[MOVE ITEM UI] Missing destination table"
+    );
+    return;
+  }
+
+  const currentTableNo = String(
+    item?.tableNo || ""
+  );
+
+  if (newTableNo === currentTableNo) {
+    console.log(
+      "[MOVE ITEM UI] Item is already on this table"
+    );
+    return;
+  }
+
+  const selectedTable = tables.find(
+    (table) =>
+      String(table.id) ===
+      String(newTableNo)
+  );
+
+  if (!selectedTable) {
+    console.error(
+      "[MOVE ITEM UI] Destination table not found:",
+      newTableNo
+    );
+    return;
+  }
+
+  const newTableName =
+    selectedTable.tableName ||
+    newTableNo;
+
+  try {
+    setMigrating(true);
+
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      "[MOVE ITEM UI] START"
+    );
+
+    console.log(
+      "[MOVE ITEM UI] Item:",
+      item
+    );
+
+    console.log(
+      "[MOVE ITEM UI] Item ID:",
+      item.id
+    );
+
+    console.log(
+      "[MOVE ITEM UI] Current table:",
+      currentTableNo
+    );
+
+    console.log(
+      "[MOVE ITEM UI] Destination table:",
+      newTableNo
+    );
+
+    console.log(
+      "[MOVE ITEM UI] Destination name:",
+      newTableName
+    );
+
+    // =============================================
+    // MOVE ITEM IN SQLITE
+    // =============================================
+
+    const result =
+      await window.posApi.moveBillItemToTable({
+        itemId: item.id,
+        tableNo: newTableNo,
+        tableName: newTableName,
+      });
+
+    console.log(
+      "[MOVE ITEM UI] IPC result:",
+      result
+    );
+
+    if (!result?.success) {
+      throw new Error(
+        result?.error ||
+          "Failed to move item"
+      );
+    }
+
+    console.log(
+      "[MOVE ITEM UI] Database move successful"
+    );
+
+    // =============================================
+    // CLOSE MIGRATION MODAL
+    // =============================================
+
+    setMigrateOpen(false);
+    setSelectedTableNo("");
+
+    // =============================================
+    // IMPORTANT:
+    // Tell parent Bill component that the move
+    // succeeded so it can call loadBillItems().
+    // =============================================
+
+    if (onMigrateSuccess) {
+      console.log(
+        "[MOVE ITEM UI] Calling onMigrateSuccess..."
+      );
+
+      await onMigrateSuccess(
+        item,
+        newTableNo,
+        newTableName
+      );
+
+      console.log(
+        "[MOVE ITEM UI] onMigrateSuccess completed"
+      );
+    } else {
+      console.warn(
+        "[MOVE ITEM UI] onMigrateSuccess callback is not provided"
+      );
+    }
+
+    console.log(
+      "[MOVE ITEM UI] COMPLETE"
+    );
+
+    console.log(
+      "========================================"
+    );
+
+  } catch (error) {
+    console.error(
+      "[MOVE ITEM UI] Failed to move item:",
+      error
+    );
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : String(error)
+    );
+
+  } finally {
+    setMigrating(false);
+  }
+};
 
   return (
     <>
@@ -662,6 +1007,160 @@ export default function BillItem({
           </div>
         </div>
       ) : null}
+
+
+      {migrateOpen && (
+        <div
+          className="
+      fixed
+      inset-0
+      z-70
+      flex
+      items-center
+      justify-center
+      bg-black/70
+      p-4
+    "
+        >
+          <div
+            className="
+        w-full
+        max-w-6xl
+        max-h-[90vh]
+        overflow-y-auto
+        rounded-xl
+        p-4
+      "
+          >
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-9">
+              {tables.map((table) => {
+                const tableNo = String(table.id);
+
+                const isSelected =
+                  selectedTableNo === tableNo;
+
+                const isCurrent =
+                  tableNo === String(
+                    (item as any)?.tableNo || ""
+                  );
+
+                const tableColor =
+                  isSelected
+                    ? "#9C27B0"
+                    : table.billCount > 0
+                      ? "#E57373"
+                      : table.kitchenCount > 0
+                        ? "#81C784"
+                        : table.cartCount > 0
+                          ? "#64B5F6"
+                          : "#F5F5F5";
+
+                const textColor =
+                  isSelected ||
+                    table.billCount > 0 ||
+                    table.kitchenCount > 0 ||
+                    table.cartCount > 0
+                    ? "#FFFFFF"
+                    : "#333333";
+
+                const statusText =
+                  table.billCount > 0
+                    ? "BILL"
+                    : table.kitchenCount > 0
+                      ? "KITCHEN"
+                      : table.cartCount > 0
+                        ? `${table.cartCount} ITEMS`
+                        : "AVAILABLE";
+
+                return (
+                  <button
+                    key={table.id}
+                    type="button"
+                    disabled={isCurrent || migrating}
+                  onClick={() => handleMoveItem(tableNo)}
+                    className={`
+                relative
+                h-[90px]
+                w-full
+                overflow-hidden
+                rounded-[10px]
+                border
+                transition-all
+                duration-150
+                ${isCurrent
+                        ? "cursor-not-allowed opacity-35"
+                        : "cursor-pointer hover:scale-[1.01]"
+                      }
+              `}
+                    style={{
+                      background: tableColor,
+                      color: textColor,
+                      borderColor: isSelected
+                        ? "#9C27B0"
+                        : "transparent",
+                      boxShadow: isSelected
+                        ? "0 0 0 2px rgba(156,39,176,0.2)"
+                        : "0 2px 6px rgba(0,0,0,0.12)",
+                    }}
+                  >
+                    <div
+                      className="
+                  flex
+                  h-full
+                  flex-col
+                  items-center
+                  justify-center
+                "
+                    >
+                      <span
+                        className="
+                    text-[17px]
+                    font-bold
+                    leading-tight
+                  "
+                      >
+                        {table.tableName || tableNo}
+                      </span>
+
+                      <span
+                        className="
+                    mt-1
+                    text-[10px]
+                    font-medium
+                    opacity-90
+                  "
+                      >
+                        {statusText}
+                      </span>
+                    </div>
+
+                    {isSelected && (
+                      <span
+                        className="
+                    absolute
+                    right-2
+                    top-2
+                    flex
+                    h-5
+                    w-5
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-white/20
+                    text-[12px]
+                    font-bold
+                  "
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
