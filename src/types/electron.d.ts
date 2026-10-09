@@ -110,11 +110,11 @@ declare global {
         deliveryFee?: number;
         deliveryTax?: number;
 
-                 // ADD THESE
-  createdById?: string;
-  createdByName?: string;
-  finalizedById?: string;
-  finalizedByName?: string;
+        // ADD THESE
+        createdById?: string;
+        createdByName?: string;
+        finalizedById?: string;
+        finalizedByName?: string;
 
         paymentMode?: string;
         paymentStatus?: string;
@@ -158,11 +158,11 @@ declare global {
         paidAmount?: number;
         dueAmount?: number;
 
-         // ADD THESE
-  createdById?: string;
-  createdByName?: string;
-  finalizedById?: string;
-  finalizedByName?: string;
+        // ADD THESE
+        createdById?: string;
+        createdByName?: string;
+        finalizedById?: string;
+        finalizedByName?: string;
 
         paymentStatus?: string;
       }>,
@@ -243,13 +243,42 @@ declare global {
         orderId: string
       ) => Promise<any[]>;
 
-// getOrderItems: (
-//   orderMasterId: string
-// ) => Promise<OrderItem[]>;
+      increaseBillItemQuantity: (data: {
+        id: number | string;
+        tableNo: string;
+        billItemGroupKey?: string;
+        quantity: number;
+      }) => Promise<any>;
 
-getOrderDeletedItems: (
-  orderMasterId: string
-) => Promise<DeletedOrderItem[]>;
+      deleteBillItemAll: (data: {
+        tableNo: string;
+        billItemGroupKey: string;
+        reason: string;
+        cancelKitchen: boolean;
+      }) => Promise<any>;
+
+
+      moveBillItemToTable: (data: {
+        itemId: number | string;
+        tableNo: string;
+        tableName: string;
+      }) => Promise<any>;
+
+      // getOrderItems: (
+      //   orderMasterId: string
+      // ) => Promise<OrderItem[]>;
+
+      migrateBillItem: (data: {
+        id: number | string;
+        currentTableNo?: string;
+        currentBillItemGroupKey?: string;
+        targetTableNo: string;
+        targetTableName: string;
+      }) => Promise<any>;
+
+      getOrderDeletedItems: (
+        orderMasterId: string
+      ) => Promise<DeletedOrderItem[]>;
 
       uploadOrderCounter: () => Promise<{
         success: boolean;
@@ -358,7 +387,7 @@ getOrderDeletedItems: (
         data: {
           actualCash: number;
           notes?: string;
-          cashHandedOver?:number;
+          cashHandedOver?: number;
           closedById?: string;
           closedByName?: string;
         }
