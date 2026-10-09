@@ -262,6 +262,7 @@ declare global {
         itemId: number | string;
         tableNo: string;
         tableName: string;
+        quantity: number;
       }) => Promise<any>;
 
       // getOrderItems: (

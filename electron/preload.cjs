@@ -388,6 +388,12 @@ getOrderDeletedItems: (orderId) =>
     orderId
   ),
 
+// moveBillItemToTable: (data) =>
+//   ipcRenderer.invoke(
+//     "pos-bill-item:move-to-table",
+//     data
+//   ),
+
 moveBillItemToTable: (data) =>
   ipcRenderer.invoke(
     "pos-bill-item:move-to-table",

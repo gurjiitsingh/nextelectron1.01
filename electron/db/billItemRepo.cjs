@@ -731,7 +731,7 @@ function deleteBillItem({
   };
 }
 
-function moveBillItemToTable(itemId, newTableNo, newTableName) {
+function moveBillItemToTable_all_item(itemId, newTableNo, newTableName) {
   const item = db
     .prepare(`
       SELECT
@@ -785,6 +785,259 @@ function moveBillItemToTable(itemId, newTableNo, newTableName) {
     newTableName,
   };
 }
+
+
+
+function moveBillItemToTable(
+  itemId,
+  newTableNo,
+  newTableName,
+  quantityToMove
+) {
+  const moveTransaction = db.transaction(() => {
+    // =============================================
+    // 1. LOAD SOURCE ITEM
+    // =============================================
+
+    const item = db
+      .prepare(`
+        SELECT *
+        FROM pos_bill_items
+        WHERE id = ?
+      `)
+      .get(itemId);
+
+    if (!item) {
+      throw new Error(`Bill item not found: ${itemId}`);
+    }
+
+    const currentQuantity = Number(item.quantity);
+    const requestedQuantity = Number(quantityToMove);
+
+    // =============================================
+    // 2. VALIDATE
+    // =============================================
+
+    if (
+      !Number.isInteger(requestedQuantity) ||
+      requestedQuantity < 1 ||
+      requestedQuantity > currentQuantity
+    ) {
+      throw new Error("Invalid migration quantity.");
+    }
+
+    if (
+      String(item.tableNo ?? "") ===
+      String(newTableNo ?? "")
+    ) {
+      throw new Error(
+        "Source and destination tables are the same."
+      );
+    }
+
+    const sourceTableNo = String(item.tableNo ?? "");
+    const sourceTableName = String(item.tableName ?? "");
+    const destinationTableNo = String(newTableNo ?? "");
+    const destinationTableName = String(newTableName ?? "");
+
+    const normalizedModifiers =
+      normalizeModifiersJson(item.modifiersJson);
+
+    const makeGroupKey = (tableNo) =>
+      [
+        tableNo,
+        item.productId,
+        item.note ?? "",
+        normalizedModifiers,
+      ].join("|");
+
+    const sourceGroupKey = makeGroupKey(sourceTableNo);
+    const destinationGroupKey = makeGroupKey(destinationTableNo);
+
+    // =============================================
+    // 3. FULL QUANTITY: MOVE EXISTING ROW
+    // =============================================
+
+    if (requestedQuantity === currentQuantity) {
+      const result = db
+        .prepare(`
+          UPDATE pos_bill_items
+          SET
+            tableNo = ?,
+            tableName = ?,
+            billItemGroupKey = ?,
+            syncedToCloud = 0
+          WHERE id = ?
+            AND quantity = ?
+        `)
+        .run(
+          destinationTableNo,
+          destinationTableName,
+          destinationGroupKey,
+          itemId,
+          currentQuantity
+        );
+
+      if (result.changes !== 1) {
+        throw new Error("Failed to move item.");
+      }
+
+      return {
+        success: true,
+        itemId,
+        movedQuantity: requestedQuantity,
+        remainingQuantity: 0,
+        oldTableNo: sourceTableNo,
+        oldTableName: sourceTableName,
+        newTableNo: destinationTableNo,
+        newTableName: destinationTableName,
+      };
+    }
+
+    // =============================================
+    // 4. PARTIAL QUANTITY: REDUCE SOURCE ROW
+    // =============================================
+
+    const remainingQuantity =
+      currentQuantity - requestedQuantity;
+
+    const updateSource = db
+      .prepare(`
+        UPDATE pos_bill_items
+        SET
+          quantity = ?,
+          billItemGroupKey = ?,
+          syncedToCloud = 0
+        WHERE id = ?
+          AND quantity = ?
+      `)
+      .run(
+        remainingQuantity,
+        sourceGroupKey,
+        itemId,
+        currentQuantity
+      );
+
+    if (updateSource.changes !== 1) {
+      throw new Error(
+        "Item changed during migration. Please reload and try again."
+      );
+    }
+
+    // =============================================
+    // 5. CREATE DESTINATION ROW
+    // =============================================
+
+    const newItemId = require("crypto").randomUUID();
+
+    db.prepare(`
+      INSERT INTO pos_bill_items (
+        id,
+        billItemGroupKey,
+        sessionId,
+        tableNo,
+        tableName,
+        productId,
+        name,
+        categoryId,
+        categoryName,
+        parentId,
+        isVariant,
+        basePrice,
+        finalPrice,
+        modifierTotal,
+        quantity,
+        taxRate,
+        taxType,
+        note,
+        modifiersJson,
+        status,
+        billed,
+        billNo,
+        billId,
+        createdAt,
+        source,
+        syncedToCloud,
+        syncedFromCloud
+      )
+      VALUES (
+        @id,
+        @billItemGroupKey,
+        @sessionId,
+        @tableNo,
+        @tableName,
+        @productId,
+        @name,
+        @categoryId,
+        @categoryName,
+        @parentId,
+        @isVariant,
+        @basePrice,
+        @finalPrice,
+        @modifierTotal,
+        @quantity,
+        @taxRate,
+        @taxType,
+        @note,
+        @modifiersJson,
+        @status,
+        @billed,
+        @billNo,
+        @billId,
+        @createdAt,
+        @source,
+        0,
+        0
+      )
+    `).run({
+      id: newItemId,
+      billItemGroupKey: destinationGroupKey,
+      sessionId: item.sessionId,
+      tableNo: destinationTableNo,
+      tableName: destinationTableName,
+      productId: item.productId,
+      name: item.name,
+      categoryId: item.categoryId,
+      categoryName: item.categoryName,
+      parentId: item.parentId,
+      isVariant: item.isVariant,
+      basePrice: item.basePrice,
+      finalPrice: item.finalPrice,
+      modifierTotal: item.modifierTotal,
+      quantity: requestedQuantity,
+      taxRate: item.taxRate,
+      taxType: item.taxType,
+      note: item.note,
+      modifiersJson: item.modifiersJson,
+      status: item.status,
+      billed: item.billed,
+      billNo: item.billNo,
+      billId: item.billId,
+      createdAt: Date.now(),
+      source: item.source,
+    });
+
+    // =============================================
+    // 6. RETURN RESULT
+    // =============================================
+
+    return {
+      success: true,
+      itemId,
+      newItemId,
+      movedQuantity: requestedQuantity,
+      remainingQuantity,
+      oldTableNo: sourceTableNo,
+      oldTableName: sourceTableName,
+      newTableNo: destinationTableNo,
+      newTableName: destinationTableName,
+    };
+  });
+
+  // All database changes commit together or roll back.
+  return moveTransaction();
+}
+
 
 // =====================================================
 // UPDATE BILL ITEM QUANTITY

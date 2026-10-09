@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-
+import toast from "react-hot-toast";
 export type BillItemData = {
   id: string;
   name: string;
   note?: string;
   quantity: number;
   basePrice: number;
+  tableNo: string;
   modifierTotal?: number;
 };
 
@@ -70,6 +71,7 @@ export default function BillItem({
   const [loadingTables, setLoadingTables] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [selectedTableNo, setSelectedTableNo] = useState("");
+  const [moveQuantity, setMoveQuantity] = useState(1);
 
   const handleDelete = async () => {
     const finalReason = reason.trim();
@@ -121,7 +123,7 @@ export default function BillItem({
     const finalReason = reason.trim();
 
     if (!finalReason) {
-      alert("Please enter a reason for decreasing the quantity.");
+      toast.error("Please enter a reason for decreasing the quantity.");
       return;
     }
 
@@ -135,17 +137,9 @@ export default function BillItem({
 
     console.log("========================================");
     console.log("DECREASE BILL ITEM");
-    console.log("========================================");
     console.log("ITEM:", item);
-    console.log("ITEM ID:", item.id);
-    console.log("PRODUCT ID:", (item as any)?.productId);
-    console.log(
-      "GROUP KEY:",
-      (item as any)?.billItemGroupKey
-    );
     console.log("CURRENT QUANTITY:", currentQuantity);
     console.log("NEW QUANTITY:", newQuantity);
-    console.log("DECREASED QUANTITY:", 1);
     console.log("REASON:", finalReason);
     console.log("CANCEL KITCHEN:", cancelKitchen);
     console.log("========================================");
@@ -170,8 +164,17 @@ export default function BillItem({
     onIncrease(item);
   };
 
+  // const handleMigrate = async () => {
+  //   setSelectedTableNo("");
+
+  //   await loadTables();
+
+  //   setMigrateOpen(true);
+  // };
   const handleMigrate = async () => {
+     setEditOpen(false); 
     setSelectedTableNo("");
+    setMoveQuantity(1);
 
     await loadTables();
 
@@ -317,7 +320,13 @@ export default function BillItem({
       setSelectedTableNo("");
 
       if (onMigrateSuccess) {
-        await onMigrateSuccess(item);
+        //  await onMigrateSuccess(item);
+
+        await onMigrateSuccess(
+          item,
+          String(targetTable.id),
+          targetTable.tableName || ""
+        );
       }
 
     } catch (e) {
@@ -337,172 +346,252 @@ export default function BillItem({
     }
   };
 
-const handleMoveItem = async (
-  newTableNo: string
-) => {
-  if (!item?.id) {
-    console.error(
-      "[MOVE ITEM UI] Missing bill item id"
+  // const handleMoveItem = async (
+  //   newTableNo: string
+  // ) => {
+  //   if (!item?.id) {
+  //     console.error(
+  //       "[MOVE ITEM UI] Missing bill item id"
+  //     );
+  //     return;
+  //   }
+
+  //   if (!newTableNo) {
+  //     console.error(
+  //       "[MOVE ITEM UI] Missing destination table"
+  //     );
+  //     return;
+  //   }
+
+  //   const currentTableNo = String(
+  //     item?.tableNo || ""
+  //   );
+
+  //   if (newTableNo === currentTableNo) {
+  //     console.log(
+  //       "[MOVE ITEM UI] Item is already on this table"
+  //     );
+  //     return;
+  //   }
+
+  //   const selectedTable = tables.find(
+  //     (table) =>
+  //       String(table.id) ===
+  //       String(newTableNo)
+  //   );
+
+  //   if (!selectedTable) {
+  //     console.error(
+  //       "[MOVE ITEM UI] Destination table not found:",
+  //       newTableNo
+  //     );
+  //     return;
+  //   }
+
+  //   const newTableName =
+  //     selectedTable.tableName ||
+  //     newTableNo;
+
+  //   try {
+  //     setMigrating(true);
+
+  //     console.log(
+  //       "========================================"
+  //     );
+
+  //     console.log(
+  //       "[MOVE ITEM UI] START"
+  //     );
+
+  //     console.log(
+  //       "[MOVE ITEM UI] Item:",
+  //       item
+  //     );
+
+  //     console.log(
+  //       "[MOVE ITEM UI] Item ID:",
+  //       item.id
+  //     );
+
+  //     console.log(
+  //       "[MOVE ITEM UI] Current table:",
+  //       currentTableNo
+  //     );
+
+  //     console.log(
+  //       "[MOVE ITEM UI] Destination table:",
+  //       newTableNo
+  //     );
+
+  //     console.log(
+  //       "[MOVE ITEM UI] Destination name:",
+  //       newTableName
+  //     );
+
+  //     // =============================================
+  //     // MOVE ITEM IN SQLITE
+  //     // =============================================
+
+  //     const result =
+  //       await window.posApi.moveBillItemToTable({
+  //         itemId: item.id,
+  //         tableNo: newTableNo,
+  //         tableName: newTableName,
+  //       });
+
+  //     console.log(
+  //       "[MOVE ITEM UI] IPC result:",
+  //       result
+  //     );
+
+  //     if (!result?.success) {
+  //       throw new Error(
+  //         result?.error ||
+  //         "Failed to move item"
+  //       );
+  //     }
+
+  //     console.log(
+  //       "[MOVE ITEM UI] Database move successful"
+  //     );
+
+  //     // =============================================
+  //     // CLOSE MIGRATION MODAL
+  //     // =============================================
+
+  //     setMigrateOpen(false);
+  //     setSelectedTableNo("");
+
+  //     // =============================================
+  //     // IMPORTANT:
+  //     // Tell parent Bill component that the move
+  //     // succeeded so it can call loadBillItems().
+  //     // =============================================
+
+  //     if (onMigrateSuccess) {
+  //       console.log(
+  //         "[MOVE ITEM UI] Calling onMigrateSuccess..."
+  //       );
+
+  //       await onMigrateSuccess(
+  //         item,
+  //         newTableNo,
+  //         newTableName
+  //       );
+
+  //       console.log(
+  //         "[MOVE ITEM UI] onMigrateSuccess completed"
+  //       );
+  //     } else {
+  //       console.warn(
+  //         "[MOVE ITEM UI] onMigrateSuccess callback is not provided"
+  //       );
+  //     }
+
+  //     console.log(
+  //       "[MOVE ITEM UI] COMPLETE"
+  //     );
+
+  //     console.log(
+  //       "========================================"
+  //     );
+
+  //   } catch (error) {
+  //     console.error(
+  //       "[MOVE ITEM UI] Failed to move item:",
+  //       error
+  //     );
+
+  //     alert(
+  //       error instanceof Error
+  //         ? error.message
+  //         : String(error)
+  //     );
+
+  //   } finally {
+  //     setMigrating(false);
+  //   }
+  // };
+
+  const handleMoveItem = async (
+    newTableNo: string,
+    quantityToMove: number
+  ) => {
+    if (!item?.id || !newTableNo) {
+      toast.error("Select a destination table.");
+      return;
+    }
+
+    const currentQuantity = Number(item.quantity || 0);
+
+    if (
+      !Number.isInteger(quantityToMove) ||
+      quantityToMove < 1 ||
+      quantityToMove > currentQuantity
+    ) {
+      toast.error("Please select a valid quantity.");
+      return;
+    }
+
+    const currentTableNo = String(item.tableNo || "");
+
+    if (newTableNo === currentTableNo) {
+      toast.error("Item is already on this table.");
+      return;
+    }
+
+    const selectedTable = tables.find(
+      (table) => String(table.id) === newTableNo
     );
-    return;
-  }
 
-  if (!newTableNo) {
-    console.error(
-      "[MOVE ITEM UI] Missing destination table"
-    );
-    return;
-  }
+    if (!selectedTable) {
+      toast.error("Destination table not found.");
+      return;
+    }
 
-  const currentTableNo = String(
-    item?.tableNo || ""
-  );
+    const newTableName = selectedTable.tableName || newTableNo;
 
-  if (newTableNo === currentTableNo) {
-    console.log(
-      "[MOVE ITEM UI] Item is already on this table"
-    );
-    return;
-  }
+    try {
+      setMigrating(true);
 
-  const selectedTable = tables.find(
-    (table) =>
-      String(table.id) ===
-      String(newTableNo)
-  );
-
-  if (!selectedTable) {
-    console.error(
-      "[MOVE ITEM UI] Destination table not found:",
-      newTableNo
-    );
-    return;
-  }
-
-  const newTableName =
-    selectedTable.tableName ||
-    newTableNo;
-
-  try {
-    setMigrating(true);
-
-    console.log(
-      "========================================"
-    );
-
-    console.log(
-      "[MOVE ITEM UI] START"
-    );
-
-    console.log(
-      "[MOVE ITEM UI] Item:",
-      item
-    );
-
-    console.log(
-      "[MOVE ITEM UI] Item ID:",
-      item.id
-    );
-
-    console.log(
-      "[MOVE ITEM UI] Current table:",
-      currentTableNo
-    );
-
-    console.log(
-      "[MOVE ITEM UI] Destination table:",
-      newTableNo
-    );
-
-    console.log(
-      "[MOVE ITEM UI] Destination name:",
-      newTableName
-    );
-
-    // =============================================
-    // MOVE ITEM IN SQLITE
-    // =============================================
-
-    const result =
-      await window.posApi.moveBillItemToTable({
+      const result = await window.posApi.moveBillItemToTable({
         itemId: item.id,
         tableNo: newTableNo,
         tableName: newTableName,
+        quantity: quantityToMove,
       });
 
-    console.log(
-      "[MOVE ITEM UI] IPC result:",
-      result
-    );
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to move item");
+      }
 
-    if (!result?.success) {
-      throw new Error(
-        result?.error ||
-          "Failed to move item"
-      );
-    }
+      setMigrateOpen(false);
+      setEditOpen(false);
+      setSelectedTableNo("");
+      setMoveQuantity(1);
 
-    console.log(
-      "[MOVE ITEM UI] Database move successful"
-    );
-
-    // =============================================
-    // CLOSE MIGRATION MODAL
-    // =============================================
-
-    setMigrateOpen(false);
-    setSelectedTableNo("");
-
-    // =============================================
-    // IMPORTANT:
-    // Tell parent Bill component that the move
-    // succeeded so it can call loadBillItems().
-    // =============================================
-
-    if (onMigrateSuccess) {
-      console.log(
-        "[MOVE ITEM UI] Calling onMigrateSuccess..."
-      );
-
-      await onMigrateSuccess(
+      await onMigrateSuccess?.(
         item,
         newTableNo,
         newTableName
       );
 
-      console.log(
-        "[MOVE ITEM UI] onMigrateSuccess completed"
+      toast.success(
+        `Moved ${quantityToMove} ${quantityToMove === 1 ? "item" : "items"
+        } to ${newTableName}.`
       );
-    } else {
-      console.warn(
-        "[MOVE ITEM UI] onMigrateSuccess callback is not provided"
+    } catch (error) {
+      console.error("Failed to move bill item:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : String(error)
       );
+    } finally {
+      setMigrating(false);
     }
-
-    console.log(
-      "[MOVE ITEM UI] COMPLETE"
-    );
-
-    console.log(
-      "========================================"
-    );
-
-  } catch (error) {
-    console.error(
-      "[MOVE ITEM UI] Failed to move item:",
-      error
-    );
-
-    alert(
-      error instanceof Error
-        ? error.message
-        : String(error)
-    );
-
-  } finally {
-    setMigrating(false);
-  }
-};
+  };
 
   return (
     <>
@@ -1009,158 +1098,238 @@ const handleMoveItem = async (
       ) : null}
 
 
-      {migrateOpen && (
-        <div
-          className="
+    
+{migrateOpen && (
+  <div
+    className="
       fixed
       inset-0
-      z-70
+      z-[70]
       flex
       items-center
       justify-center
       bg-black/70
       p-4
     "
-        >
-          <div
-            className="
+    onClick={() => {
+      if (!migrating) {
+        setMigrateOpen(false);
+        setSelectedTableNo("");
+        setMoveQuantity(1);
+      }
+    }}
+  >
+    <div
+      className="
+        flex
         w-full
         max-w-6xl
         max-h-[90vh]
-        overflow-y-auto
+        flex-col
+        overflow-hidden
         rounded-xl
-        p-4
+        bg-slate-400
+        shadow-2xl
       "
-          >
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-9">
-              {tables.map((table) => {
-                const tableNo = String(table.id);
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* TOP HEADER: ITEM + QUANTITY + CLOSE */}
+      <div className="flex items-center gap-4 bg-white p-4 text-slate-900">
+        {/* ITEM DETAILS */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold">
+            {item.name}
+          </p>
 
-                const isSelected =
-                  selectedTableNo === tableNo;
-
-                const isCurrent =
-                  tableNo === String(
-                    (item as any)?.tableNo || ""
-                  );
-
-                const tableColor =
-                  isSelected
-                    ? "#9C27B0"
-                    : table.billCount > 0
-                      ? "#E57373"
-                      : table.kitchenCount > 0
-                        ? "#81C784"
-                        : table.cartCount > 0
-                          ? "#64B5F6"
-                          : "#F5F5F5";
-
-                const textColor =
-                  isSelected ||
-                    table.billCount > 0 ||
-                    table.kitchenCount > 0 ||
-                    table.cartCount > 0
-                    ? "#FFFFFF"
-                    : "#333333";
-
-                const statusText =
-                  table.billCount > 0
-                    ? "BILL"
-                    : table.kitchenCount > 0
-                      ? "KITCHEN"
-                      : table.cartCount > 0
-                        ? `${table.cartCount} ITEMS`
-                        : "AVAILABLE";
-
-                return (
-                  <button
-                    key={table.id}
-                    type="button"
-                    disabled={isCurrent || migrating}
-                  onClick={() => handleMoveItem(tableNo)}
-                    className={`
-                relative
-                h-[90px]
-                w-full
-                overflow-hidden
-                rounded-[10px]
-                border
-                transition-all
-                duration-150
-                ${isCurrent
-                        ? "cursor-not-allowed opacity-35"
-                        : "cursor-pointer hover:scale-[1.01]"
-                      }
-              `}
-                    style={{
-                      background: tableColor,
-                      color: textColor,
-                      borderColor: isSelected
-                        ? "#9C27B0"
-                        : "transparent",
-                      boxShadow: isSelected
-                        ? "0 0 0 2px rgba(156,39,176,0.2)"
-                        : "0 2px 6px rgba(0,0,0,0.12)",
-                    }}
-                  >
-                    <div
-                      className="
-                  flex
-                  h-full
-                  flex-col
-                  items-center
-                  justify-center
-                "
-                    >
-                      <span
-                        className="
-                    text-[17px]
-                    font-bold
-                    leading-tight
-                  "
-                      >
-                        {table.tableName || tableNo}
-                      </span>
-
-                      <span
-                        className="
-                    mt-1
-                    text-[10px]
-                    font-medium
-                    opacity-90
-                  "
-                      >
-                        {statusText}
-                      </span>
-                    </div>
-
-                    {isSelected && (
-                      <span
-                        className="
-                    absolute
-                    right-2
-                    top-2
-                    flex
-                    h-5
-                    w-5
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-white/20
-                    text-[12px]
-                    font-bold
-                  "
-                      >
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            Available: {item.quantity}
+            {" · "}
+            Remaining: {Number(item.quantity) - moveQuantity}
+          </p>
         </div>
-      )}
+
+        {/* QUANTITY SELECTOR */}
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            disabled={moveQuantity <= 1 || migrating}
+            onClick={() =>
+              setMoveQuantity((q) => Math.max(1, q - 1))
+            }
+            className="
+              flex h-9 w-9 items-center justify-center
+              rounded-lg border border-slate-300
+              text-lg transition hover:bg-slate-100
+              disabled:opacity-30
+            "
+          >
+            −
+          </button>
+
+          <div className="min-w-12 text-center">
+            <p className="text-xl font-bold tabular-nums">
+              {moveQuantity}
+            </p>
+            <p className="text-[10px] text-slate-500">
+              to move
+            </p>
+          </div>
+
+          <button
+            type="button"
+            disabled={
+              moveQuantity >= Number(item.quantity) || migrating
+            }
+            onClick={() =>
+              setMoveQuantity((q) =>
+                Math.min(Number(item.quantity), q + 1)
+              )
+            }
+            className="
+              flex h-9 w-9 items-center justify-center
+              rounded-lg border border-slate-300
+              text-lg transition hover:bg-slate-100
+              disabled:opacity-30
+            "
+          >
+            +
+          </button>
+        </div>
+
+        {/* CONFIRM MIGRATION */}
+        <button
+          type="button"
+          disabled={!selectedTableNo || migrating}
+          onClick={() =>
+            handleMoveItem(selectedTableNo, moveQuantity)
+          }
+          className="
+            shrink-0 rounded-lg bg-violet-600
+            px-4 py-2.5 text-xs font-semibold text-white
+            transition hover:bg-violet-700
+            disabled:cursor-not-allowed disabled:opacity-40
+          "
+        >
+          {migrating ? "Moving..." : "Confirm"}
+        </button>
+
+        {/* CLOSE WITHOUT MIGRATING */}
+        <button
+          type="button"
+          disabled={migrating}
+          onClick={() => {
+            setMigrateOpen(false);
+            setSelectedTableNo("");
+            setMoveQuantity(1);
+          }}
+          className="
+            flex h-9 w-9 shrink-0 items-center
+            justify-center rounded-lg
+            text-2xl text-slate-500
+            transition hover:bg-slate-100 hover:text-slate-900
+            disabled:opacity-30
+          "
+          title="Close without migrating"
+          aria-label="Close migration"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* EXISTING TABLE GRID */}
+      <div className="overflow-y-auto p-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-9">
+          {tables.map((table) => {
+            const tableNo = String(table.id);
+
+            const isSelected =
+              selectedTableNo === tableNo;
+
+            const isCurrent =
+              tableNo === String(item?.tableNo || "");
+
+            const tableColor = isSelected
+              ? "#9C27B0"
+              : table.billCount > 0
+                ? "#E57373"
+                : table.kitchenCount > 0
+                  ? "#81C784"
+                  : table.cartCount > 0
+                    ? "#64B5F6"
+                    : "#F5F5F5";
+
+            const textColor =
+              isSelected ||
+              table.billCount > 0 ||
+              table.kitchenCount > 0 ||
+              table.cartCount > 0
+                ? "#FFFFFF"
+                : "#333333";
+
+            const statusText =
+              table.billCount > 0
+                ? "BILL"
+                : table.kitchenCount > 0
+                  ? "KITCHEN"
+                  : table.cartCount > 0
+                    ? `${table.cartCount} ITEMS`
+                    : "AVAILABLE";
+
+            return (
+              <button
+                key={table.id}
+                type="button"
+                disabled={isCurrent || migrating}
+                onClick={() => setSelectedTableNo(tableNo)}
+                className={`
+                  relative h-[90px] w-full overflow-hidden
+                  rounded-[10px] border
+                  transition-all duration-150
+                  ${
+                    isCurrent
+                      ? "cursor-not-allowed opacity-35"
+                      : "cursor-pointer hover:scale-[1.01]"
+                  }
+                `}
+                style={{
+                  background: tableColor,
+                  color: textColor,
+                  borderColor: isSelected
+                    ? "#9C27B0"
+                    : "transparent",
+                  boxShadow: isSelected
+                    ? "0 0 0 2px rgba(156,39,176,0.2)"
+                    : "0 2px 6px rgba(0,0,0,0.12)",
+                }}
+              >
+                <div className="flex h-full flex-col items-center justify-center">
+                  <span className="text-[17px] font-bold leading-tight">
+                    {table.tableName || tableNo}
+                  </span>
+
+                  <span className="mt-1 text-[10px] font-medium opacity-90">
+                    {statusText}
+                  </span>
+                </div>
+
+                {isSelected && (
+                  <span className="
+                    absolute right-2 top-2 flex h-5 w-5
+                    items-center justify-center rounded-full
+                    bg-white/20 text-[12px] font-bold
+                  ">
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </>
   );
 }
