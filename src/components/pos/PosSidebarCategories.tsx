@@ -106,8 +106,8 @@ export default function PosSidebarCategories() {
     return () => {
       isMounted = false;
     };
-  }, [setDisablePickupCatDiscountIds]);
-
+  }, []);
+//setDisablePickupCatDiscountIds
   // =====================================================
   // CATEGORY BUTTON
   // =====================================================

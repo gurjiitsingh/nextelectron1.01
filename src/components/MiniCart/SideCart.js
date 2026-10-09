@@ -1,10 +1,23 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useClickAway } from "react-use";
-import { IoClose } from "react-icons/io5";
+import {
+  IoClose,
+  IoReceiptOutline,
+  IoGlobeOutline,
+  IoDocumentTextOutline,
+  IoSwapHorizontalOutline,
+  IoTimeOutline,
+  IoBarChartOutline,
+  IoPeopleOutline,
+  IoSyncOutline,
+  IoSettingsOutline,
+  IoColorPaletteOutline,
+  IoPrintOutline,
+} from "react-icons/io5";
 import { LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -13,19 +26,39 @@ import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
 import { usePosAuth } from "@/store/PosAuthContext";
 
 const framerSidebarPanel = {
-  initial: { x: "-100%" },
-  animate: { x: 0 },
-  exit: { x: "-100%" },
-  transition: { duration: 0.3 },
+  initial: {
+    x: "-100%",
+  },
+
+  animate: {
+    x: 0,
+  },
+
+  exit: {
+    x: "-100%",
+  },
+
+  transition: {
+    duration: 0.25,
+    ease: "easeOut",
+  },
 };
 
 export const SideCart = () => {
   const pathname = usePathname();
 
+  
+
   const {
-    open,
-    sideBarToggle,
-  } = UseSiteContext();
+  open,
+  sideBarToggle,
+} = UseSiteContext();
+
+useEffect(() => {
+  if (open) {
+    sideBarToggle();
+  }
+}, [pathname]);
 
   const {
     theme,
@@ -33,24 +66,25 @@ export const SideCart = () => {
   } = usePosTheme();
 
   const {
-  logout,
-} = usePosAuth();
+    logout,
+  } = usePosAuth();
 
   const ref = useRef(null);
 
   useClickAway(ref, () => {
-    sideBarToggle();
+    if (open) {
+      sideBarToggle();
+    }
   });
 
   const handleLogout = async () => {
-  try {
-    sideBarToggle();
-
-    logout();
-  } catch (error) {
-    console.error("POS logout failed:", error);
-  }
-};
+    try {
+      sideBarToggle();
+      logout();
+    } catch (error) {
+      console.error("POS logout failed:", error);
+    }
+  };
 
   // =====================================================
   // CLOSE SIDEBAR AFTER LINK CLICK
@@ -76,16 +110,32 @@ export const SideCart = () => {
   };
 
   // =====================================================
+  // TEXT COLOR
+  // =====================================================
+
+  const textColor =
+    background.text === "text-white"
+      ? "#FFFFFF"
+      : "#334155";
+
+  // =====================================================
   // SIDEBAR LINK
   // =====================================================
 
-  const sidebarLinkClass = (href) => `
-    block
-    px-4
-    py-1
+  const sidebarLinkClass = `
+    group
+    relative
+    flex
+    items-center
+    gap-3
+    w-full
+    px-3
+    py-2.5
+    rounded-xl
     text-sm
     font-medium
-    transition-colors
+    transition-all
+    duration-200
     cursor-pointer
   `;
 
@@ -94,13 +144,105 @@ export const SideCart = () => {
   // =====================================================
 
   const sectionTitleClass = `
-    px-4
-    py-1
-    text-xs
+    px-3
+    pt-5
+    pb-2
+    text-[10px]
     font-bold
     uppercase
-    tracking-wide
+    tracking-[0.14em]
   `;
+
+  // =====================================================
+  // NAV ITEM
+  // =====================================================
+
+const NavItem = ({
+  href,
+  label,
+  icon,
+}) => {
+    const active = isActive(href);
+
+    return (
+      <Link
+        href={href}
+        onClick={handleLinkClick}
+        className={sidebarLinkClass}
+        style={{
+          color: active
+            ? theme.primary
+            : textColor,
+
+          backgroundColor: active
+            ? theme.primarySelected
+            : "transparent",
+
+          fontWeight: active ? 600 : 500,
+        }}
+        onMouseEnter={(e) => {
+          if (!active) {
+            e.currentTarget.style.backgroundColor =
+              theme.primarySelected;
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!active) {
+            e.currentTarget.style.backgroundColor =
+              "transparent";
+          }
+        }}
+      >
+        {/* Active indicator */}
+        {active && (
+          <span
+            className="
+              absolute
+              left-0
+              top-1/2
+              -translate-y-1/2
+              w-1
+              h-6
+              rounded-r-full
+            "
+            style={{
+              backgroundColor: theme.primary,
+            }}
+          />
+        )}
+
+        {/* Icon */}
+        <span
+          className="
+            flex
+            items-center
+            justify-center
+            w-8
+            h-8
+            rounded-lg
+            shrink-0
+            transition-all
+          "
+          style={{
+            backgroundColor: active
+              ? theme.primary
+              : "transparent",
+
+            color: active
+              ? "#FFFFFF"
+              : textColor,
+          }}
+        >
+          {icon}
+        </span>
+
+        {/* Label */}
+        <span className="truncate">
+          {label}
+        </span>
+      </Link>
+    );
+  };
 
   return (
     <div
@@ -111,7 +253,6 @@ export const SideCart = () => {
         mode="wait"
         initial={false}
       >
-
         {open && (
           <motion.div
             {...framerSidebarPanel}
@@ -122,20 +263,26 @@ export const SideCart = () => {
               bottom-0
               left-0
               z-50
+
               w-full
-              max-w-[250px]
+              max-w-[280px]
+
               h-[calc(100vh-60px)]
-              shadow-2xl
-              
+
               flex
               flex-col
-              overflow-y-auto
-              app-scrollbar
-              pos-sidebar-scroll
+
+              overflow-hidden
+
+              border-r
+
+              shadow-[8px_0_30px_rgba(0,0,0,0.08)]
+
               ${background.className}
             `}
             style={{
-              borderColor: theme.primarySelected,
+              borderColor:
+                theme.primarySelected,
             }}
             aria-label="Sidebar"
           >
@@ -150,36 +297,85 @@ export const SideCart = () => {
                 flex
                 items-center
                 justify-between
+
                 px-4
-                py-2
-               
+                py-4
+
+                border-b
               "
               style={{
-                borderColor: theme.primarySelected,
+                borderColor:
+                  theme.primarySelected,
               }}
             >
+              <div className="flex items-center gap-3">
 
-              <span
-                className="
-                  text-lg
-                  font-semibold
-                "
-                style={{
-                  color: theme.primaryText,
-                }}
-              >
-                Menu
-              </span>
+                {/* Menu Icon */}
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-center
+                    w-9
+                    h-9
+                    rounded-xl
+                  "
+                  style={{
+                    backgroundColor:
+                      theme.primary,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  <IoReceiptOutline
+                    size={19}
+                  />
+                </div>
 
+                <div>
+                  <div
+                    className="
+                      text-sm
+                      font-bold
+                      leading-tight
+                    "
+                    style={{
+                      color: theme.primaryText,
+                    }}
+                  >
+                    POS Menu
+                  </div>
+
+                  <div
+                    className="
+                      text-[11px]
+                      mt-0.5
+                      opacity-60
+                    "
+                    style={{
+                      color: textColor,
+                    }}
+                  >
+                    Restaurant System
+                  </div>
+                </div>
+              </div>
+
+              {/* Close */}
               <button
+                type="button"
                 onClick={sideBarToggle}
                 className="
-                  p-2
-                  rounded-lg
-                  transition-colors
+                  flex
+                  items-center
+                  justify-center
+                  w-9
+                  h-9
+                  rounded-xl
+                  transition-all
+                  cursor-pointer
                 "
                 style={{
-                  color: theme.primaryText,
+                  color: textColor,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor =
@@ -191,358 +387,288 @@ export const SideCart = () => {
                 }}
                 aria-label="Close sidebar"
               >
-                <IoClose size={24} />
+                <IoClose size={22} />
               </button>
+            </div>
+
+            {/* ================================================= */}
+            {/* NAVIGATION */}
+            {/* ================================================= */}
+
+            <div
+              className="
+                flex-1
+                min-h-0
+                overflow-y-auto
+                px-3
+                pb-4
+                app-scrollbar
+                pos-sidebar-scroll
+              "
+            >
+
+              {/* ================================================= */}
+              {/* ORDERS */}
+              {/* ================================================= */}
+
+              <div>
+                <div
+                  className={sectionTitleClass}
+                  style={{
+                    color:
+                      background.text === "text-white"
+                        ? "rgba(255,255,255,0.55)"
+                        : "#94A3B8",
+                  }}
+                >
+                  Orders
+                </div>
+
+                <NavItem
+                  href="/orders"
+                  label="Local Orders"
+                  icon={
+                    <IoReceiptOutline size={18} />
+                  }
+                />
+
+                <NavItem
+                  href="/orders/online"
+                  label="Online Orders"
+                  icon={
+                    <IoGlobeOutline size={18} />
+                  }
+                />
+
+                <NavItem
+                  href="/kot/history"
+                  label="KOT History"
+                  icon={
+                    <IoDocumentTextOutline size={18} />
+                  }
+                />
+
+                <NavItem
+                  href="/table-migrate"
+                  label="Table Shift"
+                  icon={
+                    <IoSwapHorizontalOutline size={18} />
+                  }
+                />
+              </div>
+
+              {/* ================================================= */}
+              {/* REPORTS */}
+              {/* ================================================= */}
+
+              <div>
+                <div
+                  className={sectionTitleClass}
+                  style={{
+                    color:
+                      background.text === "text-white"
+                        ? "rgba(255,255,255,0.55)"
+                        : "#94A3B8",
+                  }}
+                >
+                  Reports
+                </div>
+
+                <NavItem
+                  href="/reports/day-close"
+                  label="Day Close"
+                  icon={
+                    <IoTimeOutline size={18} />
+                  }
+                />
+
+                <NavItem
+                  href="/reports/sales"
+                  label="Sales / Z-Reports"
+                  icon={
+                    <IoBarChartOutline size={18} />
+                  }
+                />
+              </div>
+
+              {/* ================================================= */}
+              {/* CUSTOMERS */}
+              {/* ================================================= */}
+
+              <div>
+                <div
+                  className={sectionTitleClass}
+                  style={{
+                    color:
+                      background.text === "text-white"
+                        ? "rgba(255,255,255,0.55)"
+                        : "#94A3B8",
+                  }}
+                >
+                  Customers
+                </div>
+
+                <NavItem
+                  href="/customers"
+                  label="Customer List"
+                  icon={
+                    <IoPeopleOutline size={18} />
+                  }
+                />
+              </div>
+
+              {/* ================================================= */}
+              {/* SYSTEM */}
+              {/* ================================================= */}
+
+              <div>
+                <div
+                  className={sectionTitleClass}
+                  style={{
+                    color:
+                      background.text === "text-white"
+                        ? "rgba(255,255,255,0.55)"
+                        : "#94A3B8",
+                  }}
+                >
+                  System
+                </div>
+
+                <NavItem
+                  href="/sync"
+                  label="Sync"
+                  icon={
+                    <IoSyncOutline size={18} />
+                  }
+                />
+              </div>
+
+              {/* ================================================= */}
+              {/* SETTINGS */}
+              {/* ================================================= */}
+
+              <div>
+                <div
+                  className={sectionTitleClass}
+                  style={{
+                    color:
+                      background.text === "text-white"
+                        ? "rgba(255,255,255,0.55)"
+                        : "#94A3B8",
+                  }}
+                >
+                  Settings
+                </div>
+
+                <NavItem
+                  href="/settings"
+                  label="All Settings"
+                  icon={
+                    <IoSettingsOutline size={18} />
+                  }
+                />
+
+                <NavItem
+                  href="/settings/theme"
+                  label="Theme Setting"
+                  icon={
+                    <IoColorPaletteOutline
+                      size={18}
+                    />
+                  }
+                />
+
+                <NavItem
+                  href="/settings/printers"
+                  label="Printer Setting"
+                  icon={
+                    <IoPrintOutline size={18} />
+                  }
+                />
+              </div>
 
             </div>
 
-
             {/* ================================================= */}
-            {/* MAIN */}
-            {/* ================================================= */}
-
-         
-{/* ================================================= */}
-{/* LOGOUT  mt-auto */}
-{/* ================================================= */}
-
-<div
-  className="
-   
-    shrink-0
-    border-t
-    px-3
-    py-3
-  "
-  style={{
-    borderColor: theme.primarySelected,
-  }}
->
-
-  <button
-    type="button"
-    onClick={handleLogout}
-    className="
-      w-full
-      flex
-      items-center
-      gap-3
-      px-3
-      py-2
-      rounded-lg
-      text-sm
-      font-medium
-      transition-all
-      cursor-pointer
-    "
-    style={{
-      color:
-        background.text === "text-white"
-          ? "#FFFFFF"
-          : "#334155",
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.backgroundColor =
-        theme.primarySelected;
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.backgroundColor =
-        "transparent";
-    }}
-  >
-
-    <LogOut
-      size={18}
-      strokeWidth={2}
-    />
-
-    <span>
-      Logout
-    </span>
-
-  </button>
-
-</div>
-
-
-
-            {/* ================================================= */}
-            {/* ORDERS */}
+            {/* LOGOUT */}
             {/* ================================================= */}
 
-            <div className="py-1">
-
-              <div
-                className={sectionTitleClass}
+            <div
+              className="
+                shrink-0
+                px-3
+                py-3
+                border-t
+              "
+              style={{
+                borderColor:
+                  theme.primarySelected,
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="
+                  group
+                  w-full
+                  flex
+                  items-center
+                  gap-3
+                  px-3
+                  py-2.5
+                  rounded-xl
+                  text-sm
+                  font-medium
+                  transition-all
+                  duration-200
+                  cursor-pointer
+                "
                 style={{
-                  backgroundColor: theme.primary,
-                  color: "#FFFFFF",
+                  color: textColor,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    theme.primarySelected;
+
+                  e.currentTarget.style.color =
+                    theme.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "transparent";
+
+                  e.currentTarget.style.color =
+                    textColor;
                 }}
               >
-                Orders
-              </div>
+                <span
+                  className="
+                    flex
+                    items-center
+                    justify-center
+                    w-8
+                    h-8
+                    rounded-lg
+                  "
+                  style={{
+                    backgroundColor:
+                      theme.primarySelected,
+                  }}
+                >
+                  <LogOut
+                    size={17}
+                    strokeWidth={2}
+                  />
+                </span>
 
-              <Link
-                href="/orders"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/orders")}
-                style={{
-                  color: isActive("/orders")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/orders")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Local Orders
-              </Link>
-
-              <Link
-                href="/orders/online"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/orders/online")}
-                style={{
-                  color: isActive("/orders/online")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/orders/online")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Online Orders
-              </Link>
-
-              <Link
-                href="/kot/history"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/kot/history")}
-                style={{
-                  color: isActive("/kot/history")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/kot/history")
-                    ? 700
-                    : 500,
-                }}
-              >
-                KOT History
-              </Link>
-
-            </div>
-
-
-            {/* ================================================= */}
-            {/* REPORTS */}
-            {/* ================================================= */}
-
-            <div className="py-1">
-
-              <div
-                className={sectionTitleClass}
-                style={{
-                  backgroundColor: theme.primary,
-                  color: "#FFFFFF",
-                }}
-              >
-                Reports
-              </div>
-
-              <Link
-                href="/reports/day-close"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/reports/day-close")}
-                style={{
-                  color: isActive("/reports/day-close")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/reports/day-close")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Day Close
-              </Link>
-
-              <Link
-                href="/reports/sales"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/reports/sales")}
-                style={{
-                  color: isActive("/reports/sales")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/reports/sales")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Sales / Z-Reports
-              </Link>
-
-            </div>
-
-
-            {/* ================================================= */}
-            {/* CUSTOMERS */}
-            {/* ================================================= */}
-
-            <div className="py-1">
-
-              <div
-                className={sectionTitleClass}
-                style={{
-                  backgroundColor: theme.primary,
-                  color: "#FFFFFF",
-                }}
-              >
-                Customers
-              </div>
-
-              <Link
-                href="/customers"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/customers")}
-                style={{
-                  color: isActive("/customers")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/customers")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Customer List
-              </Link>
-
-            </div>
-
-
-            {/* ================================================= */}
-            {/* SYSTEM */}
-            {/* ================================================= */}
-
-            <div className="py-1">
-
-              <div
-                className={sectionTitleClass}
-                style={{
-                  backgroundColor: theme.primary,
-                  color: "#FFFFFF",
-                }}
-              >
-                System
-              </div>
-
-              <Link
-                href="/sync"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/sync")}
-                style={{
-                  color: isActive("/sync")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/sync")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Sync
-              </Link>
-
-            </div>
-
-
-            {/* ================================================= */}
-            {/* SETTINGS */}
-            {/* ================================================= */}
-
-            <div className="py-1">
-
-              <div
-                className={sectionTitleClass}
-                style={{
-                  backgroundColor: theme.primary,
-                  color: "#FFFFFF",
-                }}
-              >
-                Settings
-              </div>
-
-               <Link
-                href="/settings"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/settings")}
-                style={{
-                  color: isActive("/settings")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/settings")
-                    ? 700
-                    : 500,
-                }}
-              >
-                All Setting
-              </Link>
-
-              <Link
-                href="/settings/theme"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/settings/theme")}
-                style={{
-                  color: isActive("/settings/theme")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/settings/theme")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Theme Setting
-              </Link>
-
-              <Link
-                href="/settings/printers"
-                onClick={handleLinkClick}
-                className={sidebarLinkClass("/settings/printers")}
-                style={{
-                  color: isActive("/settings/printers")
-                    ? theme.primary
-                    : background.text === "text-white"
-                      ? "#FFFFFF"
-                      : "#334155",
-                  fontWeight: isActive("/settings/printers")
-                    ? 700
-                    : 500,
-                }}
-              >
-                Printer Setting
-              </Link>
-
+                <span>
+                  Logout
+                </span>
+              </button>
             </div>
 
           </motion.div>
         )}
-
       </AnimatePresence>
     </div>
   );
