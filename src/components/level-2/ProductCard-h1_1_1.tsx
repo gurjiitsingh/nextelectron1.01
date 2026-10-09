@@ -119,11 +119,11 @@ export default function ProductCardHorizontical({
   }, [isOpen]);
 
   // ---------------- PRICE ----------------
-  const priceRegular = formatCurrencyNumber(
-    product.price ?? 0,
-    settings.currency as string,
-    settings.locale as string
-  );
+  // const priceRegular = formatCurrencyNumber(
+  //   product.price ?? 0,
+  //   settings.currency as string,
+  //   settings.locale as string
+  // );
 
   const priceTarget =
     product.discountPrice && product.discountPrice > 0

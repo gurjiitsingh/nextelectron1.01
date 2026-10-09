@@ -274,24 +274,11 @@ export default function Page() {
   }
 
   return (
-    <>
-      {migrateOpen && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-70
-            flex
-            items-center
-            justify-center
-            bg-black/70
-            p-4
-          "
-        >
+ 
           <div
             className="
               w-full
-              max-w-6xl
+              max-full
               max-h-[90vh]
               overflow-y-auto
               rounded-xl
@@ -817,8 +804,8 @@ export default function Page() {
             </div>
 
           </div>
-        </div>
-      )}
-    </>
+      
+       
+   
   );
 }

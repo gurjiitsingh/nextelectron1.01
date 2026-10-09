@@ -7,7 +7,7 @@ import "@/css/style.css";
 import { Providers } from "../Providers";
 
 import { BargerMenu } from "@/components/Bargermenu/Menu";
-import Modal from "@/components/level-1/Modal";
+ 
 
 import PosTopBar from "@/components/pos/home/PosTopBar";
 
@@ -49,7 +49,7 @@ export default function RootLayout({
 
                   <BargerMenu />
 
-                  <Modal />
+                
 
 
                   {/* =================================================
