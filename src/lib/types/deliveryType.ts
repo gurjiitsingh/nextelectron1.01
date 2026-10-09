@@ -2,19 +2,7 @@ import { z } from "zod";
 
 
 
-export type deliveryType = {
-  id: string | undefined;
-  name: string;
-  deliveryFee: number;
-  minSpend: number;
-  note: string;
-  productCat: string;
-  //image: string;
-  deliveryDistance?: number | null ;
- // purchaseSession: string | null;
- // quantity: number | null;
- // status: string | null;
-};
+ 
 
 
 

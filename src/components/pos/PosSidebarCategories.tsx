@@ -32,8 +32,8 @@ export default function PosSidebarCategories() {
     productCategoryIdG,
     setProductCategoryIdG,
     setProductToSearchQuery,
-    setDisablePickupCatDiscountIds,
-    settings,
+ 
+    
   } = UseSiteContext();
 
   // =====================================================
@@ -90,9 +90,7 @@ export default function PosSidebarCategories() {
           )
           .map((c) => c.id);
 
-        setDisablePickupCatDiscountIds(
-          pickupDisabled
-        );
+     
       } catch (error) {
         console.error(
           "SQLite category load error:",
@@ -107,7 +105,7 @@ export default function PosSidebarCategories() {
       isMounted = false;
     };
   }, []);
-//setDisablePickupCatDiscountIds
+ 
   // =====================================================
   // CATEGORY BUTTON
   // =====================================================
