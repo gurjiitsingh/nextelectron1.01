@@ -2121,24 +2121,57 @@ ipcMain.handle(
 );
 
 
-ipcMain.handle(
-  "firebase:get-config",
-  async () => {
-    try {
-      const config = getFirebaseConfig();
+// ipcMain.handle(
+//   "firebase:get-config",
+//   async () => {
+//     try {
+//       const config = getFirebaseConfig();
 
-      return {
-        success: true,
-        data: config || null,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message,
-      };
-    }
+//       return {
+//         success: true,
+//         data: config || null,
+//       };
+//     } catch (error) {
+//       return {
+//         success: false,
+//         error: error.message,
+//       };
+//     }
+//   }
+// );
+
+
+ipcMain.handle("firebase:get-config", async () => {
+  try {
+    const config = getFirebaseConfig();
+
+    const configured = Boolean(
+      config?.apiKey &&
+      config?.projectId &&
+      config?.appId
+    );
+
+    return {
+      success: true,
+      configured,
+      data: configured ? config : null,
+    };
+  } catch (error) {
+    console.error(
+      "FIREBASE CONFIG READ FAILED:",
+      error
+    );
+
+    return {
+      success: false,
+      configured: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to read Firebase configuration",
+    };
   }
-);
+});
 
 
 

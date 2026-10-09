@@ -321,12 +321,12 @@ declare global {
           error?: string;
         }>;
 
-        getConfig: () => Promise<{
-          success: boolean;
-          data?: any;
-          error?: string;
-        }>;
-      };
+   getConfig: () => Promise<{
+  success: boolean;
+  configured?: boolean;
+  data?: any;
+  error?: string;
+}>;
 
 
       getPosIPAddress: () => Promise<{

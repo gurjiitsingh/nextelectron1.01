@@ -361,7 +361,7 @@ export default function LoginScreen() {
               >
                 POS Login
               </div>
-  <SyncButton />
+  
               <div
                 className="
                   text-[11px]
@@ -389,6 +389,7 @@ export default function LoginScreen() {
               opacity-50
             "
           >
+            <SyncButton />
             <span
               className="
                 w-2
