@@ -31,6 +31,7 @@ function resolveDeliveryTaxRate(
   return firstItem?.taxRate ?? 0;
 }
 
+
 export function calculateBillAndroid(
   params: {
     items: BillItemInput[];
@@ -52,19 +53,40 @@ export function calculateBillAndroid(
 
   // =========================
   // ITEM SUBTOTAL
+  // Includes ALL items
   // =========================
   const itemSubtotalPaise = items.reduce(
     (sum, item) =>
-      sum +
-      toPaise(item.basePrice) * item.quantity,
+      sum + toPaise(item.basePrice) * item.quantity,
+    0
+  );
+
+  // =========================
+  // ELIGIBLE ITEM SUBTOTAL
+  // Includes ONLY discount-eligible items
+  // =========================
+  const eligibleSubtotalPaise = items.reduce(
+    (sum, item) => {
+      if (item.discountEligible !== true) {
+        return sum;
+      }
+
+      return (
+        sum + toPaise(item.basePrice) * item.quantity
+      );
+    },
     0
   );
 
   // =========================
   // RAW TAX
+  // Calculate tax for ALL items
   // =========================
   let exclusiveTaxPaise = 0;
   let inclusiveTaxPaise = 0;
+
+  let eligibleExclusiveTaxPaise = 0;
+  let eligibleInclusiveTaxPaise = 0;
 
   for (const item of items) {
     const basePaise = toPaise(item.basePrice);
@@ -87,43 +109,58 @@ export function calculateBillAndroid(
       );
     }
 
+    const itemTaxPaise =
+      taxPerItem * item.quantity;
+
     if (taxType === 'exclusive') {
-      exclusiveTaxPaise +=
-        taxPerItem * item.quantity;
+      exclusiveTaxPaise += itemTaxPaise;
     } else {
-      inclusiveTaxPaise +=
-        taxPerItem * item.quantity;
+      inclusiveTaxPaise += itemTaxPaise;
+    }
+
+    // Track tax separately for eligible items.
+    if (item.discountEligible === true) {
+      if (taxType === 'exclusive') {
+        eligibleExclusiveTaxPaise += itemTaxPaise;
+      } else {
+        eligibleInclusiveTaxPaise += itemTaxPaise;
+      }
     }
   }
 
   // =========================
   // DISCOUNT
+  // Only eligible items receive a discount
   // =========================
   const flatPaise = toPaise(discountFlat);
 
   const percentPaise = Math.round(
-    (itemSubtotalPaise * discountPercent) / 100
+    (eligibleSubtotalPaise * discountPercent) / 100
   );
 
-  const discountPaise =
+  // Flat discount takes priority over percentage.
+  const requestedDiscountPaise =
     flatPaise > 0 ? flatPaise : percentPaise;
 
+  // Discount cannot exceed the eligible subtotal.
   const safeDiscountPaise = Math.min(
-    discountPaise,
-    itemSubtotalPaise
+    Math.max(0, requestedDiscountPaise),
+    eligibleSubtotalPaise
   );
 
+  // Calculate the discount proportion for eligible items.
   const discountRatio =
-    itemSubtotalPaise === 0
-      ? 0
-      : safeDiscountPaise / itemSubtotalPaise;
+    eligibleSubtotalPaise > 0
+      ? safeDiscountPaise / eligibleSubtotalPaise
+      : 0;
 
-  exclusiveTaxPaise = Math.round(
-    exclusiveTaxPaise * (1 - discountRatio)
+  // Reduce tax ONLY for eligible items.
+  exclusiveTaxPaise -= Math.round(
+    eligibleExclusiveTaxPaise * discountRatio
   );
 
-  inclusiveTaxPaise = Math.round(
-    inclusiveTaxPaise * (1 - discountRatio)
+  inclusiveTaxPaise -= Math.round(
+    eligibleInclusiveTaxPaise * discountRatio
   );
 
   // =========================
@@ -147,7 +184,7 @@ export function calculateBillAndroid(
 
   // =========================
   // GRAND TOTAL
-  // Android does NOT add inclusive tax again
+  // Inclusive tax is NOT added again.
   // =========================
   const grandTotalPaise =
     itemSubtotalPaise -
@@ -167,5 +204,6 @@ export function calculateBillAndroid(
     grandTotalPaise,
   };
 }
+
 
 export { fromPaise, toPaise };

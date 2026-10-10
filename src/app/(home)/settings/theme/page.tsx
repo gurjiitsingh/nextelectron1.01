@@ -1,6 +1,6 @@
 'use client';
 
-import PosThemeSelector from '@/components/pos/PosThemeSelector';
+import PosThemeSelector from '@/components/theme/PosThemeSelector';
 import { useEffect, useState } from 'react';
 
 export default function TestPage() {

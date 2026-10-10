@@ -8,7 +8,7 @@ async function insertProducts(list) {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO products (
       id, searchCode,
-      favorite,
+      favorite,name,
       price, discountPrice, discountEligible, image,
       foodType,
       sortOrder, kitchenPrintReq,
@@ -21,9 +21,9 @@ async function insertProducts(list) {
       type,
       outletId
     ) VALUES (
-      @id, @searchCode,
-      @favorite,
-    @name, @price, @discountPrice, @discountEligible, @image,
+     @id, @searchCode,
+@favorite, @name,
+@price, @discountPrice, @discountEligible, @image,
       @foodType,
       @sortOrder, @kitchenPrintReq,
       @categoryId, @productCat,

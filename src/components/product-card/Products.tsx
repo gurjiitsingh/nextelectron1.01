@@ -18,36 +18,36 @@ export default function Products() {
     setProductToSearchQuery,
     setAllProduct,
   } = UseSiteContext();
-  
-const {
-  activeTable,
-  activeOrder,
-  setActiveTable,
-  setActiveOrder,
-} = usePosSession();
 
-// =====================================================
-// DEFAULT ORDER TYPE
-// =====================================================
+  const {
+    activeTable,
+    activeOrder,
+    setActiveTable,
+    setActiveOrder,
+  } = usePosSession();
 
-useEffect(() => {
-  // Do not overwrite an existing order/session
-  if (activeOrder) {
-    return;
-  }
+  // =====================================================
+  // DEFAULT ORDER TYPE
+  // =====================================================
 
-  // Default POS order type
-  setActiveOrder({
-    orderType: "DINE_IN",
-    orderNo: "",
-    tableId: activeTable?.tableId ?? "",
-    tableName: activeTable?.tableName ?? "",
-  });
-}, [
-  activeOrder,
-  activeTable,
-  setActiveOrder,
-]);
+  useEffect(() => {
+    // Do not overwrite an existing order/session
+    if (activeOrder) {
+      return;
+    }
+
+    // Default POS order type
+    setActiveOrder({
+      orderType: "DINE_IN",
+      orderNo: "",
+      tableId: activeTable?.tableId ?? "",
+      tableName: activeTable?.tableName ?? "",
+    });
+  }, [
+    activeOrder,
+    activeTable,
+    setActiveOrder,
+  ]);
 
   const [allProducts, setAllProducts] = useState<ProductType[]>([]);
   const [variants, setVariants] = useState<ProductType[]>([]);
@@ -65,6 +65,7 @@ useEffect(() => {
       try {
         const data: ProductType[] =
           await window.posApi.getAllProducts();
+          console.log("data---------------------",data)
 
         // Keep the same sorting
         const sorted = [...data].sort(
@@ -96,13 +97,14 @@ useEffect(() => {
     loadProducts();
   }, [setAllProduct]);
 
-  
+
 
   // =====================================================
   // FILTER PRODUCTS
   // =====================================================
 
   const products = useMemo(() => {
+ 
     const query =
       productToSearchQuery?.trim().toLowerCase();
 
@@ -162,6 +164,8 @@ useEffect(() => {
     productCategoryIdG,
     productToSearchQuery,
   ]);
+
+ 
 
   // =====================================================
   // LOAD MODIFIERS FROM SQLITE
@@ -284,12 +288,12 @@ useEffect(() => {
 
   return (
     <div className="w-full">
-   {/* =================================================
+      {/* =================================================
     SEARCH + ORDER TYPE
 ================================================= */}
 
-<div
-  className="
+      <div
+        className="
     sticky
     top-0
     z-20
@@ -298,22 +302,22 @@ useEffect(() => {
     py-2
     bg-inherit
   "
->
-  <div
-    className="
+      >
+        <div
+          className="
       flex
       items-center
       gap-2
       w-full
     "
-  >
+        >
 
-    {/* =============================================
+          {/* =============================================
         SEARCH
     ============================================= */}
 
-    <div
-      className="
+          <div
+            className="
         relative
         flex
         items-center
@@ -326,25 +330,25 @@ useEffect(() => {
         bg-white
         dark:bg-zinc-800
       "
-    >
+          >
 
-      <FiSearch
-        size={19}
-        className="
+            <FiSearch
+              size={19}
+              className="
           ml-3
           shrink-0
           text-zinc-400
         "
-      />
+            />
 
-      <input
-        type="text"
-        value={
-          productToSearchQuery ?? ""
-        }
-        onChange={handleSearchChange}
-        placeholder="Search product name or code..."
-        className="
+            <input
+              type="text"
+              value={
+                productToSearchQuery ?? ""
+              }
+              onChange={handleSearchChange}
+              placeholder="Search product name or code..."
+              className="
           flex-1
           h-full
           px-3
@@ -355,14 +359,14 @@ useEffect(() => {
           dark:text-white
           placeholder:text-zinc-400
         "
-      />
+            />
 
-      {productToSearchQuery && (
-        <button
-          type="button"
-          onClick={clearSearch}
-          title="Clear search"
-          className="
+            {productToSearchQuery && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                title="Clear search"
+                className="
             mr-2
             p-1.5
             rounded
@@ -373,20 +377,20 @@ useEffect(() => {
             dark:hover:bg-zinc-700
             transition
           "
-        >
-          <FiX size={18} />
-        </button>
-      )}
+              >
+                <FiX size={18} />
+              </button>
+            )}
 
-    </div>
+          </div>
 
 
-    {/* =============================================
+          {/* =============================================
         ORDER TYPE
     ============================================= */}
 
-   <div
-  className="
+          <div
+            className="
     flex
     h-11
     shrink-0
@@ -398,78 +402,77 @@ useEffect(() => {
     bg-white
     dark:bg-zinc-800
   "
->
+          >
 
-  {/* DINE IN */}
+            {/* DINE IN */}
 
-  <button
-    type="button"
-    onClick={() => {
+            <button
+              type="button"
+              onClick={() => {
 
-      setActiveOrder({
-        orderType: "DINE_IN",
-        orderNo: "",
-        tableId: activeTable!.tableId,
-        tableName: activeTable!.tableName,
-      });
+                setActiveOrder({
+                  orderType: "DINE_IN",
+                  orderNo: "",
+                  tableId: activeTable!.tableId,
+                  tableName: activeTable!.tableName,
+                });
 
-    }}
-    className={`
+              }}
+              className={`
       px-3
       text-[11px]
       font-semibold
       transition
 
-      ${
-        activeOrder?.orderType === "DINE_IN"
-          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
-      }
+      ${activeOrder?.orderType === "DINE_IN"
+                  ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                }
     `}
-  >
-    DINE IN
-  </button>
+            >
+              DINE IN
+            </button>
 
 
-  {/* TAKEAWAY */}
+            {/* TAKEAWAY */}
 
-  <button
-    type="button"
-    onClick={async () => {
+            <button
+              type="button"
+              onClick={async () => {
 
-      try {
+                try {
 
-        const orderNo =
-          await window.posApi.generateNextPosOrderNumber(
-            "TAKEAWAY"
-          );
+                  const orderNo =
+                    await window.posApi.generateNextPosOrderNumber(
+                      "TAKEAWAY"
+                    );
 
-        setActiveTable({
-          tableId: orderNo,
-          tableName: orderNo,
-        });
+                  setActiveTable({
+                    tableId: orderNo,
+                    tableName: orderNo,
+                  });
 
-        setActiveOrder({
-          orderType: "TAKEAWAY",
-          orderNo,
-          tableId: orderNo,
-          tableName: orderNo,
-        });
+                  setActiveOrder({
+                    orderType: "TAKEAWAY",
+                    orderNo,
+                    tableId: orderNo,
+                    tableName: orderNo,
+                  });
 
-      } catch (error) {
+                } catch (error) {
 
-        console.error(
-          "Failed to generate takeaway order number",
-          error
-        );
+                  console.error(
+                    "Failed to generate takeaway order number",
+                    error
+                  );
 
-        alert(
-          "Failed to create takeaway order."
-        );
-      }
+                  alert(
+                    "Failed to create takeaway order."
+                  );
+                }
 
-    }}
-    className={`
+              }}
+              className={`
       px-3
       text-[11px]
       font-semibold
@@ -480,97 +483,95 @@ useEffect(() => {
       border-zinc-300
       dark:border-zinc-600
 
-      ${
-        activeOrder?.orderType === "TAKEAWAY"
-          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
-      }
+      ${activeOrder?.orderType === "TAKEAWAY"
+                  ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                }
     `}
-  >
-    TAKEAWAY
-  </button>
+            >
+              TAKEAWAY
+            </button>
 
 
-  {/* DELIVERY */}
+            {/* DELIVERY */}
 
-  <button
-    type="button"
-    onClick={async () => {
+            <button
+              type="button"
+              onClick={async () => {
 
-      try {
+                try {
 
-        const orderNo =
-          await window.posApi.generateNextPosOrderNumber(
-            "DELIVERY"
-          );
+                  const orderNo =
+                    await window.posApi.generateNextPosOrderNumber(
+                      "DELIVERY"
+                    );
 
-        setActiveTable({
-          tableId: orderNo,
-          tableName: orderNo,
-        });
+                  setActiveTable({
+                    tableId: orderNo,
+                    tableName: orderNo,
+                  });
 
-        setActiveOrder({
-          orderType: "DELIVERY",
-          orderNo,
-          tableId: orderNo,
-          tableName: orderNo,
-        });
+                  setActiveOrder({
+                    orderType: "DELIVERY",
+                    orderNo,
+                    tableId: orderNo,
+                    tableName: orderNo,
+                  });
 
-      } catch (error) {
+                } catch (error) {
 
-        console.error(
-          "Failed to generate delivery order number",
-          error
-        );
+                  console.error(
+                    "Failed to generate delivery order number",
+                    error
+                  );
 
-        alert(
-          "Failed to create delivery order."
-        );
-      }
+                  alert(
+                    "Failed to create delivery order."
+                  );
+                }
 
-    }}
-    className={`
+              }}
+              className={`
       px-3
       text-[11px]
       font-semibold
       transition
 
-      ${
-        activeOrder?.orderType === "DELIVERY"
-          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
-      }
+      ${activeOrder?.orderType === "DELIVERY"
+                  ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                }
     `}
-  >
-    DELIVERY
-  </button>
+            >
+              DELIVERY
+            </button>
 
-</div>
+          </div>
 
-  </div>
-</div>
+        </div>
+      </div>
 
       {/* =================================================
           PRODUCTS
       ================================================= */}
 
-     {Card && (
-  <div className="flex flex-wrap ml-2">
-    {products.map((product, i) => (
-      <Card
-        key={
-          product.id ??
-          `${product.name}-${i}`
-        }
-        product={product}
-        variants={variants}
-        allAddOns={addOns}
-        modifierGroups={modifierGroups}
-        productModifiers={productModifiers}
-      />
-    ))}
-  </div>
-)}
+      {Card && (
+        <div className="flex flex-wrap ml-2">
+          {products.map((product, i) => (
+            <Card
+              key={
+                product.id ??
+                `${product.name}-${i}`
+              }
+              product={product}
+              variants={variants}
+              allAddOns={addOns}
+              modifierGroups={modifierGroups}
+              productModifiers={productModifiers}
+            />
+          ))}
+        </div>
+      )}
 
       {/* =================================================
           NO RESULTS

@@ -177,17 +177,7 @@ export default function Bill({
       //     currentTableId
       //   );
 
-      console.log(
-        'BILL ITEMS =>',
-        currentTableId,
-        billRows
-      );
-
-      // console.log(
-      //   'CART ITEMS =>',
-      //   currentTableId,
-      //   cartRows
-      // );
+    
 
       // =============================================
       // COMBINE
@@ -250,106 +240,204 @@ export default function Bill({
   // GROUP BILL ITEMS
   // =====================================================
 
-  const billItems = useMemo(
-    () =>
-      groupBillItems(billRows),
-    [billRows]
+const billItems = useMemo(() => {
+  console.log(
+    '========== BILL ROWS BEFORE GROUPING =========='
   );
 
+  billRows.forEach((item) => {
+    console.log(
+      'BILL ROW:',
+      item.name,
+      '| productId:',
+      item.productId,
+      '| discountEligible:',
+      item.discountEligible,
+      '| type:',
+      typeof item.discountEligible
+    );
+  });
+
+  const grouped = groupBillItems(billRows);
+
+  console.log(
+    '========== BILL ITEMS AFTER GROUPING =========='
+  );
+
+  grouped.forEach((item) => {
+    console.log(
+      'GROUPED ITEM:',
+      item.name,
+      '| productId:',
+      item.productId,
+      '| discountEligible:',
+      item.discountEligible,
+      '| type:',
+      typeof item.discountEligible
+    );
+  });
+
+  return grouped;
+}, [billRows]);
   // =====================================================
   // BILL CALCULATION
   // =====================================================
 
-  const calculation = useMemo(() => {
+  // const calculation = useMemo(() => {
 
-    const result =
-      calculateBillAndroid({
+  //   const result =
+  //     calculateBillAndroid({
 
-        items: billItems.map((i) => ({
-          productId:
-            i.productId,
+  //       items: billItems.map((i) => ({
+  //         productId:
+  //           i.productId,
 
-          name:
-            i.name,
+  //         name:
+  //           i.name,
 
-          quantity:
-            Number(
-              i.quantity || 0
-            ),
+  //         quantity:
+  //           Number(
+  //             i.quantity || 0
+  //           ),
 
-          basePrice:
-            Number(
-              i.basePrice || 0
-            ),
+  //         basePrice:
+  //           Number(
+  //             i.basePrice || 0
+  //           ),
 
-          taxRate:
-            Number(
-              i.taxRate || 0
-            ),
+  //         taxRate:
+  //           Number(
+  //             i.taxRate || 0
+  //           ),
 
-          taxType:
-            (i.taxType ||
-              'exclusive') as
-            | 'inclusive'
-            | 'exclusive',
-        })),
+  //         taxType:
+  //           (i.taxType ||
+  //             'exclusive') as
+  //           | 'inclusive'
+  //           | 'exclusive',
+  //       })),
 
-        taxMode:
-          'PER_ITEM',
+  //       taxMode:
+  //         'PER_ITEM',
 
-        discountFlat:
-          discount,
+  //       discountFlat:
+  //         discount,
 
-        discountPercent,
+  //       discountPercent,
 
-        deliveryFee,
+  //       deliveryFee,
 
-        deliveryTaxPercent:
-          0,
-      });
+  //       deliveryTaxPercent:
+  //         0,
+  //     });
 
-    return {
+  //   return {
 
-      itemSubtotal:
-        fromPaise(
-          result.itemSubtotalPaise
-        ),
+  //     itemSubtotal:
+  //       fromPaise(
+  //         result.itemSubtotalPaise
+  //       ),
 
-      itemTax:
-        fromPaise(
-          result.totalTaxPaise
-        ),
+  //     itemTax:
+  //       fromPaise(
+  //         result.totalTaxPaise
+  //       ),
 
-      discount:
-        fromPaise(
-          result.discountPaise
-        ),
+  //     discount:
+  //       fromPaise(
+  //         result.discountPaise
+  //       ),
 
-      deliveryFee:
-        fromPaise(
-          result.deliveryFeePaise
-        ),
+  //     deliveryFee:
+  //       fromPaise(
+  //         result.deliveryFeePaise
+  //       ),
 
-      deliveryTax:
-        fromPaise(
-          result.deliveryTaxPaise
-        ),
+  //     deliveryTax:
+  //       fromPaise(
+  //         result.deliveryTaxPaise
+  //       ),
 
-      grandTotal:
-        fromPaise(
-          result.grandTotalPaise
-        ),
+  //     grandTotal:
+  //       fromPaise(
+  //         result.grandTotalPaise
+  //       ),
 
-      raw:
-        result,
-    };
+  //     raw:
+  //       result,
+  //   };
 
-  }, [
-    billItems,
-    discount,
+  // }, [
+  //   billItems,
+  //   discount,
+  //   discountPercent,
+  //   deliveryFee,
+  // ]);
+
+
+  
+
+ 
+const calculation = useMemo(() => {
+  const mappedItems = billItems.map((i) => ({
+    productId: i.productId,
+    name: i.name,
+    quantity: Number(i.quantity || 0),
+    basePrice: Number(i.basePrice || 0),
+    taxRate: Number(i.taxRate || 0),
+    taxType: (i.taxType || 'exclusive') as
+      | 'inclusive'
+      | 'exclusive',
+
+    // SQLite INTEGER -> Boolean
+    // 0 = false, 1 = true
+    // Missing/null defaults to true
+    discountEligible:
+      i.discountEligible == null
+        ? true
+        : i.discountEligible === true ||
+          i.discountEligible === 1,
+  }));
+
+  console.log('========== BILL DISCOUNT DEBUG ==========');
+
+  mappedItems.forEach((item) => {
+    console.log(
+      'BILL CALCULATION ITEM:',
+      item.name,
+      '| productId:',
+      item.productId,
+      '| discountEligible:',
+      item.discountEligible,
+      '| type:',
+      typeof item.discountEligible
+    );
+  });
+
+  const result = calculateBillAndroid({
+    items: mappedItems,
+    taxMode: 'PER_ITEM',
+    discountFlat: discount,
     discountPercent,
     deliveryFee,
-  ]);
+    deliveryTaxPercent: 0,
+  });
+
+  console.log('=========================================');
+
+  return {
+    itemSubtotal: fromPaise(result.itemSubtotalPaise),
+    itemTax: fromPaise(result.totalTaxPaise),
+    discount: fromPaise(result.discountPaise),
+    deliveryFee: fromPaise(result.deliveryFeePaise),
+    deliveryTax: fromPaise(result.deliveryTaxPaise),
+    grandTotal: fromPaise(result.grandTotalPaise),
+    raw: result,
+  };
+}, [billItems, discount, discountPercent, deliveryFee]);
+ 
+
+
 
   // =====================================================
   // PAYMENT
@@ -407,19 +495,7 @@ async function updateBillItemQuantity(
       );
     }
 
-    console.log("========================================");
-    console.log("UPDATE BILL ITEM QUANTITY - RENDERER");
-    console.log("========================================");
 
-    console.log("ITEM ID:", item.id);
-    console.log("TABLE:", currentTableId);
-    console.log("GROUP KEY:", item.billItemGroupKey);
-    console.log("CURRENT QUANTITY:", item.quantity);
-    console.log("NEW QUANTITY:", quantity);
-    console.log("REASON:", finalReason);
-    console.log("CANCEL KITCHEN:", cancelKitchen);
-
-    console.log("========================================");
 
     const result =
       await window.posApi.updateBillItemQuantity({
@@ -476,15 +552,7 @@ async function decreaseBillItem(
   reason: string,
   cancelKitchen: boolean
 ) {
-  console.log("========================================");
-  console.log("PARENT - DECREASE BILL ITEM");
-  console.log("========================================");
-  console.log("ITEM:", item);
-  console.log("CURRENT QUANTITY:", item?.quantity);
-  console.log("NEW QUANTITY:", newQuantity);
-  console.log("REASON:", reason);
-  console.log("CANCEL KITCHEN:", cancelKitchen);
-  console.log("========================================");
+  
 
   await updateBillItemQuantity(
     item,
@@ -508,26 +576,7 @@ async function decreaseBillItem(
   const newQuantity =
     currentQuantity + 1;
 
-  console.log("========================================");
-  console.log("INCREASE BILL ITEM");
-  console.log("========================================");
-
-  console.log("ITEM ID:", item?.id);
-  console.log("TABLE:", currentTableId);
-  console.log(
-    "GROUP KEY:",
-    item?.billItemGroupKey
-  );
-  console.log(
-    "CURRENT QUANTITY:",
-    currentQuantity
-  );
-  console.log(
-    "NEW QUANTITY:",
-    newQuantity
-  );
-
-  console.log("========================================");
+ 
 
   try {
     setProcessing(true);
@@ -591,17 +640,7 @@ async function handleDeleteBillItem(
     setProcessing(true);
     setError(null);
 
-    console.log("========================================");
-    console.log("DELETE BILL ITEM");
-    console.log("========================================");
-    console.log("TABLE:", currentTableId);
-    console.log("ITEM ID:", item?.id);
-    console.log("PRODUCT ID:", item?.productId);
-    console.log("GROUP KEY:", item?.billItemGroupKey);
-    console.log("CURRENT QUANTITY:", item?.quantity);
-    console.log("REASON:", reason);
-    console.log("CANCEL KITCHEN:", cancelKitchen);
-    console.log("========================================");
+   
 
     const result = await window.posApi.deleteBillItemAll({
       tableNo: currentTableId,
@@ -683,28 +722,7 @@ async function handleDeleteBillItem(
         ) || 0;
 
 
-      console.log(
-        'CHECKOUT PAYMENT MODE:',
-        selectedPaymentMode
-      );
-
-
-      console.log(
-        'CHECKOUT AMOUNT:',
-        totalAmount
-      );
-
-
-      console.log(
-        'CHECKOUT TABLE:',
-        currentTableId
-      );
-
-
-      console.log(
-        'FINAL BILL ITEMS:',
-        billItems
-      );
+     
 
 
       // =================================================

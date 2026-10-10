@@ -6,6 +6,7 @@ export type ProductType = {
   price: number;
   quantity: number | null;
   discountPrice: number | undefined;
+  discountEligible?: boolean;
   categoryId: string;
   masterCategoryId?: string;
   masterCategoryName?: string;

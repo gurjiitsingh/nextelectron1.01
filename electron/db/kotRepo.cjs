@@ -149,6 +149,19 @@ function createKot({
   if (!items.length) {
     throw new Error('KOT items are required');
   }
+
+  console.log('========== CREATE KOT: INCOMING ITEMS ==========');
+
+for (const item of items) {
+  console.log({
+    productId: item.productId,
+    name: item.name,
+    discountEligible: item.discountEligible,
+    type: typeof item.discountEligible,
+  });
+}
+
+console.log('================================================');
   const transaction = db.transaction(() => {
     // =============================================
     // 1. INSERT KOT BATCH
@@ -166,10 +179,11 @@ function createKot({
         productMode,
         currentStock,
         sessionId,
-        kotBatchId,
+        kotBatchId, 
         tableNo,
         tableName,
         productId,
+        discountEligible,
         name,
         categoryId,
         createdById,
@@ -203,6 +217,7 @@ function createKot({
         @tableNo,
         @tableName,
         @productId,
+        @discountEligible,
         @name,
         @categoryId,
         @createdById,
@@ -251,7 +266,7 @@ function createKot({
 
         kitchenPrintReq:
           item.kitchenPrintReq ? 1 : 0,
-
+         
         kitchenPrinted:
           item.kitchenPrinted ? 1 : 0,
 

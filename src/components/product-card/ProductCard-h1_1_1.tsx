@@ -27,12 +27,13 @@ export default function ProductCardHorizontical({
   productModifiers: any[];
 
 }) {
+
   const router = useRouter();
   type ModifierItem = TnewModifierItemSchema & {
     id: string;
   };
   const { theme, background } = usePosTheme();
- 
+
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ProductType | null>(null);
 
@@ -119,14 +120,14 @@ export default function ProductCardHorizontical({
   }, [isOpen]);
 
   // ---------------- PRICE ----------------
-  
+
 
   const priceTarget =
     product.discountPrice && product.discountPrice > 0
       ? product.discountPrice
       : product.price ?? 0;
 
- 
+
 
   const cartProduct: cartProductType = {
 
@@ -142,9 +143,10 @@ export default function ProductCardHorizontical({
     // FIX: always provide a string
     categoryName: product.productCat ?? '',
 
+
     parentId: product.parentId ?? null,
     isVariant: product.type === 'variant',
-
+    discountEligible: product.discountEligible,
     basePrice: priceTarget,
     finalPrice: priceTarget,
     modifierTotal: 0,
@@ -198,6 +200,21 @@ export default function ProductCardHorizontical({
     // FIX: if productCat in cartProductType is required, keep it a string too
     productCat: product.productCat ?? '',
   };
+
+  // DEBUG: Check discount eligibility copied into cart
+// console.log('========== PRODUCT CARD DEBUG ==========');
+// console.log('Product name:', product.name);
+// console.log(
+//   'Original discountEligible:',
+//   product.discountEligible,
+//   typeof product.discountEligible
+// );
+// console.log(
+//   'Cart discountEligible:',
+//   cartProduct.discountEligible,
+//   typeof cartProduct.discountEligible
+// );
+// console.log('========================================');
 
   const modifiersFlat = Object.values(selectedModifiers).flat();
 

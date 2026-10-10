@@ -140,6 +140,16 @@ async function reloadCart(
     newProduct: cartProductType
   ) {
 
+    console.log('========== CART CONTEXT RECEIVED ==========');
+console.log('Product name:', newProduct.name);
+console.log(
+  'discountEligible:',
+  newProduct.discountEligible,
+  typeof newProduct.discountEligible
+);
+console.log('Full product:', newProduct);
+console.log('===========================================');
+
     if (!activeOrder) {
   console.warn(
     'Cannot add product: no active order'
@@ -186,7 +196,7 @@ if (
     categoryName: newProduct.categoryName,
 
     parentId: newProduct.parentId ?? null,
-
+  discountEligible: newProduct.discountEligible,
     isVariant: newProduct.isVariant ?? false,
 
     basePrice: Number(newProduct.basePrice),
@@ -362,14 +372,47 @@ async function emptyCart() {
   // ADD PRODUCT (LEGACY HELPER)
   // =====================================================
 
-  async function addProduct(
-    newProduct: cartProductType
-  ) {
-    await addProductToCart({
-      ...newProduct,
-      quantity: 1,
-    });
-  }
+ 
+async function addProduct(
+  newProduct: cartProductType
+) {
+  console.log(
+    '========== ADD PRODUCT TO CART DEBUG =========='
+  );
+
+  console.log('Product ID:', newProduct.productId);
+  console.log('Product name:', newProduct.name);
+  console.log(
+    'discountEligible:',
+    newProduct.discountEligible
+  );
+  console.log(
+    'discountEligible type:',
+    typeof newProduct.discountEligible
+  );
+  console.log('Full product:', newProduct);
+
+  const cartProduct = {
+    ...newProduct,
+    quantity: 1,
+  };
+
+  console.log(
+    'Product passed to addProductToCart:',
+    cartProduct
+  );
+  console.log(
+    'discountEligible passed to cart:',
+    cartProduct.discountEligible
+  );
+
+  await addProductToCart(cartProduct);
+
+  console.log(
+    '========== ADD PRODUCT DEBUG END =========='
+  );
+}
+ 
 
   // =====================================================
   // ADDRESS

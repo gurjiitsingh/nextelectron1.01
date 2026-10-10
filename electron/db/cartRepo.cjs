@@ -94,6 +94,7 @@ async function addCartItem(item, partition) {
         categoryId,
         categoryName,
         parentId,
+        discountEligible,
         isVariant,
         basePrice,
         finalPrice,
@@ -113,7 +114,7 @@ async function addCartItem(item, partition) {
         printStatus,
         createdAt
       ) VALUES (
-        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
       )`
     ).run(
       productId,
@@ -129,6 +130,7 @@ async function addCartItem(item, partition) {
       item.categoryName || '',
 
       item.parentId || null,
+      item.discountEligible,
 
       item.isVariant ? 1 : 0,
 

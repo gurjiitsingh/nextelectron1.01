@@ -104,8 +104,9 @@ CREATE TABLE IF NOT EXISTS pos_cart_item (
 
   basePrice REAL NOT NULL,
   finalPrice REAL NOT NULL DEFAULT 0,
+  discountEligible INTEGER NOT NULL DEFAULT 1,
   modifierTotal REAL NOT NULL DEFAULT 0,
-discountEligible INTEGER NOT NULL DEFAULT 1,
+
   quantity INTEGER NOT NULL,
 
   taxRate REAL NOT NULL DEFAULT 0,
@@ -228,7 +229,7 @@ CREATE TABLE IF NOT EXISTS pos_kot_items (
 
   parentId TEXT,
   isVariant INTEGER NOT NULL DEFAULT 0,
-
+discountEligible INTEGER NOT NULL DEFAULT 1,
   basePrice REAL NOT NULL,
   finalPrice REAL NOT NULL DEFAULT 0,
   modifierTotal REAL NOT NULL DEFAULT 0,

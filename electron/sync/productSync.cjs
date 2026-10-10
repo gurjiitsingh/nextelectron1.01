@@ -52,6 +52,11 @@ async function syncProducts() {
       ? data.discountPrice
       : null,
 
+  discountEligible:
+    data.discountEligible == null
+      ? true
+      : data.discountEligible === true,    
+
   image: data.image || null,
 
   foodType: data.foodType || null,

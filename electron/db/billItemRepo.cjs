@@ -17,6 +17,7 @@ function insertBillItems(items) {
       categoryId,
       categoryName,
       parentId,
+      discountEligible,
       isVariant,
       basePrice,
       finalPrice,
@@ -40,6 +41,7 @@ function insertBillItems(items) {
       @categoryId,
       @categoryName,
       @parentId,
+      @discountEligible,
       @isVariant,
       @basePrice,
       @finalPrice,
@@ -55,51 +57,68 @@ function insertBillItems(items) {
     )
   `);
 
-  const insertMany = db.transaction((rows) => {
-    for (const item of rows) {
+ const insertMany = db.transaction((rows) => {
+  for (const item of rows) {
+    console.log('========== INSERT BILL ITEM: INCOMING ==========');
+    console.log('Product:', item.name);
+    console.log('Product ID:', item.productId);
+    console.log(
+      'discountEligible:',
+      item.discountEligible,
+      '| type:',
+      typeof item.discountEligible
+    );
+    console.log('================================================');
 
-      const normalizedModifiers =
-        normalizeModifiersJson(item.modifiersJson);
+    const normalizedModifiers =
+      normalizeModifiersJson(item.modifiersJson);
 
-      stmt.run({
-        id: randomUUID(),
+    stmt.run({
+      id: randomUUID(),
 
-        billItemGroupKey: [
-          item.tableNo ?? '',
-          item.productId,
-          item.note ?? '',
-          normalizedModifiers,
-        ].join('|'),
+      billItemGroupKey: [
+        item.tableNo ?? '',
+        item.productId,
+        item.note ?? '',
+        normalizedModifiers,
+      ].join('|'),
 
-        sessionId: item.sessionId ?? '',
-        tableNo: item.tableNo ?? '',
-        tableName: item.tableName ?? '',
+      sessionId: item.sessionId ?? '',
+      tableNo: item.tableNo ?? '',
+      tableName: item.tableName ?? '',
 
-        productId: item.productId,
-        name: item.name,
+      productId: item.productId,
+      name: item.name,
 
-        categoryId: item.categoryId,
-        categoryName: item.categoryName ?? '',
+      categoryId: item.categoryId,
+      categoryName: item.categoryName ?? '',
 
-        parentId: item.parentId ?? null,
-        isVariant: item.isVariant ? 1 : 0,
+      parentId: item.parentId ?? null,
 
-        basePrice: item.basePrice,
-        finalPrice: item.finalPrice ?? item.basePrice,
-        modifierTotal: item.modifierTotal ?? 0,
+      // SQLite INTEGER: false = 0, true = 1; missing = 1
+      discountEligible:
+        item.discountEligible == null
+          ? 1
+          : Number(item.discountEligible),
 
-        quantity: item.quantity,
+      isVariant: item.isVariant ? 1 : 0,
 
-        taxRate: item.taxRate ?? 0,
-        taxType: item.taxType ?? 'exclusive',
+      basePrice: item.basePrice,
+      finalPrice: item.finalPrice ?? item.basePrice,
+      modifierTotal: item.modifierTotal ?? 0,
 
-        note: item.note ?? '',
-        modifiersJson: normalizedModifiers,
+      quantity: item.quantity,
 
-        createdAt: Date.now(),
-      });
-    }
-  });
+      taxRate: item.taxRate ?? 0,
+      taxType: item.taxType ?? 'exclusive',
+
+      note: item.note ?? '',
+      modifiersJson: normalizedModifiers,
+
+      createdAt: Date.now(),
+    });
+  }
+});
 
   insertMany(items);
 

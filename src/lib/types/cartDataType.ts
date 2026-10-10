@@ -11,7 +11,7 @@ export type cartModifierItem = {
   price: number;
 };
 
-export type cartProductType = {
+export type cartProductType = { 
   // =====================================================
   // Android PosCartEntity compatible fields
   // =====================================================
@@ -27,7 +27,7 @@ export type cartProductType = {
 
   categoryId: string;
   categoryName: string;
-
+discountEligible?: boolean;
   parentId?: string | null;
 
   isVariant: boolean;
