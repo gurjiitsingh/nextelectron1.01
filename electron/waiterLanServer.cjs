@@ -238,6 +238,9 @@ function normalizeItem(
     isVariant:
       Boolean(item.isVariant),
 
+        discountEligible:
+      item.discountEligible === true ? 1 : 0,
+
     basePrice,
 
     finalPrice,
@@ -321,6 +324,16 @@ async function handleWaiterKot(req, res) {
     console.log(
       '===================================='
     );
+
+    console.log(
+  'INCOMING discountEligible:',
+  payload?.items?.map(item => ({
+    productId: item.productId,
+    name: item.name,
+    discountEligible: item.discountEligible,
+    type: typeof item.discountEligible,
+  }))
+);
 
     console.log(
       'WAITER LAN KOT RECEIVED'
