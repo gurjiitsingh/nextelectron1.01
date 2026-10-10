@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 
 import { usePosAuth } from "@/store/PosAuthContext";
-import LoginScreen from "../LoginScreen";
+import LoginScreen from "./LoginScreen";
 
 // =====================================================
 // POS AUTH GATE

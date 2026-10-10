@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { UseSiteContext } from "@/SiteContext/SiteContext";
 import { ProductType } from "@/lib/types/productType";
 import { addOnType } from "@/lib/types/addOnType";
-import { FAVORITES_CATEGORY_ID } from "../pos/PosSidebarCategories";
+import { FAVORITES_CATEGORY_ID } from "../home/PosSidebarCategories";
 
 import { FiSearch, FiX } from "react-icons/fi";
 import { usePosSession } from "@/PosSessionStore/PosSessionContext";
@@ -214,7 +214,7 @@ useEffect(() => {
         return dynamic(
           () =>
             import(
-              "../level-2/ProductCard-h1_1_1"
+              "./ProductCard-h1_1_1"
             )
         );
 

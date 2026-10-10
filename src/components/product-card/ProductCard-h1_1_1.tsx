@@ -32,7 +32,7 @@ export default function ProductCardHorizontical({
     id: string;
   };
   const { theme, background } = usePosTheme();
-  const { settings } = UseSiteContext();
+ 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ProductType | null>(null);
 
@@ -119,25 +119,14 @@ export default function ProductCardHorizontical({
   }, [isOpen]);
 
   // ---------------- PRICE ----------------
-  // const priceRegular = formatCurrencyNumber(
-  //   product.price ?? 0,
-  //   settings.currency as string,
-  //   settings.locale as string
-  // );
+  
 
   const priceTarget =
     product.discountPrice && product.discountPrice > 0
       ? product.discountPrice
       : product.price ?? 0;
 
-  const priceDiscounted =
-    product.discountPrice && product.discountPrice > 0
-      ? formatCurrencyNumber(
-        product.discountPrice,
-        settings.currency as string,
-        settings.locale as string
-      )
-      : null;
+ 
 
   const cartProduct: cartProductType = {
 

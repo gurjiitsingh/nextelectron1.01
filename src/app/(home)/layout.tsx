@@ -9,7 +9,7 @@ import { Providers } from "../Providers";
 import { BargerMenu } from "@/components/Bargermenu/Menu";
  
 
-import PosTopBar from "@/components/pos/home/PosTopBar";
+import PosTopBar from "@/components/home/PosTopBar";
 
 import { PosUiProvider } from "@/PosUiStore/PosUiContext";
 import { PosSessionProvider } from "@/PosSessionStore/PosSessionContext";
@@ -17,7 +17,7 @@ import { PosThemeProvider } from "@/PosThemeStore/PosThemeContext";
 
 import { PosAuthProvider } from "@/store/PosAuthContext";
 
-import PosAuthGate from "@/components/pos/auth/PosAuthGate";
+import PosAuthGate from "@/components/auth/PosAuthGate";
 import { SideCart } from "@/components/MiniCart/SideCart";
 
 

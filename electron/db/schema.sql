@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS products (
 
   parentId TEXT,
   baseProductId TEXT,
-
+discountEligible INTEGER NOT NULL DEFAULT 1,
   hasVariants INTEGER NOT NULL DEFAULT 0,
   hasModifiers INTEGER NOT NULL DEFAULT 0,
 
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS pos_cart_item (
   basePrice REAL NOT NULL,
   finalPrice REAL NOT NULL DEFAULT 0,
   modifierTotal REAL NOT NULL DEFAULT 0,
-
+discountEligible INTEGER NOT NULL DEFAULT 1,
   quantity INTEGER NOT NULL,
 
   taxRate REAL NOT NULL DEFAULT 0,
@@ -549,7 +549,7 @@ CREATE TABLE IF NOT EXISTS pos_bill_items (
   -- Pricing
   basePrice REAL NOT NULL,
   finalPrice REAL NOT NULL DEFAULT 0,
-  --discountEligible: Boolean = true,
+  discountEligible INTEGER NOT NULL DEFAULT 1,
   modifierTotal REAL NOT NULL DEFAULT 0,
   quantity INTEGER NOT NULL,
 

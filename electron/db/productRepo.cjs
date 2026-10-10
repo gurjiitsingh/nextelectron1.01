@@ -9,7 +9,7 @@ async function insertProducts(list) {
     INSERT OR REPLACE INTO products (
       id, searchCode,
       favorite,
-      name, price, discountPrice, image,
+      price, discountPrice, discountEligible, image,
       foodType,
       sortOrder, kitchenPrintReq,
       categoryId, productCat,
@@ -23,7 +23,7 @@ async function insertProducts(list) {
     ) VALUES (
       @id, @searchCode,
       @favorite,
-      @name, @price, @discountPrice, @image,
+    @name, @price, @discountPrice, @discountEligible, @image,
       @foodType,
       @sortOrder, @kitchenPrintReq,
       @categoryId, @productCat,
@@ -47,6 +47,14 @@ async function insertProducts(list) {
         price: Number(row.price ?? 0),
         discountPrice:
           row.discountPrice ?? null,
+
+        discountEligible:
+          row.discountEligible == null
+            ? 1
+            : row.discountEligible
+              ? 1
+              : 0,
+
         image: row.image ?? null,
 
         foodType: row.foodType ?? null,

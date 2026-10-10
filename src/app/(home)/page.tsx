@@ -1,8 +1,8 @@
 'use client';
 
-import PosSidebarCategories from "@/components/pos/PosSidebarCategories";
-import Products from "@/components/level-1/Products";
-import RightSideBar from "@/components/pos/rightSideBar/RightSidebar";
+import PosSidebarCategories from "@/components/home/PosSidebarCategories";
+import Products from "@/components/product-card/Products";
+import RightSideBar from "@/components/rightSideBar/RightSidebar";
 import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
 
 export default function Page() {
