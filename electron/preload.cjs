@@ -36,16 +36,16 @@ contextBridge.exposeInMainWorld('posApi', {
     ipcRenderer.invoke('cart:list', tableNo),
 
   updateCartItemNote: (
-  itemId,
-  note,
-  tableNo
-) =>
-  ipcRenderer.invoke(
-    'cart:update-note',
     itemId,
     note,
     tableNo
-  ),
+  ) =>
+    ipcRenderer.invoke(
+      'cart:update-note',
+      itemId,
+      note,
+      tableNo
+    ),
 
 
   removeCartItem: (
@@ -130,10 +130,10 @@ contextBridge.exposeInMainWorld('posApi', {
   // =====================================================
   // KOT
   // =====================================================
-generateNextKotNumber: () =>
-  ipcRenderer.invoke(
-    'pos:kot:generateNumber'
-  ),
+  generateNextKotNumber: () =>
+    ipcRenderer.invoke(
+      'pos:kot:generateNumber'
+    ),
 
   // insertKotBatch: (batch) =>
   // ipcRenderer.invoke(
@@ -141,57 +141,57 @@ generateNextKotNumber: () =>
   //   batch
   // ),
 
-    // insertKotItems: (items) =>
-    // ipcRenderer.invoke(
-    //   'kot:insert',
-    //   items
-    // ),
+  // insertKotItems: (items) =>
+  // ipcRenderer.invoke(
+  //   'kot:insert',
+  //   items
+  // ),
 
-markKotHistoryPaid: (kotHistoryId) =>
-  ipcRenderer.invoke(
-    'kot-history:mark-paid',
-    kotHistoryId
-  ),    
+  markKotHistoryPaid: (kotHistoryId) =>
+    ipcRenderer.invoke(
+      'kot-history:mark-paid',
+      kotHistoryId
+    ),
 
-createKot: (batch, items) =>
-  ipcRenderer.invoke(
-    'kot:create', 
-    {
-      batch,
-      items,
-    }
-  ),
+  createKot: (batch, items) =>
+    ipcRenderer.invoke(
+      'kot:create',
+      {
+        batch,
+        items,
+      }
+    ),
 
   createKotHistory: (data) =>
-  ipcRenderer.invoke(
-    'kot-history:create',
-    data
-  ),
-  
+    ipcRenderer.invoke(
+      'kot-history:create',
+      data
+    ),
 
-getRecentKotHistoryItems: (
-  limit = 20
-) =>
-  ipcRenderer.invoke(
-    'pos:getRecentKotHistoryItems',
-    limit
-  ),
+
+  getRecentKotHistoryItems: (
+    limit = 20
+  ) =>
+    ipcRenderer.invoke(
+      'pos:getRecentKotHistoryItems',
+      limit
+    ),
 
   getKotHistory: (
-  args = {}
-) =>
-  ipcRenderer.invoke(
-    'pos:getKotHistory',
-    args
-  ),
+    args = {}
+  ) =>
+    ipcRenderer.invoke(
+      'pos:getKotHistory',
+      args
+    ),
 
-getKotHistoryDetail: (
-  kotHistoryId
-) =>
-  ipcRenderer.invoke(
-    'pos:getKotHistoryDetail',
+  getKotHistoryDetail: (
     kotHistoryId
-  ),
+  ) =>
+    ipcRenderer.invoke(
+      'pos:getKotHistoryDetail',
+      kotHistoryId
+    ),
 
 
 
@@ -222,54 +222,54 @@ getKotHistoryDetail: (
 
 
 
-    getKotHistory: (options) =>
-  ipcRenderer.invoke(
-    'kot-history:list',
-    options
-  ),
+  getKotHistory: (options) =>
+    ipcRenderer.invoke(
+      'kot-history:list',
+      options
+    ),
 
-getKotHistoryDetail: (kotHistoryId) =>
-  ipcRenderer.invoke(
-    'kot-history:detail',
-    kotHistoryId
-  ),
+  getKotHistoryDetail: (kotHistoryId) =>
+    ipcRenderer.invoke(
+      'kot-history:detail',
+      kotHistoryId
+    ),
 
   markTableHistoryPaid: (args) =>
-  ipcRenderer.invoke(
-    'kotHistory:markTablePaid',
-    args
-  ),
+    ipcRenderer.invoke(
+      'kotHistory:markTablePaid',
+      args
+    ),
 
-   // =====================================================
+  // =====================================================
   // UPDATE UI WHEN KOT RECIEVE FROM WAITER
   // =====================================================
 
-onKotReceived: (callback) => {
+  onKotReceived: (callback) => {
 
-  console.log(
-    'REGISTERING WAITER KOT IPC LISTENER'
-  );
+    console.log(
+      'REGISTERING WAITER KOT IPC LISTENER'
+    );
 
-  const listener = (_event, data) => {
+    const listener = (_event, data) => {
 
-  
-    callback(data);
-  };
 
-  ipcRenderer.on(
-    'waiter-kot-received',
-    listener
-  );
+      callback(data);
+    };
 
-  return () => {
-
-   
-    ipcRenderer.removeListener(
+    ipcRenderer.on(
       'waiter-kot-received',
       listener
     );
-  };
-},
+
+    return () => {
+
+
+      ipcRenderer.removeListener(
+        'waiter-kot-received',
+        listener
+      );
+    };
+  },
 
   // =====================================================
   // BILLING
@@ -284,6 +284,12 @@ onKotReceived: (callback) => {
   getBillItems: (tableNo) =>
     ipcRenderer.invoke(
       'bill-items:list',
+      tableNo
+    ),
+
+  countOpenBillItems: (tableNo) =>
+    ipcRenderer.invoke(
+      'bill-items:count',
       tableNo
     ),
 
@@ -317,7 +323,7 @@ onKotReceived: (callback) => {
       input
     ),
 
-    
+
 
   clearKotByTable: (tableNo) =>
     ipcRenderer.invoke(
@@ -327,89 +333,89 @@ onKotReceived: (callback) => {
 
 
 
-    updateBillItemQuantity: (args) =>
-  ipcRenderer.invoke(
-    'bill:update-item-quantity',
-    args
-  ),
+  updateBillItemQuantity: (args) =>
+    ipcRenderer.invoke(
+      'bill:update-item-quantity',
+      args
+    ),
 
   increaseBillItemQuantity: (args) =>
-  ipcRenderer.invoke(
-    "bill:increase-item-quantity",
-    args
-  ),
+    ipcRenderer.invoke(
+      "bill:increase-item-quantity",
+      args
+    ),
 
-deleteBillItem: (args) =>
-  ipcRenderer.invoke(
-    'bill:delete-item',
-    args
-  ),
+  deleteBillItem: (args) =>
+    ipcRenderer.invoke(
+      'bill:delete-item',
+      args
+    ),
 
 
   deleteBillItemAll: (data) =>
-  ipcRenderer.invoke("pos:deleteBillItem", data),
+    ipcRenderer.invoke("pos:deleteBillItem", data),
 
   // =====================================================
-// ORDERS
-// =====================================================
+  // ORDERS
+  // =====================================================
 
-getOrders: (date) =>
-  ipcRenderer.invoke(
-    'orders:list',
-    date
-  ),
+  getOrders: (date) =>
+    ipcRenderer.invoke(
+      'orders:list',
+      date
+    ),
 
   getOrdersByBusinessDate: (date) =>
-  ipcRenderer.invoke(
-    'orders:bussiness',
-    date
-  ),
+    ipcRenderer.invoke(
+      'orders:bussiness',
+      date
+    ),
 
   getOrdersByRealDate: (date) =>
-  ipcRenderer.invoke(
-    'orders:realDate',
-    date
-  ),
+    ipcRenderer.invoke(
+      'orders:realDate',
+      date
+    ),
 
-getOrderById: (orderId) =>
-  ipcRenderer.invoke(
-    'orders:get',
-    orderId
-  ),
+  getOrderById: (orderId) =>
+    ipcRenderer.invoke(
+      'orders:get',
+      orderId
+    ),
 
-getOrderItems: (orderId) =>
-  ipcRenderer.invoke(
-    'orders:items',
-    orderId
-  ),
-getOrderDeletedItems: (orderId) =>
-  ipcRenderer.invoke(
-    'orders:DeletedItems',
-    orderId
-  ),
+  getOrderItems: (orderId) =>
+    ipcRenderer.invoke(
+      'orders:items',
+      orderId
+    ),
+  getOrderDeletedItems: (orderId) =>
+    ipcRenderer.invoke(
+      'orders:DeletedItems',
+      orderId
+    ),
 
-// moveBillItemToTable: (data) =>
-//   ipcRenderer.invoke(
-//     "pos-bill-item:move-to-table",
-//     data
-//   ),
+  // moveBillItemToTable: (data) =>
+  //   ipcRenderer.invoke(
+  //     "pos-bill-item:move-to-table",
+  //     data
+  //   ),
 
-moveBillItemToTable: (data) =>
-  ipcRenderer.invoke(
-    "pos-bill-item:move-to-table",
-    data
-  ),
+  moveBillItemToTable: (data) =>
+    ipcRenderer.invoke(
+      "pos-bill-item:move-to-table",
+      data
+    ),
 
   moveFullTableToTable: (data) =>
-  ipcRenderer.invoke(
-    "pos-bill:move-full-table",
-    data
-  ),
+    ipcRenderer.invoke(
+      "pos-bill:move-full-table",
+      data
+    ),
 
   uploadOrders: () =>
-  ipcRenderer.invoke(
-    'orders:upload'
-  ),
+    ipcRenderer.invoke(
+      'orders:upload'
+    ),
   // =====================================================
   // ORDER COUNTER
   // =====================================================
@@ -419,7 +425,7 @@ moveBillItemToTable: (data) =>
       'orderCounter:upload'
     ),
 
-    // =====================================================
+  // =====================================================
   // PRINTER
   // =====================================================
 
@@ -438,15 +444,15 @@ moveBillItemToTable: (data) =>
   // IP
   // =====================================================
 
-    registerPosTerminal: () =>
-  ipcRenderer.invoke(
-    'posTerminal:register'
-  ),
+  registerPosTerminal: () =>
+    ipcRenderer.invoke(
+      'posTerminal:register'
+    ),
 
-getPosIPAddress: () =>
-  ipcRenderer.invoke(
-    'posTerminal:getIPAddress'
-  ),
+  getPosIPAddress: () =>
+    ipcRenderer.invoke(
+      'posTerminal:getIPAddress'
+    ),
 
   // =====================================================
   // BILL IMAGE PREVIEW
@@ -480,7 +486,7 @@ getPosIPAddress: () =>
     ),
 
 
-      // =====================================================
+  // =====================================================
   // BUSINESS DAY
   // =====================================================
 
@@ -490,12 +496,12 @@ getPosIPAddress: () =>
     ),
 
 
-    getBusinessInfoByDate:
-  (businessDate) =>
-    ipcRenderer.invoke(
-      'dayClosing:getBusinessInfoByDate',
-      businessDate
-    ),
+  getBusinessInfoByDate:
+    (businessDate) =>
+      ipcRenderer.invoke(
+        'dayClosing:getBusinessInfoByDate',
+        businessDate
+      ),
 
 
   // =====================================================
@@ -526,19 +532,19 @@ getPosIPAddress: () =>
     ),
 
 
-// =====================================================
-// TRANSACTIONS
-// =====================================================
+  // =====================================================
+  // TRANSACTIONS
+  // =====================================================
 
-addCashTransaction: (
-  data
-) =>
-  ipcRenderer.invoke(
-    'cashTransaction:add',
+  addCashTransaction: (
     data
-  ),
+  ) =>
+    ipcRenderer.invoke(
+      'cashTransaction:add',
+      data
+    ),
 
-    // =====================================================
+  // =====================================================
   // GET ALL USERS
   // =====================================================
 
@@ -574,75 +580,75 @@ addCashTransaction: (
       }
     ),
 
-// =====================================================
-// POS USER LOGOUT
-// =====================================================
+  // =====================================================
+  // POS USER LOGOUT
+  // =====================================================
 
-logoutUser: (sessionId) =>
-  ipcRenderer.invoke(
-    "users:logout",
-    sessionId
-  ),
+  logoutUser: (sessionId) =>
+    ipcRenderer.invoke(
+      "users:logout",
+      sessionId
+    ),
 
-  
+
   // =====================================================
   // SALE REPORTS REAL DATE
   // =====================================================
 
 
-    getSalesReport: (
-  businessDate
-) =>
-  ipcRenderer.invoke(
-    'saleReport:getReport', 
+  getSalesReport: (
     businessDate
-  ),
+  ) =>
+    ipcRenderer.invoke(
+      'saleReport:getReport',
+      businessDate
+    ),
 
-generateNextPosOrderNumber: (
-  orderType
-) =>
-  ipcRenderer.invoke(
-    'pos-order:generate-number',
+  generateNextPosOrderNumber: (
     orderType
-  ),
+  ) =>
+    ipcRenderer.invoke(
+      'pos-order:generate-number',
+      orderType
+    ),
 
 
 
 
-  
+
   // =====================================================
-// POS ORDER LIST
-// =====================================================
+  // POS ORDER LIST
+  // =====================================================
 
-getTodayPosOrders: (orderType) =>
-  ipcRenderer.invoke(
-    'pos-order:list',
-    orderType
-  ),
-
-
-
-firebase: {
-  initialize: (clientId) =>
+  getTodayPosOrders: (orderType) =>
     ipcRenderer.invoke(
-      "firebase:initialize",
-      clientId
+      'pos-order:list',
+      orderType
     ),
 
-  getConfig: () =>
-    ipcRenderer.invoke(
-      "firebase:get-config"
-    ),
-},
 
 
-// firebase: {
-//   initialize: (clientId) =>
-//     ipcRenderer.invoke("firebase:initialize", clientId),
+  firebase: {
+    initialize: (clientId) =>
+      ipcRenderer.invoke(
+        "firebase:initialize",
+        clientId
+      ),
 
-//   getConfig: () =>
-//     ipcRenderer.invoke("firebase:get-config"),
-// },
+    getConfig: () =>
+      ipcRenderer.invoke(
+        "firebase:get-config"
+      ),
+  },
+
+
+  // firebase: {
+  //   initialize: (clientId) =>
+  //     ipcRenderer.invoke("firebase:initialize", clientId),
+
+  //   getConfig: () =>
+  //     ipcRenderer.invoke("firebase:get-config"),
+  // },
 
 
 

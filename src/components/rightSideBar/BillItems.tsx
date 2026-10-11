@@ -81,7 +81,7 @@ export default function BillItem({
     // =============================================
 
     if (!finalReason) {
-      alert("Please enter a reason for deleting this item.");
+    toast.error("Please enter a reason for deleting this item.");
       return;
     }
 

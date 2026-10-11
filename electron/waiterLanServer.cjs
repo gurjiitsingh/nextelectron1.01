@@ -335,6 +335,18 @@ async function handleWaiterKot(req, res) {
   }))
 );
 
+console.log(
+  'ITEMS:',
+  payload?.items?.map(item => ({
+    productId: item.productId,
+    name: item.name,
+    quantity: item.quantity,
+    createdById: item.createdById,
+    createdByName: item.createdByName,
+    discountEligible: item.discountEligible,
+  }))
+);
+
     console.log(
       'WAITER LAN KOT RECEIVED'
     );

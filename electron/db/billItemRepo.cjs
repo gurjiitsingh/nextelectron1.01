@@ -485,6 +485,29 @@ function getOpenBillItems(tableNo) {
   `).all(tableNo);
 }
 
+function countOpenBillItems(tableNo) {
+  const result = db.prepare(`
+    SELECT COUNT(*) AS total
+    FROM pos_bill_items
+    WHERE tableNo = ?
+      AND billed = 0
+      AND status = 'OPEN'
+  `).get(tableNo);
+
+  return Number(result?.total ?? 0);
+}
+// =====================================================
+// GET ALL BILL ITEMS FOR WAITER SYNC
+// =====================================================
+
+function getAllBillItemsForWaiterSync() {
+  return db.prepare(`
+    SELECT *
+    FROM pos_bill_items
+    ORDER BY createdAt ASC
+  `).all();
+}
+
 // =====================================================
 // MARK BILL ITEMS AS BILLED
 // =====================================================
@@ -1705,10 +1728,11 @@ module.exports = {
    updateBillItemQuantity,
   insertBillItems,
   getOpenBillItems,
+  getAllBillItemsForWaiterSync,
   markBillItemsBilled,
   deleteBillItem,
   increaseBillItemQuantity,
   moveBillItemToTable,
- 
+ countOpenBillItems,
   moveFullTableToTable,
 };

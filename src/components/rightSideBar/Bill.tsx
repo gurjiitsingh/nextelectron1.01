@@ -11,6 +11,7 @@ import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import PaymentAllocation, { PaymentAllocationValue } from './PaymentAllocationValue';
 import { usePosAuth } from '@/store/PosAuthContext';
 import BillItem from './BillItems';
+import toast from 'react-hot-toast';
 
 type PaymentAllocationProps = {
   totalAmount: number;
@@ -631,43 +632,142 @@ async function decreaseBillItem(
 // DELETE BILL ITEM
 // =====================================================
 
-async function handleDeleteBillItem(
-  item: any,
-  reason: string,
-  cancelKitchen: boolean
-) {
-  try {
-    setProcessing(true);
-    setError(null);
+// async function handleDeleteBillItem(
+//   item: any,
+//   reason: string,
+//   cancelKitchen: boolean
+// ) {
+//   try {
+//     setProcessing(true);
+//     setError(null);
 
    
 
-    const result = await window.posApi.deleteBillItemAll({
-      tableNo: currentTableId,
-      billItemGroupKey: item.billItemGroupKey,
-      reason,
-      cancelKitchen,
-    });
+//     const result = await window.posApi.deleteBillItemAll({
+//       tableNo: currentTableId,
+//       billItemGroupKey: item.billItemGroupKey,
+//       reason,
+//       cancelKitchen,
+//     });
 
-    if (!result?.success) {
-      throw new Error(
-        result?.error || "Failed to delete bill item"
-      );
-    }
+//     if (!result?.success) {
+//       throw new Error(
+//         result?.error || "Failed to delete bill item"
+//       );
+//     }
 
-    await loadBillItems();
+//     await loadBillItems();
 
-  } catch (e) {
-    console.error("FAILED TO DELETE BILL ITEM:", e);
+//   } catch (e) {
+//     console.error("FAILED TO DELETE BILL ITEM:", e);
 
-    const message =
-      e instanceof Error ? e.message : String(e);
+//     const message =
+//       e instanceof Error ? e.message : String(e);
 
-    setError(message || "Failed to delete item");
-  } finally {
-    setProcessing(false);
-  }
+//     setError(message || "Failed to delete item");
+//   } finally {
+//     setProcessing(false);
+//   }
+// }
+
+ 
+// =====================================================
+// DELETE BILL ITEM
+// =====================================================
+
+async function handleDeleteBillItem(
+item: any,
+reason: string,
+cancelKitchen: boolean
+) {
+if (processing) {
+return;
 }
+
+try {
+const itemCount = Number(
+await window.posApi.countOpenBillItems(
+currentTableId
+)
+);
+
+ 
+console.log(
+  "OPEN BILL ITEM COUNT:",
+  itemCount,
+  "TABLE:",
+  currentTableId
+);
+
+
+if (itemCount < 1) {
+  console.log("NO OPEN BILL ITEMS FOUND");
+  return;
+}
+
+// Delete only when more than one item exists.
+setProcessing(true);
+setError(null);
+
+const result =
+  await window.posApi.deleteBillItemAll({
+    tableNo: currentTableId,
+    billItemGroupKey: item.billItemGroupKey,
+    reason,
+    cancelKitchen,
+  });
+
+if (!result?.success) {
+  throw new Error(
+    result?.error || "Failed to delete bill item"
+  );
+} 
+  if (itemCount <= 1) {
+  console.log(
+    "LAST ITEM DETECTED — CANCELLING BILL",
+    {
+      processing,
+      billItemsLength: billItems.length,
+      currentTableId,
+    }
+  );
+await window.posApi.updateKotStatus(
+  item.id,
+  'DELETED'
+);
+  //await handleCancel("CANCEL", reason);
+
+  return;
+
+}
+
+ 
+
+await loadBillItems();
+
+toast.success("Item deleted successfully.");
+ 
+
+} catch (e) {
+console.error(
+"FAILED TO DELETE BILL ITEM:",
+e
+);
+
+ 
+const message =
+  e instanceof Error ? e.message : String(e);
+
+setError(message || "Failed to delete item");
+ 
+
+} finally {
+setProcessing(false);
+}
+}
+
+ 
+
   // =====================================================
   // FINALIZE BILL
   // =====================================================
@@ -851,7 +951,7 @@ async function handleDeleteBillItem(
       //
       // ================================================
 
-      const kotResult =
+      const kotResult = 
         await window.posApi.markTableHistoryPaid({
 
           tableNo:
@@ -866,7 +966,9 @@ async function handleDeleteBillItem(
 
         });
 
-
+ 
+        
+ 
 
 
       if (!kotResult.success) {
@@ -965,6 +1067,30 @@ async function handleDeleteBillItem(
       | 'CANCEL',
     reason = ""
   ) {
+  console.log("HANDLE CANCEL CALLED", {
+    selectedPaymentMode,
+    reason,
+    processing,
+    billItemsLength: billItems.length,
+    currentTableId,
+  });
+
+  if (processing) {
+    console.log("CANCEL BLOCKED: processing is true");
+    return;
+  }
+
+  if (billItems.length === 0) {
+    console.log("CANCEL BLOCKED: billItems is empty");
+    setError("No items in bill");
+    return;
+  }
+
+  if (!currentTableId) {
+    console.log("CANCEL BLOCKED: no table selected");
+    setError("No table selected");
+    return;
+  }
 
     if (processing) {
       return;

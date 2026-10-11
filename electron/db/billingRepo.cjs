@@ -1288,15 +1288,41 @@ async function createBillFromKitchen(input) {
       // 6. DELETE PAID KOT ITEMS
       // =================================================
 
-      db.prepare(`
+      // db.prepare(`
 
+      //   DELETE FROM pos_kot_items
+
+      //   WHERE tableNo = ?
+
+      //     AND status = 'PAID'
+
+      // `).run(tableNo);
+
+
+      // =================================================
+      // 6. DELETE PAID AND DELETED KOT ITEMS
+      // =================================================
+
+      const deleteFinishedKotItems = db.prepare(`
         DELETE FROM pos_kot_items
-
         WHERE tableNo = ?
+          AND UPPER(COALESCE(status, '')) IN (
+            'PAID',
+            'DELETED'
+          )
+      `);
 
-          AND status = 'PAID'
+      const deletedKotResult =
+        deleteFinishedKotItems.run(tableNo);
 
-      `).run(tableNo);
+      console.log(
+        '[BILL CLEANUP] Paid/deleted KOT items removed:',
+        deletedKotResult.changes,
+        'table:',
+        tableNo
+      );
+
+
 
     });
 

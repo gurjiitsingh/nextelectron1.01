@@ -33,6 +33,17 @@ const {
 
 const billRepo = require('./db/billItemRepo.cjs');
 
+// const {
+//   createWaiterLanServer,
+//   stopWaiterLanServer,
+// } = require('./waiterLanServer.cjs');
+
+const {
+  startWaiterWebSocketServer,
+  stopWaiterWebSocketServer,
+  notifyBillItemsChanged,
+} = require("./db/waiterWebSocket.cjs");
+
 //const { broadcastLanEvent } = require("./lan/lanBroadcaster.cjs");
 
 const {
@@ -46,7 +57,7 @@ const tableRepo = require('./db/tableRepo.cjs');
 const userRepository =
   require('./db/userRepo.cjs');
 
-  const {
+const {
   getAllUsers,
 } = require('./db/userRepo.cjs');
 
@@ -111,14 +122,14 @@ const {
 const PosSessionRepository =
   require("./db/posSessionRepository.cjs");
 
-  const posSessionRepository =
+const posSessionRepository =
   new PosSessionRepository(db);
 
 const {
   printManager,
 } = require('../shared/printer/PrintManager.cjs');
 
- 
+
 
 
 
@@ -159,2023 +170,1999 @@ function registerIpcHandlers() {
 
 
   // =====================================================
-// GENERATE POS ORDER NUMBER
-// TAKEAWAY -> TW1, TW2...
-// DELIVERY -> DL1, DL2...
-// =====================================================
+  // GENERATE POS ORDER NUMBER
+  // TAKEAWAY -> TW1, TW2...
+  // DELIVERY -> DL1, DL2...
+  // =====================================================
 
-ipcMain.handle(
-  'pos-order:generate-number',
-  async (_e, orderType) => {
+  ipcMain.handle(
+    'pos-order:generate-number',
+    async (_e, orderType) => {
 
-    try {
+      try {
 
-      const orderNumber =
-        orderRepo.generateNextPosOrderNumber(
+        const orderNumber =
+          orderRepo.generateNextPosOrderNumber(
+            orderType
+          );
+
+        return orderNumber;
+
+      } catch (error) {
+
+        console.error(
+          'pos-order:generate-number failed',
+          error
+        );
+
+        throw error;
+      }
+    }
+  );
+
+
+  // =====================================================
+  // GET TODAY'S POS ORDER NUMBERS
+  //
+  // TAKEAWAY:
+  //   TW1, TW2, TW3...
+  //
+  // DELIVERY:
+  //   DL1, DL2, DL3...
+  // =====================================================
+
+  ipcMain.handle(
+    'pos-order:list',
+    async (_e, orderType) => {
+
+      try {
+
+        return await orderRepo.getTodayPosOrderNumbers(
           orderType
         );
 
-      return orderNumber;
+      } catch (error) {
 
-    } catch (error) {
+        console.error(
+          'pos-order:list failed',
+          error
+        );
 
-      console.error(
-        'pos-order:generate-number failed',
-        error
-      );
-
-      throw error;
+        throw error;
+      }
     }
-  }
-);
+  );
 
 
-// =====================================================
-// GET TODAY'S POS ORDER NUMBERS
-//
-// TAKEAWAY:
-//   TW1, TW2, TW3...
-//
-// DELIVERY:
-//   DL1, DL2, DL3...
-// =====================================================
+  // =====================================================
+  // DAY CLOSING SUMMARY
+  // =====================================================
 
-ipcMain.handle(
-  'pos-order:list',
-  async (_e, orderType) => {
+  ipcMain.handle(
+    'dayClosing:getSummary',
+    async (
+      _event,
+      businessDate
+    ) => {
 
-    try {
+      try {
 
-      return await orderRepo.getTodayPosOrderNumbers(
-        orderType
-      );
+        const summary =
+          dayClosingRepo
+            .getSummary(
+              businessDate
+            );
 
-    } catch (error) {
+        return {
+          success: true,
+          data: summary,
+        };
 
-      console.error(
-        'pos-order:list failed',
-        error
-      );
+      } catch (e) {
 
-      throw error;
+        console.error(
+          'GET DAY CLOSING SUMMARY FAILED',
+          e
+        );
+
+        return {
+          success: false,
+          error:
+            e?.message ||
+            String(e),
+        };
+      }
     }
-  }
-);
-
-
-// =====================================================
-// DAY CLOSING SUMMARY
-// =====================================================
-
-ipcMain.handle(
-  'dayClosing:getSummary',
-  async (
-    _event,
-    businessDate
-  ) => {
-
-    try {
-
-      const summary =
-        dayClosingRepo
-          .getSummary(
-            businessDate
-          );
-
-      return {
-        success: true,
-        data: summary,
-      };
-
-    } catch (e) {
-
-      console.error(
-        'GET DAY CLOSING SUMMARY FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
+  );
 
 
 
- // =====================================================
-// PRINTER IPC
-// =====================================================
+  // =====================================================
+  // PRINTER IPC
+  // =====================================================
 
-ipcMain.handle(
-  'printer:print',
-  async (_event, payload) => {
-    try {
-      const {
-        role,
-        data,
-        source,
-      } = payload;
-
-      const jobId =
-        await printManager.enqueue(
+  ipcMain.handle(
+    'printer:print',
+    async (_event, payload) => {
+      try {
+        const {
           role,
           data,
-          source || 'POS'
+          source,
+        } = payload;
+
+        const jobId =
+          await printManager.enqueue(
+            role,
+            data,
+            source || 'POS'
+          );
+
+        if (
+          role === 'BILL' &&
+          data?.tableNo
+        ) {
+          tableRepo.updateTableStatus(
+            data.tableNo,
+            'PAYMENT_PENDING'
+          );
+        }
+
+        return {
+          success: true,
+          jobId,
+        };
+
+      } catch (e) {
+        console.error(
+          'PRINTER PRINT FAILED',
+          e
         );
 
-      if (
-        role === 'BILL' &&
-        data?.tableNo
-      ) {
-        tableRepo.updateTableStatus(
-          data.tableNo,
-          'PAYMENT_PENDING'
-        );
+        return {
+          success: false,
+          error:
+            e?.message ||
+            String(e),
+        };
       }
-
-      return {
-        success: true,
-        jobId,
-      };
-
-    } catch (e) {
-      console.error(
-        'PRINTER PRINT FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
     }
-  }
-);
+  );
 
-ipcMain.handle(
-  'printer:queue-length',
-  async () => {
-    return printManager.getQueueLength();
-  }
-);
-
-
-// =====================================================
-// PRINTER SETTINGS
-// =====================================================
-
-ipcMain.handle(
-  'printer-settings:get-all',
-  async () => {
-    return printerSettingsRepo.readAll();
-  }
-);
-
-ipcMain.handle(
-  'printer-settings:save',
-  async (_event, config) => {
-    printerSettingsRepo.saveConfig(
-      config
-    );
-
-    return {
-      success: true,
-    };
-  }
-);
+  ipcMain.handle(
+    'printer:queue-length',
+    async () => {
+      return printManager.getQueueLength();
+    }
+  );
 
 
+  // =====================================================
+  // PRINTER SETTINGS
+  // =====================================================
 
+  ipcMain.handle(
+    'printer-settings:get-all',
+    async () => {
+      return printerSettingsRepo.readAll();
+    }
+  );
 
-// =====================================================
-// IP
-// =====================================================
-ipcMain.handle(
-  'posTerminal:register',
-  async () => {
-
-    return await registerPosTerminal();
-
-  }
-);
-
-
-ipcMain.handle(
-  'posTerminal:getIPAddress',
-  async () => {
-
-    return {
-      success: true,
-      ipAddress:
-        getLocalIPAddress(),
-    };
-
-  }
-);
-// =====================================================
-// BILL IMAGE PREVIEW IPC
-// =====================================================
-
-ipcMain.handle(
-  'printer:preview-bill-image',
-  async (_event, data) => {
-    try {
-      console.log(
-        '[PREVIEW] Generating bill image...'
-      );
-
-      const {
-        BillImageFormatter80,
-      } = require(
-        '../shared/printer/formatters/BillImageFormatter80.cjs'
-      );
-
-      const formatter =
-        new BillImageFormatter80();
-
-      const pngBuffer =
-        await formatter.format(data);
-
-      const previewDir =
-        path.join(
-          app.getPath('temp'),
-          'pos-bill-previews'
-        );
-
-      if (!fs.existsSync(previewDir)) {
-        fs.mkdirSync(
-          previewDir,
-          { recursive: true }
-        );
-      }
-
-      const filePath =
-        path.join(
-          previewDir,
-          `bill-preview-${Date.now()}.png`
-        );
-
-      fs.writeFileSync(
-        filePath,
-        pngBuffer
-      );
-
-      console.log(
-        '[PREVIEW] PNG CREATED:',
-        filePath
+  ipcMain.handle(
+    'printer-settings:save',
+    async (_event, config) => {
+      printerSettingsRepo.saveConfig(
+        config
       );
 
       return {
         success: true,
-        filePath,
-      };
-
-    } catch (e) {
-      console.error(
-        '[PREVIEW] BILL IMAGE FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
       };
     }
-  }
-);
+  );
 
 
-// =====================================================
-// OPEN BILL IMAGE
-// =====================================================
 
-ipcMain.handle(
-  'printer:open-file',
-  async (_event, filePath) => {
-    try {
-      if (!filePath) {
-        throw new Error(
-          'Missing file path'
+
+  // =====================================================
+  // IP
+  // =====================================================
+  ipcMain.handle(
+    'posTerminal:register',
+    async () => {
+
+      return await registerPosTerminal();
+
+    }
+  );
+
+
+  ipcMain.handle(
+    'posTerminal:getIPAddress',
+    async () => {
+
+      return {
+        success: true,
+        ipAddress:
+          getLocalIPAddress(),
+      };
+
+    }
+  );
+  // =====================================================
+  // BILL IMAGE PREVIEW IPC
+  // =====================================================
+
+  ipcMain.handle(
+    'printer:preview-bill-image',
+    async (_event, data) => {
+      try {
+        console.log(
+          '[PREVIEW] Generating bill image...'
         );
-      }
 
-      const errorMessage =
-        await shell.openPath(
+        const {
+          BillImageFormatter80,
+        } = require(
+          '../shared/printer/formatters/BillImageFormatter80.cjs'
+        );
+
+        const formatter =
+          new BillImageFormatter80();
+
+        const pngBuffer =
+          await formatter.format(data);
+
+        const previewDir =
+          path.join(
+            app.getPath('temp'),
+            'pos-bill-previews'
+          );
+
+        if (!fs.existsSync(previewDir)) {
+          fs.mkdirSync(
+            previewDir,
+            { recursive: true }
+          );
+        }
+
+        const filePath =
+          path.join(
+            previewDir,
+            `bill-preview-${Date.now()}.png`
+          );
+
+        fs.writeFileSync(
+          filePath,
+          pngBuffer
+        );
+
+        console.log(
+          '[PREVIEW] PNG CREATED:',
           filePath
         );
 
-      if (errorMessage) {
-        throw new Error(
-          errorMessage
-        );
-      }
+        return {
+          success: true,
+          filePath,
+        };
 
-      return {
-        success: true,
-      };
-
-    } catch (e) {
-      console.error(
-        '[PREVIEW] OPEN FILE FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
-
-
-// =====================================================
-// USERS / OUTLET / TABLES
-// =====================================================
-
-ipcMain.handle(
-  'users:list',
-  async () => {
-    return getAllUsers();
-  }
-);
-
-ipcMain.handle(
-  'outlet:get',
-  async () => {
-    return getOutlet();
-  }
-);
-
-ipcMain.handle(
-  'tables:list',
-  async () => {
-    return tableRepo.getAllTables();
-  }
-);
-
-
-// =====================================================
-// DEBUG
-// =====================================================
-
-ipcMain.handle(
-  'debug:counts',
-  async () => {
-    return getDebugCounts();
-  }
-);
-
-
-// =====================================================
-// KOT
-// =====================================================
-
-ipcMain.handle(
-  'kot:create',
-  async (_e, { batch, items }) => {
-    return kotRepo.createKot({
-      batch,
-      items,
-    });
-  }
-);
-
-ipcMain.handle(
-  'pos:kot:generateNumber',
-  async () => {
-    return kotRepo.generateNextKotNumber();
-  }
-);
-
-ipcMain.handle(
-  'kot:pending-by-table',
-  async (_e, tableNo) => {
-    return kotRepo.getPendingKotByTable(
-      tableNo
-    );
-  }
-);
-
-ipcMain.handle(
-  'kot:by-batch',
-  async (_e, kotBatchId) => {
-    return kotRepo.getKotByBatch(
-      kotBatchId
-    );
-  }
-);
-
-ipcMain.handle(
-  'kot:mark-printed',
-  async (_e, kotBatchId) => {
-    return kotRepo.markKotPrinted(
-      kotBatchId
-    );
-  }
-);
-
-ipcMain.handle(
-  'kot:update-status',
-  async (_e, id, status) => {
-    return kotRepo.updateKotStatus(
-      id,
-      status
-    );
-  }
-);
-
-
-// =====================================================
-// KOT HISTORY
-// =====================================================
-
-ipcMain.handle(
-  'kot-history:create',
-  async (_event, data) => {
-    return kotHistoryRepo.createKotHistory(
-      data
-    );
-  }
-);
-
-ipcMain.handle(
-  'pos:getKotHistory',
-  async (_event, args = {}) => {
-    try {
-      return {
-        success: true,
-        data:
-          kotHistoryRepo.getKotHistory(
-            args
-          ),
-      };
-    } catch (error) {
-      console.error(
-        'GET KOT HISTORY FAILED',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error?.message ||
-          'Failed to load KOT history',
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  'kot-history:list',
-  async (_event, options = {}) => {
-    try {
-      return {
-        success: true,
-        data:
-          kotHistoryRepo.getKotHistory(
-            options
-          ),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error?.message ||
-          String(error),
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  'pos:getKotHistoryDetail',
-  async (_event, kotHistoryId) => {
-    try {
-      return {
-        success: true,
-        data:
-          kotHistoryRepo.getKotHistoryDetail(
-            kotHistoryId
-          ),
-      };
-    } catch (error) {
-      console.error(
-        'GET KOT HISTORY DETAIL FAILED',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error?.message ||
-          'Failed to load KOT history detail',
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  'pos:getRecentKotHistoryItems',
-  async (_event, limit = 20) => {
-    try {
-      return {
-        success: true,
-        data:
-          kotHistoryRepo.getRecentKotHistoryItems(
-            limit
-          ),
-      };
-    } catch (error) {
-      console.error(
-        'GET RECENT KOT HISTORY ITEMS FAILED',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error?.message ||
-          'Failed to load KOT history items',
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  'kotHistory:markTablePaid',
-  async (_event, args) => {
-    try {
-      return kotHistoryRepo.markTableHistoryPaid(
-        args
-      );
-    } catch (error) {
-      console.error(
-        'IPC KOT HISTORY PAID FAILED:',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  'kot-history:mark-paid',
-  async (_e, kotHistoryId) => {
-    try {
-      if (!kotHistoryId) {
-        throw new Error(
-          'KOT history ID is required'
-        );
-      }
-
-      return kotHistoryRepo.markKotHistoryPaid(
-        kotHistoryId
-      );
-    } catch (error) {
-      console.error(
-        'MARK KOT HISTORY PAID FAILED:',
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
-  }
-);
-
-
-
-ipcMain.handle(
-  'kot-history:detail',
-  async (_event, kotHistoryId) => {
-    try {
-      return {
-        success: true,
-        data:
-          kotHistoryRepo.getKotHistoryDetail(
-            kotHistoryId
-          ),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error?.message ||
-          String(error),
-      };
-    }
-  }
-);
-
-
-// =====================================================
-// BILLING
-// =====================================================
-
-ipcMain.handle(
-  'bill-items:insert',
-  async (_e, items) => {
-    try {
-      const result =
-         billItemRepo.insertBillItems(
-          items
+      } catch (e) {
+        console.error(
+          '[PREVIEW] BILL IMAGE FAILED',
+          e
         );
 
-      tableRepo.refreshAllTableBillVisualStates();
-
-      return {
-        success: true,
-        result,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
-  }
-);
-
-// ipcMain.handle(
-//   "pos-bill-item:move-to-table",
-//   async (_event, {
-//     itemId,
-//     tableNo,
-//     tableName,
-//   }) => {
-//     try {
-//       const result =
-//         billItemRepo.moveBillItemToTable(
-//           itemId,
-//           tableNo,
-//           tableName
-//         );
-
-//       console.log(
-//         "[MOVE ITEM IPC] Move result:",
-//         result
-//       );
-
-//       if (result.success) {
-//         tableRepo.refreshAllTableCartVisualStates();
-
-//         tableRepo.refreshAllTableBillVisualStates();
-//       }
-
-//       return result;
-
-//     } catch (error) {
-//       console.error(
-//         "[MOVE ITEM IPC] moveBillItemToTable error:",
-//         error
-//       );
-
-//       return {
-//         success: false,
-//         error:
-//           error instanceof Error
-//             ? error.message
-//             : "Failed to move item",
-//       };
-//     }
-//   }
-// );
-
-
-
-ipcMain.handle(
-  "pos-bill-item:move-to-table",
-  async (
-    _event,
-    {
-      itemId,
-      tableNo,
-      tableName,
-      quantity,
-    }
-  ) => {
-    try {
-      const result =
-        billItemRepo.moveBillItemToTable(
-          itemId,
-          tableNo,
-          tableName,
-          quantity
-        );
-
-      console.log(
-        "[MOVE ITEM IPC] Move result:",
-        result
-      );
-
-      if (result.success) {
-        tableRepo.refreshAllTableCartVisualStates();
-        tableRepo.refreshAllTableBillVisualStates();
-      }
-
-      return result;
-    } catch (error) {
-      console.error(
-        "[MOVE ITEM IPC] moveBillItemToTable error:",
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to move item",
-      };
-    }
-  }
-);
-
-
-ipcMain.handle(
-  "pos-bill:move-full-table",
-  async (
-    _event,
-    {
-      sourceTableNo,
-      sourceTableName,
-      destinationTableNo,
-      destinationTableName,
-    }
-  ) => {
-    try {
-      console.log("========================================");
-      console.log(
-        "[MOVE FULL TABLE IPC] START"
-      );
-
-      console.log(
-        "[MOVE FULL TABLE IPC] Source:",
-        sourceTableNo
-      );
-
-      console.log(
-        "[MOVE FULL TABLE IPC] Destination:",
-        destinationTableNo
-      );
-
-      const result =
-        billItemRepo.moveFullTableToTable(
-          sourceTableNo,
-          sourceTableName,
-          destinationTableNo,
-          destinationTableName
-        );
-
-      console.log(
-        "[MOVE FULL TABLE IPC] Result:",
-        result
-      );
-
-      if (result.success) {
-
-        console.log(
-          "[MOVE FULL TABLE IPC] Refreshing table cart states..."
-        );
-
-        tableRepo.refreshAllTableCartVisualStates();
-
-        console.log(
-          "[MOVE FULL TABLE IPC] Refreshing table bill states..."
-        );
-
-        tableRepo.refreshAllTableBillVisualStates();
-
-        console.log(
-          "[MOVE FULL TABLE IPC] Table states refreshed"
-        );
-      }
-
-      console.log(
-        "[MOVE FULL TABLE IPC] COMPLETE"
-      );
-
-      console.log("========================================");
-
-      return result;
-
-    } catch (error) {
-
-      console.error(
-        "[MOVE FULL TABLE IPC] ERROR:",
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  'bill:create',
-  async (_event, input) => {
-    try {
-
-    //       broadcastLanEvent({
-    //   type: "TEST",
-    //   message: "OK"
-    // });
-      const result =
-        await createBillFromKitchen(
-          input
-        );
-
-      if (result?.success !== false) {
-        tableRepo.refreshAllTableCartVisualStates();
-        tableRepo.refreshAllTableBillVisualStates();
-      }
-
-      return result;
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error?.message ||
-          'Failed to create bill',
-      };
-    }
-  }
-);
-
-
-
-ipcMain.handle(
-  'bill:cancel',
-  async (_event, input) => {
-    try {
-
-    //       broadcastLanEvent({
-    //   type: "TEST",
-    //   message: "OK"
-    // });
-      const result =
-        await cancelBillFromKitchen(
-          input
-        );
-
-      if (result?.success !== false) {
-        tableRepo.refreshAllTableCartVisualStates();
-        tableRepo.refreshAllTableBillVisualStates();
-      }
-
-      return result;
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error?.message ||
-          'Failed to create bill',
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  "bill:update-item-quantity",
-  async (_event, args) => {
-    try {
-      const result =
-        billRepo.updateBillItemQuantity(
-          args
-        );
-
-      if (result?.success !== false) {
-        tableRepo.refreshAllTableBillVisualStates();
-      }
-
-      return result;
-
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  "bill:increase-item-quantity",
-  async (_event, args) => {
-    try {
-      const result =
-        billRepo.increaseBillItemQuantity(
-          args
-        );
-
-      if (result?.success !== false) {
-        tableRepo.refreshAllTableBillVisualStates();
-      }
-
-      return result;
-
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  "pos:deleteBillItem",
-  async (_event, data) => {
-    try {
-      const {
-        tableNo,
-        billItemGroupKey,
-        reason,
-        cancelKitchen,
-      } = data;
-
-      if (!tableNo) {
         return {
           success: false,
-          error: "Table number is required",
+          error:
+            e?.message ||
+            String(e),
         };
       }
+    }
+  );
 
-      if (!billItemGroupKey) {
+
+  // =====================================================
+  // OPEN BILL IMAGE
+  // =====================================================
+
+  ipcMain.handle(
+    'printer:open-file',
+    async (_event, filePath) => {
+      try {
+        if (!filePath) {
+          throw new Error(
+            'Missing file path'
+          );
+        }
+
+        const errorMessage =
+          await shell.openPath(
+            filePath
+          );
+
+        if (errorMessage) {
+          throw new Error(
+            errorMessage
+          );
+        }
+
+        return {
+          success: true,
+        };
+
+      } catch (e) {
+        console.error(
+          '[PREVIEW] OPEN FILE FAILED',
+          e
+        );
+
         return {
           success: false,
-          error: "Bill item group key is required",
+          error:
+            e?.message ||
+            String(e),
         };
       }
+    }
+  );
 
-      if (!reason || !String(reason).trim()) {
-        return {
-          success: false,
-          error: "Delete reason is required",
-        };
-      }
 
-      const result =  billRepo.deleteBillItem({
-        tableNo,
-        billItemGroupKey,
-        reason: String(reason).trim(),
-        cancelKitchen: Boolean(cancelKitchen),
+  // =====================================================
+  // USERS / OUTLET / TABLES
+  // =====================================================
+
+  ipcMain.handle(
+    'users:list',
+    async () => {
+      return getAllUsers();
+    }
+  );
+
+  ipcMain.handle(
+    'outlet:get',
+    async () => {
+      return getOutlet();
+    }
+  );
+
+  ipcMain.handle(
+    'tables:list',
+    async () => {
+      return tableRepo.getAllTables();
+    }
+  );
+
+
+  // =====================================================
+  // DEBUG
+  // =====================================================
+
+  ipcMain.handle(
+    'debug:counts',
+    async () => {
+      return getDebugCounts();
+    }
+  );
+
+
+  // =====================================================
+  // KOT
+  // =====================================================
+
+  ipcMain.handle(
+    'kot:create',
+    async (_e, { batch, items }) => {
+      return kotRepo.createKot({
+        batch,
+        items,
       });
-
-      return result;
-    } catch (error) {
-      console.error(
-        "IPC pos:deleteBillItem failed:",
-        error
-      );
-
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
     }
-  }
-);
+  );
 
-ipcMain.handle(
-  'bill:delete-item',
-  async (_event, args) => {
-    try {
-      const result =
-        await billRepo.deleteBillItem(
-          args
-        );
-
-      if (result?.success !== false) {
-        tableRepo.refreshAllTableBillVisualStates();
-      }
-
-      return result;
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
-      };
+  ipcMain.handle(
+    'pos:kot:generateNumber',
+    async () => {
+      return kotRepo.generateNextKotNumber();
     }
-  }
-);
+  );
 
-
-
-
-ipcMain.handle(
-  'bill-items:list',
-  async (_e, tableNo) => {
-    return billItemRepo.getOpenBillItems(
-      tableNo
-    );
-  }
-);
-
-ipcMain.handle(
-  'bill-items:mark-billed',
-  async (
-    _e,
-    tableNo,
-    billId,
-    billNo
-  ) => {
-    const result =
-      await billItemRepo.markBillItemsBilled(
-        tableNo,
-        billId,
-        billNo
-      );
-
-    if (result?.success !== false) {
-      tableRepo.refreshAllTableBillVisualStates();
-    }
-
-    return result;
-  }
-);
-
-ipcMain.handle(
-  'clear-kot-by-table',
-  async (_event, tableNo) => {
-    await db
-      .prepare(
-        'DELETE FROM pos_kot_items WHERE tableNo = ?'
-      )
-      .run(tableNo);
-
-    return {
-      success: true,
-    };
-  }
-);
-
-ipcMain.handle(
-  'bill:get-kot-items',
-  async (_event, tableNo) => {
-    return getBillableKotItems(
-      tableNo
-    );
-  }
-);
-
-
-// =====================================================
-// CART
-// =====================================================
-
-ipcMain.handle(
-  'cart:list',
-  async (_e, tableNo) => {
-    return cartRepo.getCartItems(
-      tableNo
-    );
-  }
-);
-
-ipcMain.handle(
-  'cart:add',
-  async (_e, item, tableNo) => {
-    const result =
-      await cartRepo.addCartItem(
-        item,
+  ipcMain.handle(
+    'kot:pending-by-table',
+    async (_e, tableNo) => {
+      return kotRepo.getPendingKotByTable(
         tableNo
       );
-
-    tableRepo.refreshAllTableCartVisualStates();
-
-    return result;
-  }
-);
-
-ipcMain.handle(
-  'cart:remove',
-  async (
-    _e,
-    uniqueKey,
-    tableNo,
-    removeAll
-  ) => {
-    const result =
-      cartRepo.removeCartItem(
-        uniqueKey,
-        tableNo,
-        removeAll
-      );
-
-    if (result?.success !== false) {
-      tableRepo.refreshAllTableCartVisualStates();
     }
+  );
 
-    return result;
-  }
-);
-
-ipcMain.handle(
-  'cart:clear',
-  async (_e, tableNo) => {
-    const result =
-      cartRepo.clearCart(
-        tableNo
+  ipcMain.handle(
+    'kot:by-batch',
+    async (_e, kotBatchId) => {
+      return kotRepo.getKotByBatch(
+        kotBatchId
       );
-
-    if (result?.success !== false) {
-      tableRepo.refreshAllTableCartVisualStates();
     }
+  );
 
-    return result;
-  }
-);
-
-ipcMain.handle(
-  'cart:update-note',
-  async (
-    _e,
-    itemId,
-    note,
-    tableNo
-  ) => {
-    const result =
-      cartRepo.updateCartItemNote(
-        itemId,
-        note,
-        tableNo
+  ipcMain.handle(
+    'kot:mark-printed',
+    async (_e, kotBatchId) => {
+      return kotRepo.markKotPrinted(
+        kotBatchId
       );
-
-    if (result?.success !== false) {
-      tableRepo.refreshAllTableCartVisualStates();
     }
+  );
 
-    return result;
-  }
-);
-
-
-// =====================================================
-// SYNC
-// =====================================================
-
-ipcMain.handle(
-  'sync:all',
-  async () => {
-    return syncAll();
-  }
-);
-
-
-// =====================================================
-// CATEGORIES
-// =====================================================
-
-ipcMain.handle(
-  'categories:list',
-  async () => {
-    return getAllCategories();
-  }
-);
-
-
-// =====================================================
-// PRODUCTS
-// =====================================================
-
-ipcMain.handle(
-  'products:list',
-  async () => {
-    return getAllProducts();
-  }
-);
-
-ipcMain.handle(
-  'products:by-category',
-  async (_e, categoryId) => {
-    return getProductsByCategory(
-      categoryId
-    );
-  }
-);
-
-ipcMain.handle(
-  'products:search',
-  async (_e, query, foodType) => {
-    return searchProducts(
-      query,
-      foodType
-    );
-  }
-);
-
-ipcMain.handle(
-  'products:search-code',
-  async (_e, code, foodType) => {
-    return searchExactCode(
-      code,
-      foodType
-    );
-  }
-);
-
-
-// =====================================================
-// MODIFIERS
-// =====================================================
-
-ipcMain.handle(
-  'modifier-groups:list',
-  async () => {
-    return getModifierGroups();
-  }
-);
-
-ipcMain.handle(
-  'product-modifiers:list',
-  async () => {
-    return getProductModifiers();
-  }
-);
-
-
-// =====================================================
-// ORDERS
-// =====================================================
-
-ipcMain.handle(
-  'orders:list',
-  async (_e, date) => {
-    return orderRepo.getOrders(date);
-  }
-);
-
-ipcMain.handle(
-  'orders:bussiness',
-  async (_e, date) => {
-    return orderRepo.getOrdersByBusinessDate(
-      date
-    );
-  }
-);
-
-ipcMain.handle(
-  'orders:realDate',
-  async (_e, date) => {
-    return orderRepo.getOrdersByRealDate(
-      date
-    );
-  }
-);
-
-ipcMain.handle(
-  'orders:get',
-  async (_e, orderId) => {
-    return orderRepo.getOrderById(
-      orderId
-    );
-  }
-);
-
-ipcMain.handle(
-  'orders:items',
-  async (_e, orderId) => {
-    return orderRepo.getOrderItems(
-      orderId
-    );
-  }
-);
-
-
-ipcMain.handle(
-  'orders:DeletedItems',
-  async (_e, orderId) => {
-    return orderRepo.getOrderDeletedItems(
-      orderId
-    );
-  }
-);
-
-// =====================================================
-// ORDER SYNC IPC
-// =====================================================
-
-ipcMain.handle(
-  'orders:upload',
-  async () => {
-
-    try {
-
-      const result =
-        await syncPendingOrders();
-
-      console.log(
-        '[IPC] ORDER UPLOAD RESULT',
-        result
+  ipcMain.handle(
+    'kot:update-status',
+    async (_e, id, status) => {
+      return kotRepo.updateKotStatus(
+        id,
+        status
       );
-
-      return result;
-
-    } catch (error) {
-
-      console.error(
-        '[IPC] ORDER UPLOAD FAILED',
-        error
-      );
-
-      throw error;
-
     }
-
-  }
-);
+  );
 
 
-// =====================================================
-// BUSINESS DAY
-// =====================================================
+  // =====================================================
+  // KOT HISTORY
+  // =====================================================
 
-ipcMain.handle(
-  'businessDay:getCurrent',
-  async () => {
-    try {
-      return {
-        success: true,
-        data:
-          businessDayRepo.getCurrentBusinessDay(),
-      };
-    } catch (e) {
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  'dayClosing:getBusinessInfoByDate',
-  async (
-    _event,
-    businessDate
-  ) => {
-    try {
-      return {
-        success: true,
-        data:
-          dayClosingRepo.getBusinessInfoByDate(
-            businessDate
-          ),
-      };
-    } catch (e) {
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
-
-
-// =====================================================
-// DAY CLOSING HISTORY
-// =====================================================
-
-ipcMain.handle(
-  'dayClosing:getHistory',
-  async () => {
-    try {
-      const history =
-        dayClosingRepo.getHistory();
-
-      return {
-        success: true,
-        data: history,
-      };
-    } catch (e) {
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
-
- // =====================================================
- // CLOSE BUSINESS DAY
- // =====================================================
- 
-ipcMain.handle(
-  'dayClosing:close',
-  async (
-    _event,
-    data
-  ) => {
-
-    try {
-
-      console.log(
-        '===================================='
-      );
-
-      console.log(
-        'DAY CLOSING REQUEST'
-      );
-
-      console.log(
-        'DATA:',
+  ipcMain.handle(
+    'kot-history:create',
+    async (_event, data) => {
+      return kotHistoryRepo.createKotHistory(
         data
       );
+    }
+  );
 
-      console.log(
-        '===================================='
+  ipcMain.handle(
+    'pos:getKotHistory',
+    async (_event, args = {}) => {
+      try {
+        return {
+          success: true,
+          data:
+            kotHistoryRepo.getKotHistory(
+              args
+            ),
+        };
+      } catch (error) {
+        console.error(
+          'GET KOT HISTORY FAILED',
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error?.message ||
+            'Failed to load KOT history',
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'kot-history:list',
+    async (_event, options = {}) => {
+      try {
+        return {
+          success: true,
+          data:
+            kotHistoryRepo.getKotHistory(
+              options
+            ),
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error?.message ||
+            String(error),
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'pos:getKotHistoryDetail',
+    async (_event, kotHistoryId) => {
+      try {
+        return {
+          success: true,
+          data:
+            kotHistoryRepo.getKotHistoryDetail(
+              kotHistoryId
+            ),
+        };
+      } catch (error) {
+        console.error(
+          'GET KOT HISTORY DETAIL FAILED',
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error?.message ||
+            'Failed to load KOT history detail',
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'pos:getRecentKotHistoryItems',
+    async (_event, limit = 20) => {
+      try {
+        return {
+          success: true,
+          data:
+            kotHistoryRepo.getRecentKotHistoryItems(
+              limit
+            ),
+        };
+      } catch (error) {
+        console.error(
+          'GET RECENT KOT HISTORY ITEMS FAILED',
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error?.message ||
+            'Failed to load KOT history items',
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'kotHistory:markTablePaid',
+    async (_event, args) => {
+      try {
+        return kotHistoryRepo.markTableHistoryPaid(
+          args
+        );
+      } catch (error) {
+        console.error(
+          'IPC KOT HISTORY PAID FAILED:',
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'kot-history:mark-paid',
+    async (_e, kotHistoryId) => {
+      try {
+        if (!kotHistoryId) {
+          throw new Error(
+            'KOT history ID is required'
+          );
+        }
+
+        return kotHistoryRepo.markKotHistoryPaid(
+          kotHistoryId
+        );
+      } catch (error) {
+        console.error(
+          'MARK KOT HISTORY PAID FAILED:',
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        };
+      }
+    }
+  );
+
+
+
+  ipcMain.handle(
+    'kot-history:detail',
+    async (_event, kotHistoryId) => {
+      try {
+        return {
+          success: true,
+          data:
+            kotHistoryRepo.getKotHistoryDetail(
+              kotHistoryId
+            ),
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error?.message ||
+            String(error),
+        };
+      }
+    }
+  );
+
+
+  // =====================================================
+  // BILLING
+  // =====================================================
+
+  ipcMain.handle(
+    'bill-items:insert',
+    async (_e, items) => {
+      try {
+        const result =
+          billItemRepo.insertBillItems(
+            items
+          );
+
+        tableRepo.refreshAllTableBillVisualStates();
+        notifyBillItemsChanged();
+        return {
+          success: true,
+          result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        };
+      }
+    }
+  );
+
+
+
+
+  ipcMain.handle(
+    "pos-bill-item:move-to-table",
+    async (
+      _event,
+      {
+        itemId,
+        tableNo,
+        tableName,
+        quantity,
+      }
+    ) => {
+      try {
+        const result =
+          billItemRepo.moveBillItemToTable(
+            itemId,
+            tableNo,
+            tableName,
+            quantity
+          );
+
+        console.log(
+          "[MOVE ITEM IPC] Move result:",
+          result
+        );
+
+        if (result.success) {
+          tableRepo.refreshAllTableCartVisualStates();
+          tableRepo.refreshAllTableBillVisualStates();
+          notifyBillItemsChanged();
+        }
+
+        return result;
+      } catch (error) {
+        console.error(
+          "[MOVE ITEM IPC] moveBillItemToTable error:",
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to move item",
+        };
+      }
+    }
+  );
+
+
+  ipcMain.handle(
+    "pos-bill:move-full-table",
+    async (
+      _event,
+      {
+        sourceTableNo,
+        sourceTableName,
+        destinationTableNo,
+        destinationTableName,
+      }
+    ) => {
+      try {
+        console.log("========================================");
+        console.log(
+          "[MOVE FULL TABLE IPC] START"
+        );
+
+        console.log(
+          "[MOVE FULL TABLE IPC] Source:",
+          sourceTableNo
+        );
+
+        console.log(
+          "[MOVE FULL TABLE IPC] Destination:",
+          destinationTableNo
+        );
+
+        const result =
+          billItemRepo.moveFullTableToTable(
+            sourceTableNo,
+            sourceTableName,
+            destinationTableNo,
+            destinationTableName
+          );
+
+        console.log(
+          "[MOVE FULL TABLE IPC] Result:",
+          result
+        );
+
+        if (result.success) {
+
+          console.log(
+            "[MOVE FULL TABLE IPC] Refreshing table cart states..."
+          );
+
+          tableRepo.refreshAllTableCartVisualStates();
+          notifyBillItemsChanged();
+          console.log(
+            "[MOVE FULL TABLE IPC] Refreshing table bill states..."
+          );
+
+          tableRepo.refreshAllTableBillVisualStates();
+
+          console.log(
+            "[MOVE FULL TABLE IPC] Table states refreshed"
+          );
+        }
+
+        console.log(
+          "[MOVE FULL TABLE IPC] COMPLETE"
+        );
+
+        console.log("========================================");
+
+        return result;
+
+      } catch (error) {
+
+        console.error(
+          "[MOVE FULL TABLE IPC] ERROR:",
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'bill:create',
+    async (_event, input) => {
+      try {
+
+        //       broadcastLanEvent({
+        //   type: "TEST",
+        //   message: "OK"
+        // });
+        const result =
+          await createBillFromKitchen(
+            input
+          );
+
+        if (result?.success !== false) {
+          tableRepo.refreshAllTableCartVisualStates();
+          tableRepo.refreshAllTableBillVisualStates();
+          notifyBillItemsChanged();
+        }
+
+        return result;
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error?.message ||
+            'Failed to create bill',
+        };
+      }
+    }
+  );
+
+
+
+  ipcMain.handle(
+    'bill:cancel',
+    async (_event, input) => {
+      try {
+
+        //       broadcastLanEvent({
+        //   type: "TEST",
+        //   message: "OK"
+        // });
+        const result =
+          await cancelBillFromKitchen(
+            input
+          );
+
+        if (result?.success !== false) {
+          tableRepo.refreshAllTableCartVisualStates();
+          tableRepo.refreshAllTableBillVisualStates();
+          notifyBillItemsChanged();
+        }
+
+        return result;
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error?.message ||
+            'Failed to create bill',
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "bill:update-item-quantity",
+    async (_event, args) => {
+      try {
+        const result =
+          billRepo.updateBillItemQuantity(
+            args
+          );
+
+        if (result?.success !== false) {
+          tableRepo.refreshAllTableBillVisualStates();
+          notifyBillItemsChanged();
+        }
+
+        return result;
+
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "bill:increase-item-quantity",
+    async (_event, args) => {
+      try {
+        const result =
+          billRepo.increaseBillItemQuantity(
+            args
+          );
+
+        if (result?.success !== false) {
+          tableRepo.refreshAllTableBillVisualStates();
+          notifyBillItemsChanged();
+        }
+
+        return result;
+
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "pos:deleteBillItem",
+    async (_event, data) => {
+      try {
+        const {
+          tableNo,
+          billItemGroupKey,
+          reason,
+          cancelKitchen,
+        } = data;
+
+        if (!tableNo) {
+          return {
+            success: false,
+            error: "Table number is required",
+          };
+        }
+
+        if (!billItemGroupKey) {
+          return {
+            success: false,
+            error: "Bill item group key is required",
+          };
+        }
+
+        if (!reason || !String(reason).trim()) {
+          return {
+            success: false,
+            error: "Delete reason is required",
+          };
+        }
+
+        const result = billRepo.deleteBillItem({
+          tableNo,
+          billItemGroupKey,
+          reason: String(reason).trim(),
+          cancelKitchen: Boolean(cancelKitchen),
+        });
+        notifyBillItemsChanged();
+        return result;
+      } catch (error) {
+        console.error(
+          "IPC pos:deleteBillItem failed:",
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'bill:delete-item',
+    async (_event, args) => {
+      try {
+        const result =
+          await billRepo.deleteBillItem(
+            args
+          );
+
+        if (result?.success !== false) {
+          tableRepo.refreshAllTableBillVisualStates();
+        }
+
+        return result;
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        };
+      }
+    }
+  );
+
+
+
+
+  ipcMain.handle(
+    'bill-items:list',
+    async (_e, tableNo) => {
+      return billItemRepo.getOpenBillItems(
+        tableNo
       );
+    }
+  );
 
 
+ipcMain.handle(
+  'bill-items:count',
+  async (_e, tableNo) => {
+    return billItemRepo.countOpenBillItems(tableNo);
+  }
+);
+
+
+
+  ipcMain.handle(
+    'bill-items:mark-billed',
+    async (
+      _e,
+      tableNo,
+      billId,
+      billNo
+    ) => {
       const result =
-        dayClosingRepo
-          .closeBusinessDay({
+        billItemRepo.markBillItemsBilled(
+          tableNo,
+          billId,
+          billNo
+        );
 
-            actualCash:
+      if (result?.success !== false) {
+        tableRepo.refreshAllTableBillVisualStates();
+        notifyBillItemsChanged();
+      }
+
+      return result;
+    }
+  );
+
+  ipcMain.handle(
+    'clear-kot-by-table',
+    async (_event, tableNo) => {
+      await db
+        .prepare(
+          'DELETE FROM pos_kot_items WHERE tableNo = ?'
+        )
+        .run(tableNo);
+
+      return {
+        success: true,
+      };
+    }
+  );
+
+  ipcMain.handle(
+    'bill:get-kot-items',
+    async (_event, tableNo) => {
+      return getBillableKotItems(
+        tableNo
+      );
+    }
+  );
+
+
+  // =====================================================
+  // CART
+  // =====================================================
+
+  ipcMain.handle(
+    'cart:list',
+    async (_e, tableNo) => {
+      return cartRepo.getCartItems(
+        tableNo
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'cart:add',
+    async (_e, item, tableNo) => {
+      const result =
+        await cartRepo.addCartItem(
+          item,
+          tableNo
+        );
+
+      tableRepo.refreshAllTableCartVisualStates();
+
+      return result;
+    }
+  );
+
+  ipcMain.handle(
+    'cart:remove',
+    async (
+      _e,
+      uniqueKey,
+      tableNo,
+      removeAll
+    ) => {
+      const result =
+        cartRepo.removeCartItem(
+          uniqueKey,
+          tableNo,
+          removeAll
+        );
+
+      if (result?.success !== false) {
+        tableRepo.refreshAllTableCartVisualStates();
+      }
+
+      return result;
+    }
+  );
+
+  ipcMain.handle(
+    'cart:clear',
+    async (_e, tableNo) => {
+      const result =
+        cartRepo.clearCart(
+          tableNo
+        );
+
+      if (result?.success !== false) {
+        tableRepo.refreshAllTableCartVisualStates();
+      }
+
+      return result;
+    }
+  );
+
+  ipcMain.handle(
+    'cart:update-note',
+    async (
+      _e,
+      itemId,
+      note,
+      tableNo
+    ) => {
+      const result =
+        cartRepo.updateCartItemNote(
+          itemId,
+          note,
+          tableNo
+        );
+
+      if (result?.success !== false) {
+        tableRepo.refreshAllTableCartVisualStates();
+      }
+
+      return result;
+    }
+  );
+
+
+  // =====================================================
+  // SYNC
+  // =====================================================
+
+  ipcMain.handle(
+    'sync:all',
+    async () => {
+      return syncAll();
+    }
+  );
+
+
+  // =====================================================
+  // CATEGORIES
+  // =====================================================
+
+  ipcMain.handle(
+    'categories:list',
+    async () => {
+      return getAllCategories();
+    }
+  );
+
+
+  // =====================================================
+  // PRODUCTS
+  // =====================================================
+
+  ipcMain.handle(
+    'products:list',
+    async () => {
+      return getAllProducts();
+    }
+  );
+
+  ipcMain.handle(
+    'products:by-category',
+    async (_e, categoryId) => {
+      return getProductsByCategory(
+        categoryId
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'products:search',
+    async (_e, query, foodType) => {
+      return searchProducts(
+        query,
+        foodType
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'products:search-code',
+    async (_e, code, foodType) => {
+      return searchExactCode(
+        code,
+        foodType
+      );
+    }
+  );
+
+
+  // =====================================================
+  // MODIFIERS
+  // =====================================================
+
+  ipcMain.handle(
+    'modifier-groups:list',
+    async () => {
+      return getModifierGroups();
+    }
+  );
+
+  ipcMain.handle(
+    'product-modifiers:list',
+    async () => {
+      return getProductModifiers();
+    }
+  );
+
+
+  // =====================================================
+  // ORDERS
+  // =====================================================
+
+  ipcMain.handle(
+    'orders:list',
+    async (_e, date) => {
+      return orderRepo.getOrders(date);
+    }
+  );
+
+  ipcMain.handle(
+    'orders:bussiness',
+    async (_e, date) => {
+      return orderRepo.getOrdersByBusinessDate(
+        date
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'orders:realDate',
+    async (_e, date) => {
+      return orderRepo.getOrdersByRealDate(
+        date
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'orders:get',
+    async (_e, orderId) => {
+      return orderRepo.getOrderById(
+        orderId
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'orders:items',
+    async (_e, orderId) => {
+      return orderRepo.getOrderItems(
+        orderId
+      );
+    }
+  );
+
+
+  ipcMain.handle(
+    'orders:DeletedItems',
+    async (_e, orderId) => {
+      return orderRepo.getOrderDeletedItems(
+        orderId
+      );
+    }
+  );
+
+  // =====================================================
+  // ORDER SYNC IPC
+  // =====================================================
+
+  ipcMain.handle(
+    'orders:upload',
+    async () => {
+
+      try {
+
+        const result =
+          await syncPendingOrders();
+
+        console.log(
+          '[IPC] ORDER UPLOAD RESULT',
+          result
+        );
+
+        return result;
+
+      } catch (error) {
+
+        console.error(
+          '[IPC] ORDER UPLOAD FAILED',
+          error
+        );
+
+        throw error;
+
+      }
+
+    }
+  );
+
+
+  // =====================================================
+  // BUSINESS DAY
+  // =====================================================
+
+  ipcMain.handle(
+    'businessDay:getCurrent',
+    async () => {
+      try {
+        return {
+          success: true,
+          data:
+            businessDayRepo.getCurrentBusinessDay(),
+        };
+      } catch (e) {
+        return {
+          success: false,
+          error:
+            e?.message ||
+            String(e),
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'dayClosing:getBusinessInfoByDate',
+    async (
+      _event,
+      businessDate
+    ) => {
+      try {
+        return {
+          success: true,
+          data:
+            dayClosingRepo.getBusinessInfoByDate(
+              businessDate
+            ),
+        };
+      } catch (e) {
+        return {
+          success: false,
+          error:
+            e?.message ||
+            String(e),
+        };
+      }
+    }
+  );
+
+
+  // =====================================================
+  // DAY CLOSING HISTORY
+  // =====================================================
+
+  ipcMain.handle(
+    'dayClosing:getHistory',
+    async () => {
+      try {
+        const history =
+          dayClosingRepo.getHistory();
+
+        return {
+          success: true,
+          data: history,
+        };
+      } catch (e) {
+        return {
+          success: false,
+          error:
+            e?.message ||
+            String(e),
+        };
+      }
+    }
+  );
+
+  // =====================================================
+  // CLOSE BUSINESS DAY
+  // =====================================================
+
+  ipcMain.handle(
+    'dayClosing:close',
+    async (
+      _event,
+      data
+    ) => {
+
+      try {
+
+        console.log(
+          '===================================='
+        );
+
+        console.log(
+          'DAY CLOSING REQUEST'
+        );
+
+        console.log(
+          'DATA:',
+          data
+        );
+
+        console.log(
+          '===================================='
+        );
+
+
+        const result =
+          dayClosingRepo
+            .closeBusinessDay({
+
+              actualCash:
+                Number(
+                  data?.actualCash || 0
+                ),
+
+              cashHandedOver:
+                Number(
+                  data?.cashHandedOver || 0
+                ),
+
+              notes:
+                data?.notes || '',
+
+              closedById:
+                data?.closedById || '',
+
+              closedByName:
+                data?.closedByName || '',
+
+            });
+
+
+        console.log(
+          'DAY CLOSED SUCCESSFULLY:',
+          result
+        );
+
+
+        return {
+          success: true,
+          data: result,
+        };
+
+      } catch (e) {
+
+        console.error(
+          'DAY CLOSING FAILED',
+          e
+        );
+
+        return {
+          success: false,
+          error:
+            e?.message ||
+            String(e),
+        };
+
+      }
+
+    }
+  );
+  // =====================================================
+  // CASH TRANSACTIONS
+  // =====================================================
+
+  // addCashTransaction: (
+  //   data
+  // ) =>
+  //   ipcRenderer.invoke(
+  //     'cashTransaction:add',
+  //     data
+  //   ),
+
+
+
+  // =====================================================
+  // ADD CASH TRANSACTION
+  // =====================================================
+
+  ipcMain.handle(
+    'cashTransaction:add',
+    async (
+      _event,
+      data
+    ) => {
+
+      try {
+
+        console.log(
+          '===================================='
+        );
+
+        console.log(
+          'CASH TRANSACTION REQUEST'
+        );
+
+        console.log(
+          'DATA:',
+          data
+        );
+
+        console.log(
+          '===================================='
+        );
+
+        const result =
+          dayClosingRepo.addCashTransaction({
+            type:
+              data?.type || '',
+
+            amount:
               Number(
-                data?.actualCash || 0
+                data?.amount || 0
               ),
 
-            cashHandedOver:
-              Number(
-                data?.cashHandedOver || 0
-              ),
+            reason:
+              data?.reason || '',
 
             notes:
               data?.notes || '',
 
-            closedById:
-              data?.closedById || '',
+            createdById:
+              data?.createdById || '',
 
-            closedByName:
-              data?.closedByName || '',
-
+            createdByName:
+              data?.createdByName || '',
           });
 
+        console.log(
+          'CASH TRANSACTION ADDED:',
+          result
+        );
 
-      console.log(
-        'DAY CLOSED SUCCESSFULLY:',
-        result
-      );
+        return {
+          success: true,
+          data: result,
+        };
 
+      } catch (e) {
 
-      return {
-        success: true,
-        data: result,
-      };
+        console.error(
+          'CASH TRANSACTION FAILED',
+          e
+        );
 
-    } catch (e) {
-
-      console.error(
-        'DAY CLOSING FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-
-    }
-
-  }
-);
- // =====================================================
-// CASH TRANSACTIONS
-// =====================================================
-
-// addCashTransaction: (
-//   data
-// ) =>
-//   ipcRenderer.invoke(
-//     'cashTransaction:add',
-//     data
-//   ),
-
-
-
-// =====================================================
-// ADD CASH TRANSACTION
-// =====================================================
-
-ipcMain.handle(
-  'cashTransaction:add',
-  async (
-    _event,
-    data
-  ) => {
-
-    try {
-
-      console.log(
-        '===================================='
-      );
-
-      console.log(
-        'CASH TRANSACTION REQUEST'
-      );
-
-      console.log(
-        'DATA:',
-        data
-      );
-
-      console.log(
-        '===================================='
-      );
-
-      const result =
-        dayClosingRepo.addCashTransaction({
-          type:
-            data?.type || '',
-
-          amount:
-            Number(
-              data?.amount || 0
-            ),
-
-          reason:
-            data?.reason || '',
-
-          notes:
-            data?.notes || '',
-
-          createdById:
-            data?.createdById || '',
-
-          createdByName:
-            data?.createdByName || '',
-        });
-
-      console.log(
-        'CASH TRANSACTION ADDED:',
-        result
-      );
-
-      return {
-        success: true,
-        data: result,
-      };
-
-    } catch (e) {
-
-      console.error(
-        'CASH TRANSACTION FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
-
-// =====================================================
-// SALE REPORT
-// =====================================================
-
-ipcMain.handle(
-  'saleReport:getReport',
-  async (_event, businessDate) => {
-
-    console.log(
-      'REPORT IPC RECEIVED:',
-      businessDate
-    );
-
-    try {
-
-      if (!businessDate) {
         return {
           success: false,
-          error: 'Business date is required',
+          error:
+            e?.message ||
+            String(e),
         };
       }
+    }
+  );
+
+  // =====================================================
+  // SALE REPORT
+  // =====================================================
+
+  ipcMain.handle(
+    'saleReport:getReport',
+    async (_event, businessDate) => {
 
       console.log(
-        'CALLING REPORT REPOSITORY:',
+        'REPORT IPC RECEIVED:',
         businessDate
       );
 
-      const report =
-        saleReportRepo.getSalesReport(
+      try {
+
+        if (!businessDate) {
+          return {
+            success: false,
+            error: 'Business date is required',
+          };
+        }
+
+        console.log(
+          'CALLING REPORT REPOSITORY:',
           businessDate
         );
 
-      console.log(
-        'REPORT FROM REPOSITORY:',
-        report
-      );
+        const report =
+          saleReportRepo.getSalesReport(
+            businessDate
+          );
 
-      return {
-        success: true,
-        data: report,
-      };
-
-    } catch (e) {
-
-      console.error(
-        'REPORT IPC ERROR:',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
-
-
-// =====================================================
-// UPLOAD DATA
-// =====================================================
-
-
-
-ipcMain.handle(
-  'orderCounter:upload',
-  async () => {
-    try {
-      const result =
-        await uploadOrderCounter();
-
-      return {
-        success: true,
-        ...result,
-      };
-    } catch (e) {
-      console.error(
-        'ORDER COUNTER UPLOAD FAILED',
-        e
-      );
-
-      return {
-        success: false,
-        error:
-          e?.message ||
-          String(e),
-      };
-    }
-  }
-);
-
-// =====================================================
-// USER 
-// =====================================================
-ipcMain.handle("users:getAll", async () => {
-  try {
-    return userRepository.getAllUsers();
-  } catch (error) {
-    console.error("Failed to get users:", error);
-
-    return [];
-  }
-});
-
-// =====================================================
-// POS LOGIN USERS
-// =====================================================
-
-ipcMain.handle("users:getPosLoginUsers", async () => {
-  try {
-    const users = userRepository.getPosLoginUsers();
-
-    return {
-      success: true,
-      users,
-    };
-  } catch (error) {
-    console.error(
-      "Failed to get POS login users:",
-      error
-    );
-
-    return {
-      success: false,
-      users: [],
-      error:
-        error.message ||
-        "Failed to load POS users.",
-    };
-  }
-});
-
-
-
-// =====================================================
-// POS USER LOGIN
-// =====================================================
-
-ipcMain.handle(
-  "users:login",
-  async (_event, { userId, pin }) => {
-
-    try {
-
-      // ===============================================
-      // VERIFY USER
-      // ===============================================
-
-      const result =
-        authRepository.loginUser(
-          userId,
-          pin
+        console.log(
+          'REPORT FROM REPOSITORY:',
+          report
         );
 
+        return {
+          success: true,
+          data: report,
+        };
 
-      // ===============================================
-      // LOGIN FAILED
-      // ===============================================
+      } catch (e) {
 
-      if (!result?.success) {
-        return result;
+        console.error(
+          'REPORT IPC ERROR:',
+          e
+        );
+
+        return {
+          success: false,
+          error:
+            e?.message ||
+            String(e),
+        };
       }
+    }
+  );
 
 
-      // ===============================================
-      // CREATE POS SESSION
-      // ===============================================
-
-      // const session =
-      //   posSessionRepository.createSession(
-      //     result.user
-      //   );
+  // =====================================================
+  // UPLOAD DATA
+  // =====================================================
 
 
-      // ===============================================
-      // RETURN USER + SESSION
-      // ===============================================
 
-         const session =
-        posSessionRepository.createSession(
-          result.user
+  ipcMain.handle(
+    'orderCounter:upload',
+    async () => {
+      try {
+        const result =
+          await uploadOrderCounter();
+
+        return {
+          success: true,
+          ...result,
+        };
+      } catch (e) {
+        console.error(
+          'ORDER COUNTER UPLOAD FAILED',
+          e
         );
+
+        return {
+          success: false,
+          error:
+            e?.message ||
+            String(e),
+        };
+      }
+    }
+  );
+
+  // =====================================================
+  // USER 
+  // =====================================================
+  ipcMain.handle("users:getAll", async () => {
+    try {
+      return userRepository.getAllUsers();
+    } catch (error) {
+      console.error("Failed to get users:", error);
+
+      return [];
+    }
+  });
+
+  // =====================================================
+  // POS LOGIN USERS
+  // =====================================================
+
+  ipcMain.handle("users:getPosLoginUsers", async () => {
+    try {
+      const users = userRepository.getPosLoginUsers();
 
       return {
         success: true,
-
-        user: result.user,
-
-        session,
+        users,
       };
-
     } catch (error) {
-
       console.error(
-        "POS user login failed:",
+        "Failed to get POS login users:",
         error
       );
 
       return {
         success: false,
+        users: [],
+        error:
+          error.message ||
+          "Failed to load POS users.",
+      };
+    }
+  });
 
+
+
+  // =====================================================
+  // POS USER LOGIN
+  // =====================================================
+
+  ipcMain.handle(
+    "users:login",
+    async (_event, { userId, pin }) => {
+
+      try {
+
+        // ===============================================
+        // VERIFY USER
+        // ===============================================
+
+        const result =
+          authRepository.loginUser(
+            userId,
+            pin
+          );
+
+
+        // ===============================================
+        // LOGIN FAILED
+        // ===============================================
+
+        if (!result?.success) {
+          return result;
+        }
+
+
+        // ===============================================
+        // CREATE POS SESSION
+        // ===============================================
+
+        // const session =
+        //   posSessionRepository.createSession(
+        //     result.user
+        //   );
+
+
+        // ===============================================
+        // RETURN USER + SESSION
+        // ===============================================
+
+        const session =
+          posSessionRepository.createSession(
+            result.user
+          );
+
+        return {
+          success: true,
+
+          user: result.user,
+
+          session,
+        };
+
+      } catch (error) {
+
+        console.error(
+          "POS user login failed:",
+          error
+        );
+
+        return {
+          success: false,
+
+          error:
+            error instanceof Error
+              ? error.message
+              : "Login failed.",
+        };
+      }
+    }
+  );
+
+
+
+  // =====================================================
+  // POS USER LOGOUT
+  // =====================================================
+
+  // ipcMain.handle(
+  //   "users:logout",
+  //   async () => {
+  //     try {
+
+  //       // No persistent POS session yet.
+  //       // Session cleanup will be added later.
+
+  //       return {
+  //         success: true,
+  //       };
+
+  //     } catch (error) {
+
+  //       console.error(
+  //         "POS user logout failed:",
+  //         error
+  //       );
+
+  //       return {
+  //         success: false,
+  //         error:
+  //           error instanceof Error
+  //             ? error.message
+  //             : "Logout failed.",
+  //       };
+  //     }
+  //   }
+  // );
+
+  // =====================================================
+  // POS USER LOGOUT
+  // =====================================================
+
+  ipcMain.handle(
+    "users:logout",
+    async (_event, sessionId) => {
+
+      try {
+
+        if (sessionId) {
+
+          posSessionRepository.closeSession(
+            sessionId
+          );
+
+        } else {
+
+          posSessionRepository.closeActiveSession();
+
+        }
+
+
+        return {
+          success: true,
+        };
+
+      } catch (error) {
+
+        console.error(
+          "POS user logout failed:",
+          error
+        );
+
+        return {
+          success: false,
+
+          error:
+            error instanceof Error
+              ? error.message
+              : "Logout failed.",
+        };
+      }
+    }
+  );
+
+
+
+  ipcMain.handle(
+    "firebase:initialize",
+    async (_event, clientId) => {
+      try {
+        const config =
+          await fetchClientWebApi(clientId);
+
+        saveFirebaseConfig(
+          config,
+          clientId
+        );
+
+        console.log(
+          "FIREBASE CONFIG SAVED FOR:",
+          clientId
+        );
+
+        return {
+          success: true,
+          data: config,
+        };
+
+      } catch (error) {
+        console.error(
+          "FIREBASE INITIALIZATION FAILED:",
+          error
+        );
+
+        return {
+          success: false,
+          error: error.message ||
+            "Failed to initialize Firebase",
+        };
+      }
+    }
+  );
+
+
+  // ipcMain.handle(
+  //   "firebase:get-config",
+  //   async () => {
+  //     try {
+  //       const config = getFirebaseConfig();
+
+  //       return {
+  //         success: true,
+  //         data: config || null,
+  //       };
+  //     } catch (error) {
+  //       return {
+  //         success: false,
+  //         error: error.message,
+  //       };
+  //     }
+  //   }
+  // );
+
+
+  ipcMain.handle("firebase:get-config", async () => {
+    try {
+      const config = getFirebaseConfig();
+
+      const configured = Boolean(
+        config?.apiKey &&
+        config?.projectId &&
+        config?.appId
+      );
+
+      return {
+        success: true,
+        configured,
+        data: configured ? config : null,
+      };
+    } catch (error) {
+      console.error(
+        "FIREBASE CONFIG READ FAILED:",
+        error
+      );
+
+      return {
+        success: false,
+        configured: false,
         error:
           error instanceof Error
             ? error.message
-            : "Login failed.",
+            : "Failed to read Firebase configuration",
       };
     }
-  }
-);
+  });
 
 
 
-// =====================================================
-// POS USER LOGOUT
-// =====================================================
-
-// ipcMain.handle(
-//   "users:logout",
-//   async () => {
-//     try {
-
-//       // No persistent POS session yet.
-//       // Session cleanup will be added later.
-
-//       return {
-//         success: true,
-//       };
-
-//     } catch (error) {
-
-//       console.error(
-//         "POS user logout failed:",
-//         error
-//       );
-
-//       return {
-//         success: false,
-//         error:
-//           error instanceof Error
-//             ? error.message
-//             : "Logout failed.",
-//       };
-//     }
-//   }
-// );
-
-// =====================================================
-// POS USER LOGOUT
-// =====================================================
-
-ipcMain.handle(
-  "users:logout",
-  async (_event, sessionId) => {
-
-    try {
-
-      if (sessionId) {
-
-        posSessionRepository.closeSession(
-          sessionId
-        );
-
-      } else {
-
-        posSessionRepository.closeActiveSession();
-
-      }
+  app.on("before-quit", () => {
+    stopWaiterWebSocketServer();
+  });
 
 
-      return {
-        success: true,
-      };
-
-    } catch (error) {
-
-      console.error(
-        "POS user logout failed:",
-        error
-      );
-
-      return {
-        success: false,
-
-        error:
-          error instanceof Error
-            ? error.message
-            : "Logout failed.",
-      };
-    }
-  }
-);
-
-
-
-ipcMain.handle(
-  "firebase:initialize",
-  async (_event, clientId) => {
-    try {
-      const config =
-        await fetchClientWebApi(clientId);
-
-      saveFirebaseConfig(
-        config,
-        clientId
-      );
-
-      console.log(
-        "FIREBASE CONFIG SAVED FOR:",
-        clientId
-      );
-
-      return {
-        success: true,
-        data: config,
-      };
-
-    } catch (error) {
-      console.error(
-        "FIREBASE INITIALIZATION FAILED:",
-        error
-      );
-
-      return {
-        success: false,
-        error: error.message ||
-          "Failed to initialize Firebase",
-      };
-    }
-  }
-);
-
-
-// ipcMain.handle(
-//   "firebase:get-config",
-//   async () => {
-//     try {
-//       const config = getFirebaseConfig();
-
-//       return {
-//         success: true,
-//         data: config || null,
-//       };
-//     } catch (error) {
-//       return {
-//         success: false,
-//         error: error.message,
-//       };
-//     }
-//   }
-// );
-
-
-ipcMain.handle("firebase:get-config", async () => {
-  try {
-    const config = getFirebaseConfig();
-
-    const configured = Boolean(
-      config?.apiKey &&
-      config?.projectId &&
-      config?.appId
-    );
-
-    return {
-      success: true,
-      configured,
-      data: configured ? config : null,
-    };
-  } catch (error) {
-    console.error(
-      "FIREBASE CONFIG READ FAILED:",
-      error
-    );
-
-    return {
-      success: false,
-      configured: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to read Firebase configuration",
-    };
-  }
-});
-
-
-
- 
 }
 
 
@@ -2186,7 +2173,7 @@ ipcMain.handle("firebase:get-config", async () => {
 
 let nextServer = null;
 
- 
+
 function startNextServer() {
   if (!app.isPackaged) {
     console.log(
@@ -2206,7 +2193,7 @@ function startNextServer() {
     'standalone'
   );
 
-  
+
 
   const serverPath = path.join(
     standalonePath,
@@ -2359,7 +2346,7 @@ function createWindow() {
   });
 
   if (isDev) {
- //   win.webContents.openDevTools();
+    //   win.webContents.openDevTools();
   }
 
   if (isDev) {
@@ -2410,7 +2397,7 @@ app.whenReady().then(async () => {
     return;
   }
 
-    registerIpcHandlers();
+  registerIpcHandlers();
 
   // ===================================================
   // START NEXT.JS IN PRODUCTION
@@ -2432,10 +2419,16 @@ app.whenReady().then(async () => {
 
 
   // =============================================
-  // WAITER LAN SERVER
+  // WAITER LAN SERVER RECIEVE
   // =============================================
 
   createWaiterLanServer();
+
+
+  // =============================================
+  // WAITER LAN SERVER SEND UPDATES
+  // =============================================
+  startWaiterWebSocketServer();
 
   // ===================================================
   // UPLOAD LOCAL COUNTER EVERY 5 MINUTES
@@ -2449,21 +2442,21 @@ app.whenReady().then(async () => {
   // DEVTOOLS SHORTCUTS
   // ===================================================
 
-if (!app.isPackaged) {
-  globalShortcut.register(
-    "F12",
-    () => {
-      win.webContents.toggleDevTools();
-    }
-  );
+  if (!app.isPackaged) {
+    globalShortcut.register(
+      "F12",
+      () => {
+        win.webContents.toggleDevTools();
+      }
+    );
 
-  globalShortcut.register(
-    "CommandOrControl+Shift+I",
-    () => {
-      win.webContents.toggleDevTools();
-    }
-  );
-}
+    globalShortcut.register(
+      "CommandOrControl+Shift+I",
+      () => {
+        win.webContents.toggleDevTools();
+      }
+    );
+  }
 
 });
 
