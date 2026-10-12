@@ -1,646 +1,411 @@
-class BillFormatter80 {
-  format(data) {
-    const WIDTH = 48;
 
+class BillFormatter80 {
+  format(data = {}) {
+    const WIDTH = 48;
     const line = '-'.repeat(WIDTH);
 
     // =====================================================
     // HELPERS
     // =====================================================
 
-    const center = (text) => {
-      text = String(text ?? '');
+    const text = (value) => String(value ?? '').trim();
 
-      if (text.length >= WIDTH) {
-        return text.substring(0, WIDTH);
-      }
-
-      const left = Math.floor(
-        (WIDTH - text.length) / 2
-      );
-
-      return ' '.repeat(left) + text;
+    const padRight = (value, length) => {
+      const valueText = String(value ?? '');
+      return valueText.length >= length
+        ? valueText.substring(0, length)
+        : valueText + ' '.repeat(length - valueText.length);
     };
 
-    const padRight = (text, length) => {
-      text = String(text ?? '');
-
-      if (text.length >= length) {
-        return text.substring(0, length);
-      }
-
-      return (
-        text +
-        ' '.repeat(length - text.length)
-      );
+    const padLeft = (value, length) => {
+      const valueText = String(value ?? '');
+      return valueText.length >= length
+        ? valueText.substring(0, length)
+        : ' '.repeat(length - valueText.length) + valueText;
     };
 
-    const padLeft = (text, length) => {
-      text = String(text ?? '');
+    const center = (value) => {
+      const valueText = String(value ?? '').substring(0, WIDTH);
+      const left = Math.floor((WIDTH - valueText.length) / 2);
+      return ' '.repeat(left) + valueText;
+    };
 
-      if (text.length >= length) {
-        return text.substring(0, length);
+    const money = (value) => {
+      const amount = Number(value ?? 0);
+      return (Number.isFinite(amount) ? amount : 0).toFixed(2);
+    };
+
+    const cleanLine = (value) => String(value ?? '').substring(0, WIDTH);
+
+    const wrapText = (value, width = WIDTH) => {
+      const words = String(value ?? '').trim().split(/\s+/).filter(Boolean);
+      const result = [];
+      let current = '';
+
+      for (const word of words) {
+        if (!current) {
+          current = word.substring(0, width);
+          if (word.length > width) {
+            result.push(current);
+            current = '';
+          }
+          continue;
+        }
+
+        if (`${current} ${word}`.length <= width) {
+          current += ` ${word}`;
+        } else {
+          result.push(current);
+          current = word.substring(0, width);
+
+          if (word.length > width) {
+            result.push(current);
+            current = '';
+          }
+        }
       }
 
-      return (
-        ' '.repeat(length - text.length) +
-        text
-      );
+      if (current) result.push(current);
+      return result;
     };
 
     // =====================================================
     // TOTAL LINE
-    // Android style:
-    //
-    // Item Total                              100.00
-    // Delivery                                 20.00
-    // Discount                                 10.00
-    // Tax                                      18.00
     // =====================================================
 
-    const totalLine = (label, value) => {
-      return (
-        padRight(label, 38) +
-        padLeft(
-          Number(value || 0).toFixed(2),
-          10
-        ) +
-        '\n'
-      );
-    };
+    const totalLine = (label, value) =>
+      padRight(label, 38) + padLeft(money(value), 10) + '\n';
 
     // =====================================================
     // OUTLET HEADER
-    //
-    // Same concept as Android buildOutletHeader()
     // =====================================================
 
-    const buildOutletHeader = (info) => {
-      if (!info) {
-        return '';
-      }
-
+    const buildOutletHeader = (info = {}) => {
       const lines = [];
 
-      // Outlet name
-      if (info.outletName) {
-        lines.push(
-          center(info.outletName)
-        );
-      }
+      const addCentered = (value) => {
+        if (text(value)) lines.push(center(value));
+      };
 
-      // Address line 1
-      if (info.addressLine1) {
-        lines.push(
-          String(info.addressLine1).substring(
-            0,
-            WIDTH
-          )
-        );
-      }
+      addCentered(info.outletName);
+      addCentered(info.addressLine1);
+      addCentered(info.addressLine2);
+      addCentered(info.addressLine3);
+      addCentered(info.city);
 
-      // Address line 2
-      if (info.addressLine2) {
-        lines.push(
-          String(info.addressLine2).substring(
-            0,
-            WIDTH
-          )
-        );
-      }
-
-      // Address line 3
-      if (info.addressLine3) {
-        lines.push(
-          String(info.addressLine3).substring(
-            0,
-            WIDTH
-          )
-        );
-      }
-
-      // City
-      if (info.city) {
-        lines.push(
-          String(info.city).substring(
-            0,
-            WIDTH
-          )
-        );
-      }
-
-      // Phones
-      const phone1 =
-        info.phone
-          ? String(info.phone).trim()
-          : '';
-
-      const phone2 =
-        info.phone2
-          ? String(info.phone2).trim()
-          : '';
+      const phone1 = text(info.phone);
+      const phone2 = text(info.phone2);
 
       if (phone1 && phone2) {
-        lines.push(
-          `Phone: ${phone1}, ${phone2}`.substring(
-            0,
-            WIDTH
-          )
-        );
-      } else if (phone1) {
-        lines.push(
-          `Phone: ${phone1}`.substring(
-            0,
-            WIDTH
-          )
-        );
-      } else if (phone2) {
-        lines.push(
-          `Phone: ${phone2}`.substring(
-            0,
-            WIDTH
-          )
-        );
+        addCentered(`Phone: ${phone1}, ${phone2}`);
+      } else if (phone1 || phone2) {
+        addCentered(`Phone: ${phone1 || phone2}`);
       }
 
-      // Email
-      if (info.email) {
-        lines.push(
-          `Email: ${info.email}`.substring(
-            0,
-            WIDTH
-          )
-        );
-      }
+      addCentered(info.email);
+      addCentered(info.web);
 
-      // Website
-      if (info.web) {
-        lines.push(
-          String(info.web).substring(
-            0,
-            WIDTH
-          )
-        );
-      }
-
-      // GST
-      if (info.gstVatNumber) {
-        lines.push(
-          `GST: ${info.gstVatNumber}`.substring(
-            0,
-            WIDTH
-          )
-        );
+      if (text(info.gstVatNumber)) {
+        addCentered(`GST No: ${info.gstVatNumber}`);
       }
 
       return lines.join('\n');
     };
 
     // =====================================================
-    // HEADER BLOCK
-    //
-    // Same structure as Android buildHeaderBlock()
+    // ORDER TYPE
     // =====================================================
 
-    const buildHeaderBlock = () => {
-      const base = [];
-
-      const orderNo =
-        data?.orderNo ||
-        data?.billNo ||
-        'PREVIEW';
-
-      const customerName =
-        data?.customerName &&
-        data.customerName.trim()
-          ? data.customerName
-          : 'Walk-in';
-
-      const dateTime =
-        data?.dateTime ||
-        (
-          data?.createdAt
-            ? new Date(
-                data.createdAt
-              ).toLocaleString()
-            : new Date().toLocaleString()
-        );
-
-      // ---------------------------------------------------
-      // Common fields
-      // ---------------------------------------------------
-
-      base.push(
-        `Invoice No : ${orderNo}`
-      );
-
-      base.push(
-        `Customer  : ${customerName}`
-      );
-
-      base.push(
-        `Date      : ${dateTime}`
-      );
-
-      // ---------------------------------------------------
-      // Order type specific fields
-      // ---------------------------------------------------
-
-      const orderType =
-        data?.orderType || '';
-
-      // DINE IN
-      if (orderType === 'DINE_IN') {
-        const table =
-          data?.tableName ||
-          data?.tableNo;
-
-        if (table) {
-          base.push(
-            `Table     : ${table}`
-          );
-        }
+    const getOrderTypeLabel = (orderType) => {
+      switch (String(orderType ?? '').toUpperCase()) {
+        case 'DINE_IN':
+          return 'DINE IN';
+        case 'TAKEAWAY':
+          return 'TAKEAWAY';
+        case 'DELIVERY':
+          return 'DELIVERY';
+        case 'ONLINE':
+          return 'ONLINE';
+        default:
+          return text(orderType).replace(/_/g, ' ').toUpperCase();
       }
-
-      // TAKEAWAY
-      else if (orderType === 'TAKEAWAY') {
-        if (
-          data?.customerPhone &&
-          String(
-            data.customerPhone
-          ).trim()
-        ) {
-          base.push(
-            `Phone     : ${data.customerPhone}`
-          );
-        }
-      }
-
-      // DELIVERY / ONLINE
-      else if (
-        orderType === 'DELIVERY' ||
-        orderType === 'ONLINE'
-      ) {
-        const addressLines = [];
-
-        if (data?.dAddressLine1) {
-          addressLines.push(
-            data.dAddressLine1
-          );
-        }
-
-        if (data?.dAddressLine2) {
-          addressLines.push(
-            data.dAddressLine2
-          );
-        }
-
-        if (data?.dLandmark) {
-          addressLines.push(
-            `Landmark: ${data.dLandmark}`
-          );
-        }
-
-        const cityZip = [
-          data?.dCity,
-          data?.dZipcode,
-        ]
-          .filter(Boolean)
-          .join(' ');
-
-        if (cityZip) {
-          addressLines.push(
-            cityZip
-          );
-        }
-
-        if (addressLines.length > 0) {
-          base.push('Address  :');
-
-          addressLines.forEach(
-            (address) => {
-              base.push(
-                String(address).substring(
-                  0,
-                  WIDTH
-                )
-              );
-            }
-          );
-        }
-
-        if (
-          data?.customerPhone &&
-          String(
-            data.customerPhone
-          ).trim()
-        ) {
-          base.push(
-            `Phone     : ${data.customerPhone}`
-          );
-        }
-      }
-
-      return base
-        .map((line) =>
-          String(line).substring(
-            0,
-            WIDTH
-          )
-        )
-        .join('\n');
     };
 
-    // =====================================================
-    // ITEMS
-    // =====================================================
+    const buildInvoiceTitle = () => {
+      const title = 'TAX INVOICE';
+      const orderType = getOrderTypeLabel(data.orderType);
+      const spaces = Math.max(1, WIDTH - title.length - orderType.length);
 
-    const items = Array.isArray(data?.items)
-      ? data.items
-      : [];
-
-    let output = '';
-
-    // =====================================================
-    // OUTLET HEADER
-    // =====================================================
-
-    const outletHeader =
-      buildOutletHeader(
-        data?.outletInfo
-      );
-
-    if (outletHeader) {
-      output += outletHeader;
-      output += '\n';
-      output += line;
-      output += '\n';
-    }
-
-    // =====================================================
-    // BILL TITLE
-    // =====================================================
-
-    output += center('BILL');
-    output += '\n';
-
-    output += line;
-    output += '\n';
+      return title + ' '.repeat(spaces) + orderType;
+    };
 
     // =====================================================
     // ORDER HEADER
     // =====================================================
 
-    output += buildHeaderBlock();
-    output += '\n';
+    const buildHeaderBlock = () => {
+      const result = [];
 
-    output += line;
-    output += '\n';
+      const orderNo =
+        text(data.orderNo) ||
+        text(data.billNo) ||
+        'PREVIEW';
+
+      const customerName = text(data.customerName) || 'Walk-in';
+
+      let dateTime = text(data.dateTime);
+
+      if (!dateTime) {
+        const rawDate = data.createdAt;
+        const parsedDate = rawDate ? new Date(rawDate) : new Date();
+
+        if (!Number.isNaN(parsedDate.getTime())) {
+          try {
+            dateTime = parsedDate.toLocaleString(
+              data.outletInfo?.localeTag || undefined
+            );
+          } catch {
+            dateTime = parsedDate.toLocaleString();
+          }
+        } else {
+          dateTime = new Date().toLocaleString();
+        }
+      }
+
+      result.push(cleanLine(`Invoice No : ${orderNo}`));
+      result.push(cleanLine(`Customer   : ${customerName}`));
+      result.push(cleanLine(`Date       : ${dateTime}`));
+
+      const orderType = String(data.orderType ?? '').toUpperCase();
+
+      if (orderType === 'DINE_IN') {
+        const table = text(data.tableName) || text(data.tableNo);
+        const steward = text(data.stewardName);
+
+        if (table && steward) {
+          const combined = `Table : ${table}    Steward : ${steward}`;
+
+          if (combined.length <= WIDTH) {
+            result.push(combined);
+          } else {
+            result.push(cleanLine(`Table   : ${table}`));
+            result.push(cleanLine(`Steward : ${steward}`));
+          }
+        } else if (table) {
+          result.push(cleanLine(`Table     : ${table}`));
+        } else if (steward) {
+          result.push(cleanLine(`Steward   : ${steward}`));
+        }
+      } else if (orderType === 'TAKEAWAY') {
+        if (text(data.customerPhone)) {
+          result.push(cleanLine(`Phone      : ${data.customerPhone}`));
+        }
+      } else if (orderType === 'DELIVERY' || orderType === 'ONLINE') {
+        const addressLines = [
+          data.dAddressLine1,
+          data.dAddressLine2,
+          data.dLandmark ? `Landmark: ${data.dLandmark}` : '',
+          [data.dCity, data.dZipcode].filter(Boolean).join(' '),
+        ].filter((value) => text(value));
+
+        if (addressLines.length) {
+          result.push('Address   :');
+
+          for (const address of addressLines) {
+            result.push(...wrapText(address));
+          }
+        }
+
+        if (text(data.customerPhone)) {
+          result.push(cleanLine(`Phone      : ${data.customerPhone}`));
+        }
+      }
+
+      return result.join('\n');
+    };
 
     // =====================================================
-    // ITEM HEADER
-    //
-    // 48 chars:
-    //
-    // ITEM                      QTY     RATE       AMT
-    //
-    // ITEM = 24
-    // QTY  = 5
-    // RATE = 9
-    // AMT  = 10
-    // TOTAL = 48
+    // MODIFIERS
+    // Supports modifier arrays and modifiersJson containing
+    // groups with nested items.
     // =====================================================
 
-    output +=
-      padRight('ITEM', 24) +
-      padLeft('QTY', 5) +
-      padLeft('RATE', 9) +
-      padLeft('AMT', 10);
+    const getModifierNames = (item) => {
+      const names = [];
 
-    output += '\n';
-    output += line;
-    output += '\n';
+      const visit = (value) => {
+        if (Array.isArray(value)) {
+          for (const entry of value) visit(entry);
+          return;
+        }
+
+        if (!value || typeof value !== 'object') {
+          if (typeof value === 'string' && text(value)) {
+            names.push(text(value));
+          }
+          return;
+        }
+
+        if (text(value.name)) {
+          names.push(text(value.name));
+          return;
+        }
+
+        if (Array.isArray(value.items)) visit(value.items);
+        if (Array.isArray(value.groups)) visit(value.groups);
+        if (Array.isArray(value.modifiers)) visit(value.modifiers);
+      };
+
+      if (Array.isArray(item.modifiers)) {
+        visit(item.modifiers);
+      } else if (text(item.modifiersJson)) {
+        try {
+          visit(JSON.parse(item.modifiersJson));
+        } catch (error) {
+          console.warn(
+            '[BillFormatter80] Invalid modifiersJson:',
+            error?.message
+          );
+        }
+      }
+
+      return names;
+    };
+
+    // =====================================================
+    // RECEIPT
+    // =====================================================
+
+    const output = [];
+
+    const outletHeader = buildOutletHeader(data.outletInfo);
+
+    if (outletHeader) {
+      output.push(outletHeader);
+      output.push(line);
+    }
+
+    output.push(buildInvoiceTitle());
+    output.push(line);
+    output.push(buildHeaderBlock());
+    output.push(line);
 
     // =====================================================
     // ITEMS
+    // 4 + 26 + 8 + 10 = 48 characters
     // =====================================================
 
+    output.push(
+      padRight('QTY', 4) +
+      padRight('ITEM', 26) +
+      padLeft('PRICE', 8) +
+      padLeft('TOTAL', 10)
+    );
+
+    output.push(line);
+
+    const items = Array.isArray(data.items) ? data.items : [];
+
     for (const item of items) {
-      const name =
-        String(
-          item?.name ?? 'ITEM'
-        )
-          .toUpperCase();
+      const name = text(item?.name) || 'ITEM';
+      const quantity = Number(item?.quantity ?? 0);
+      const price = Number(item?.price ?? item?.rate ?? 0);
 
-      const qty =
-        Number(
-          item?.quantity ?? 0
-        );
+      const amount = Number(
+        item?.subtotal ??
+        item?.amount ??
+        price * quantity
+      );
 
-      const rate =
-        Number(
-          item?.rate ?? 0
-        );
+      output.push(
+        padRight(quantity, 4) +
+        padRight(name.toUpperCase(), 26) +
+        padLeft(money(price), 8) +
+        padLeft(money(amount), 10)
+      );
 
-      const amount =
-        Number(
-          item?.amount ??
-          rate * qty
-        );
-
-      output +=
-        padRight(
-          name,
-          24
-        ) +
-        padLeft(
-          qty,
-          5
-        ) +
-        padLeft(
-          rate.toFixed(2),
-          9
-        ) +
-        padLeft(
-          amount.toFixed(2),
-          10
-        );
-
-      output += '\n';
-
-      // ---------------------------------------------------
-      // MODIFIERS
-      // ---------------------------------------------------
-
-      if (
-        Array.isArray(
-          item?.modifiers
-        )
-      ) {
-        item.modifiers.forEach(
-          (modifier) => {
-            const modifierName =
-              typeof modifier === 'string'
-                ? modifier
-                : modifier?.name;
-
-            if (
-              modifierName &&
-              String(
-                modifierName
-              ).trim()
-            ) {
-              output +=
-                `    + ${String(
-                  modifierName
-                )}\n`;
-            }
-          }
-        );
+      for (const modifierName of getModifierNames(item ?? {})) {
+        output.push(...wrapText(`    + ${modifierName}`));
       }
 
-      // ---------------------------------------------------
-      // NOTE
-      // ---------------------------------------------------
-
-      if (
-        item?.note &&
-        String(
-          item.note
-        ).trim()
-      ) {
-        output +=
-          `    • ${String(
-            item.note
-          )}\n`;
+      if (text(item?.note)) {
+        output.push(...wrapText(`    • ${text(item.note)}`));
       }
     }
 
-    output += line;
-    output += '\n';
+    output.push(line);
 
     // =====================================================
-    // CALCULATED TOTALS
-    //
-    // IMPORTANT:
-    // These values are NOT recalculated here.
-    //
-    // React / calculateBillAndroid() already calculated them.
-    // Formatter only prints them.
+    // TOTALS
+    // Do not recalculate tax, discounts, or grand total.
+    // Print the values supplied by the existing POS logic.
     // =====================================================
 
-    const subtotal =
-      Number(
-        data?.subtotal ?? 0
-      );
+    const subtotal = Number(data.subtotal ?? 0);
+    const discount = Number(data.discount ?? 0);
+    const deliveryFee = Number(data.deliveryFee ?? 0);
+    const tax = Number(data.tax ?? 0);
+    const deliveryTax = Number(data.deliveryTax ?? 0);
+    const grandTotal = Number(data.grandTotal ?? data.total ?? 0);
 
-    const tax =
-      Number(
-        data?.tax ?? 0
-      );
-
-    const discount =
-      Number(
-        data?.discount ?? 0
-      );
-
-    const deliveryFee =
-      Number(
-        data?.deliveryFee ?? 0
-      );
-
-    const total =
-      Number(
-        data?.grandTotal ??
-        data?.total ??
-        0
-      );
-
-    // =====================================================
-    // TOTALS BLOCK
-    //
-    // Same order as Android
-    // =====================================================
-
-    output += totalLine(
-      'Item Total',
-      subtotal
-    );
+    output.push(totalLine('Item Total', subtotal));
 
     if (deliveryFee > 0) {
-      output += totalLine(
-        'Delivery',
-        deliveryFee
-      );
+      output.push(totalLine('Delivery', deliveryFee));
     }
 
     if (discount > 0) {
-      output += totalLine(
-        'Discount',
-        discount
-      );
+      output.push(totalLine('Discount', discount));
     }
 
     if (tax > 0) {
-      output += totalLine(
-        'Tax',
-        tax
-      );
+      output.push(totalLine('Tax', tax));
     }
 
-    // =====================================================
-    // GRAND TOTAL
-    // =====================================================
-
-    output += line;
-    output += '\n';
-
-    output += totalLine(
-      'GRAND TOTAL',
-      total
-    );
-
-    output += line;
-    output += '\n';
-
-    // =====================================================
-    // PAYMENT
-    // =====================================================
-
-    if (data?.paymentMode) {
-      output +=
-        `Payment   : ${data.paymentMode}\n`;
+    if (deliveryTax > 0) {
+      output.push(totalLine('Delivery Tax', deliveryTax));
     }
 
+    output.push(line);
+    output.push(totalLine('TOTAL', grandTotal));
+    output.push(line);
+
     // =====================================================
-    // CUSTOMER
+    // PAYMENT AND CUSTOMER
     // =====================================================
+
+    // if (text(data.paymentMode)) {
+    //   output.push(cleanLine(`Payment   : ${data.paymentMode}`));
+    // }
 
     if (
-      data?.customerName &&
-      data.customerName !== 'Customer' &&
-      data.customerName !== 'Walk-in'
+      text(data.customerName) &&
+      !['CUSTOMER', 'WALK-IN'].includes(data.customerName.trim().toUpperCase())
     ) {
-      output +=
-        `Customer  : ${data.customerName}\n`;
+      output.push(cleanLine(`Customer  : ${data.customerName}`));
     }
 
-    if (data?.customerPhone) {
-      output +=
-        `Phone     : ${data.customerPhone}\n`;
+    if (text(data.customerPhone)) {
+      output.push(cleanLine(`Phone     : ${data.customerPhone}`));
     }
 
     // =====================================================
-    // FOOTER
+    // OUTLET FOOTER
     // =====================================================
 
-    output += '\n';
-    output += center('THANK YOU');
-    output += '\n';
-    output += '\n';
-    output += '\n';
+    if (text(data.outletInfo?.footerNote)) {
+      output.push('');
+      output.push(...wrapText(data.outletInfo.footerNote));
+      output.push(line);
+    }
 
-    return output;
+    output.push('');
+    output.push(center('Thank You!'));
+    output.push('');
+    output.push('');
+  
+
+    return output.join('\n');
   }
 }
 

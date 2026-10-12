@@ -9,7 +9,7 @@ import { calculateBillAndroid } from '@/lib/pos/billing/calculator';
 import { POS_THEME } from '@/style/posTheme';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import PaymentAllocation, { PaymentAllocationValue } from './PaymentAllocationValue';
-import { usePosAuth } from '@/store/PosAuthContext';
+import { usePosAuth } from "@/store/PosAuthContext";
 import BillItem from './BillItems';
 import toast from 'react-hot-toast';
 
@@ -76,6 +76,7 @@ export default function Bill({
   currentUser,
   session,
 } = usePosAuth();
+
 
   const [showComplimentaryMenu, setShowComplimentaryMenu] =
     useState(false);

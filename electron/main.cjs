@@ -42,14 +42,14 @@ const {
   startWaiterWebSocketServer,
   stopWaiterWebSocketServer,
   notifyBillItemsChanged,
-} = require("./db/waiterWebSocket.cjs");
+} = require("./lan/waiterWebSocket.cjs");
 
 //const { broadcastLanEvent } = require("./lan/lanBroadcaster.cjs");
 
 const {
   createWaiterLanServer,
   stopWaiterLanServer,
-} = require('./waiterLanServer.cjs');
+} = require('./lan/waiterLanServer.cjs');
 
 
 const tableRepo = require('./db/tableRepo.cjs');
@@ -1338,6 +1338,35 @@ ipcMain.handle(
   );
 
 
+  ipcMain.handle(
+  'cart:updateKitchenPrint',
+  async (_event, { itemId, kitchenPrintReq, partition }) => {
+    try {
+      const items = await cartRepo.updateCartItemKitchenPrint(
+        itemId,
+        kitchenPrintReq,
+        partition
+      );
+
+      return {
+        success: true,
+        data: items,
+      };
+    } catch (error) {
+      console.error(
+        '[CART] Failed to update kitchen print:',
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message || 'Failed to update kitchen print',
+      };
+    }
+  }
+);
+
+
   // =====================================================
   // SYNC
   // =====================================================
@@ -2382,10 +2411,10 @@ app.whenReady().then(async () => {
 
     console.log("DATABASE INITIALIZED");
 
-    console.log(
-      "DATABASE COUNTS:",
-      getDebugCounts()
-    );
+    // console.log(
+    //   "DATABASE COUNTS:",
+    //   getDebugCounts()
+    // );
 
   } catch (error) {
     console.error(

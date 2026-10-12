@@ -3,7 +3,7 @@ const { WebSocketServer, WebSocket } = require("ws");
 
 const {
   getAllBillItemsForWaiterSync,
-} = require("./billItemRepo.cjs");
+} = require("../db/billItemRepo.cjs");
 
 const PORT = 2346;
 const SNAPSHOT_INTERVAL_MS = 10000;

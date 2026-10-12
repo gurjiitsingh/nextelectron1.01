@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
-
+const outletRepo = require('../../electron/db/outletRepo.cjs');
 const {
   BillImageFormatter80,
 } = require('./formatters/BillImageFormatter80.cjs');
@@ -171,11 +171,21 @@ class PrintManager {
       formatter?.constructor?.name
     );
 
-    const text =
-      formatter.format(
-        job.data,
-        config.paperSize
-      );
+   const outletInfo =
+  job.data?.outletInfo ||
+  outletRepo.getOutlet() ||
+  {};
+
+const printData = {
+  ...job.data,
+  outletInfo,
+};
+
+const text =
+  formatter.format(
+    printData,
+    config.paperSize
+  );
 
     console.log(
       '[PRINT] FORMATTED TEXT:\n' +

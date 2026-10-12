@@ -183,7 +183,7 @@ export default function ProductCardHorizontical({
 
     // kitchen workflow
     sentToKitchen: false,
-    kitchenPrintReq: false,
+    kitchenPrintReq: true,
     printStatus: 'PENDING',
 
     createdAt: Date.now(),

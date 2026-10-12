@@ -6,8 +6,13 @@ import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
 import { useCartContext } from '@/store/CartContext';
 import { useState } from 'react';
-
+import { ChefHat, CookingPot } from "lucide-react";
+import { usePosAuth } from "@/store/PosAuthContext";
 export default function CartPanel() {
+
+      const {
+  currentUser, 
+} = usePosAuth();
 
   const {
     cartData,
@@ -228,7 +233,7 @@ export default function CartPanel() {
           // ------------------------------------------------
           // PRICE
           // ------------------------------------------------
-         discountEligible: item.discountEligible ?? true,
+          discountEligible: item.discountEligible ?? true,
           basePrice:
             Number(item.basePrice ?? 0),
 
@@ -305,7 +310,7 @@ export default function CartPanel() {
 
         }));
 
-console.log("commonItems--------------------------------",commonItems)
+      console.log("commonItems--------------------------------", commonItems)
       // =================================================
       // CREATE KOT BATCH
       // =================================================
@@ -360,34 +365,43 @@ console.log("commonItems--------------------------------",commonItems)
       // CREATE KOT ITEMS
       // =================================================
 
-      const kotItems =
-        commonItems.map((item) => ({
+console.log(
+  '========== KOT PRINT FLAG DEBUG: CART DATA ==========',
+);
 
-          id:
-            crypto.randomUUID(),
+cartData.forEach((item, index) => {
+  console.log(`[CART ITEM ${index}]`, {
+    name: item.name,
+    productId: item.productId,
+    kitchenPrintReq: item.kitchenPrintReq,
+    valueType: typeof item.kitchenPrintReq,
+    isStrictTrue: item.kitchenPrintReq === true,
+  });
+});
 
-          kotNumber:
-            kotNumber,
+const kotItems = commonItems.map((item, index) => ({
+  id: crypto.randomUUID(),
+  kotNumber,
+  kotBatchId,
+  status: 'PENDING',
+  ...item,
+  kitchenPrintReq:
+    cartData[index].kitchenPrintReq === true,
+  kitchenPrinted: false,
+}));
 
-          kotBatchId:
-            kotBatchId,
+console.log('========== FINAL KOT ITEMS ==========');
+console.table(
+  kotItems.map((item) => ({
+    name: item.name,
+    productId: item.productId,
+    kitchenPrintReq: item.kitchenPrintReq,
+    kitchenPrinted: item.kitchenPrinted,
+  })),
+);
+console.log('======================================');
 
-          status:
-            'PENDING',
-
-
-
-          kitchenPrintReq:
-            true,
-
-          kitchenPrinted:
-            false,
-
-          ...item,
-
-        }));
-
-
+console.log('full item-------------------', kotItems)
       // =================================================
       // CREATE KOT
       // =================================================
@@ -468,62 +482,92 @@ console.log("commonItems--------------------------------",commonItems)
       // PRINT KOT
       // =================================================
 
-      await window.posApi.print({
+    // =================================================
+// PRINT KOT — ONLY ITEMS ENABLED FOR KITCHEN PRINT
+// =================================================
 
-        role:
-          'KITCHEN',
+const kitchenItems = cartData
+  .filter((item) => item.kitchenPrintReq === true)
+  .map((item) => ({
+    name: item.name,
+    quantity: item.quantity,
+    note: item.note || '',
+    createdByName: item.createdByName || '',
+  }));
 
-        source:
-          'POS',
+console.log('========== POS KITCHEN PRINT DEBUG ==========');
 
-        data: {
+console.table(
+  cartData.map((item) => ({
+    name: item.name,
+    productId: item.productId,
+    kitchenPrintReq: item.kitchenPrintReq,
+    type: typeof item.kitchenPrintReq,
+    willPrint: item.kitchenPrintReq === true,
+  })),
+);
 
-          kotNumber:
-            kotNumber,
+console.log('Filtered kitchen items:', kitchenItems);
+console.log('Items selected for printing:', kitchenItems.length);
 
-          tableNo:
-            currentTableId,
+if (kitchenItems.length > 0) {
+  try {
+    const printResult = await window.posApi.print({
+      role: 'KITCHEN',
+      source: 'POS',
+      data: {
+        kotNumber,
+        tableNo: currentTableId,
+        tableName: currentTableName,
+        orderType: activeOrder.orderType,
+        createdAt: now,
 
-          tableName:
-            currentTableName,
+        createdByName:
+          cartData.find((item) => item.createdByName)?.createdByName ||
+  currentUser?.fullName ||  '',
 
-          orderType:
-            activeOrder.orderType,
+        items: kitchenItems,
+      },
+    });
 
-          createdAt:
-            now,
 
-          items:
-            cartData.map((item) => ({
 
-              name:
-                item.name,
+    
 
-              quantity:
-                item.quantity,
 
-              note:
-                item.note ?? '',
+    console.log(
+      '[POS KITCHEN PRINT] Print result:',
+      printResult,
+    );
+  } catch (printError) {
+    console.error(
+      '[POS KITCHEN PRINT] Failed:',
+      printError,
+    );
 
-            })),
+    throw printError;
+  }
+} else {
+  console.log(
+    '[POS KITCHEN PRINT] Skipped: no items have kitchenPrintReq === true.',
+  );
+}
 
-        },
-
-      });
+console.log('=============================================');
 
 
       // =================================================
       // SAVE BILL ITEMS
       // =================================================
       console.log(
-  'BILL ITEMS BEFORE SQLITE SAVE:',
-  billItems.map((item) => ({
-    productId: item.productId,
-    name: item.name,
-    discountEligible: item.discountEligible,
-    type: typeof item.discountEligible,
-  }))
-);
+        'BILL ITEMS BEFORE SQLITE SAVE:',
+        billItems.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          discountEligible: item.discountEligible,
+          type: typeof item.discountEligible,
+        }))
+      );
 
       await window.posApi.insertBillItems(
         billItems
@@ -785,6 +829,64 @@ console.log("commonItems--------------------------------",commonItems)
                         gap-3
                       "
                     >
+
+{/* KITCHEN PRINT TOGGLE */}
+
+
+<button
+  type="button"
+  title={
+    item.kitchenPrintReq === false
+      ? "Kitchen printing disabled"
+      : "Kitchen printing enabled"
+  }
+  aria-label={
+    item.kitchenPrintReq === false
+      ? `Enable kitchen printing for ${item.name}`
+      : `Disable kitchen printing for ${item.name}`
+  }
+  onClick={async () => {
+    const nextKitchenPrint =
+      item.kitchenPrintReq === false;
+
+    const result =
+      await window.posApi.updateKitchenPrint({
+        itemId: item.id,
+        kitchenPrintReq: nextKitchenPrint,
+        partition: item.tableId,
+      });
+
+    if (result?.success) {
+      setCartData(
+        result.data.map((cartItem) => ({
+          ...cartItem,
+          kitchenPrintReq:
+            cartItem.kitchenPrintReq == null
+              ? true
+              : Boolean(cartItem.kitchenPrintReq),
+        }))
+      );
+    } else {
+      console.error(
+        "Failed to update kitchen printing:",
+        result?.error
+      );
+    }
+  }}
+  className={`
+    flex h-6 w-6 shrink-0
+    items-center justify-center
+    text-orange-500 transition-opacity
+    ${
+      item.kitchenPrintReq === false
+        ? "opacity-25"
+        : "opacity-100"
+    }
+  `}
+>
+  <CookingPot size={15} />
+</button>
+
 
                       {/* =================================================
                           NAME + NOTE

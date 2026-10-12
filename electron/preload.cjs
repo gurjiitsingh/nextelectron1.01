@@ -48,6 +48,10 @@ contextBridge.exposeInMainWorld('posApi', {
     ),
 
 
+    updateKitchenPrint: (payload) =>
+  ipcRenderer.invoke('cart:updateKitchenPrint', payload),
+
+
   removeCartItem: (
     uniqueKey,
     tableNo,

@@ -1,7 +1,10 @@
 const http = require('http');
-const tableRepo = require('./db/tableRepo.cjs');
-const kotRepo = require('./db/kotRepo.cjs');
-const billItemRepo = require('./db/billItemRepo.cjs');
+const tableRepo = require('../db/tableRepo.cjs');
+const kotRepo = require('../db/kotRepo.cjs');
+const billItemRepo = require('../db/billItemRepo.cjs');
+const {
+  printManager,
+} = require('../../shared/printer/PrintManager.cjs');
 const { BrowserWindow } = require('electron');
 const HOST = '0.0.0.0';
 const PORT = 2345;
@@ -238,7 +241,7 @@ function normalizeItem(
     isVariant:
       Boolean(item.isVariant),
 
-        discountEligible:
+    discountEligible:
       item.discountEligible === true ? 1 : 0,
 
     basePrice,
@@ -325,47 +328,14 @@ async function handleWaiterKot(req, res) {
       '===================================='
     );
 
-    console.log(
-  'INCOMING discountEligible:',
-  payload?.items?.map(item => ({
-    productId: item.productId,
-    name: item.name,
-    discountEligible: item.discountEligible,
-    type: typeof item.discountEligible,
-  }))
-);
-
-console.log(
-  'ITEMS:',
-  payload?.items?.map(item => ({
-    productId: item.productId,
-    name: item.name,
-    quantity: item.quantity,
-    createdById: item.createdById,
-    createdByName: item.createdByName,
-    discountEligible: item.discountEligible,
-  }))
-);
+   
 
     console.log(
-      'WAITER LAN KOT RECEIVED'
+      'ITEMS:',
+      payload?.items?.map(item => (item))
     );
 
-    console.log(
-      'BATCH:',
-      payload?.batch?.id
-    );
-
-    console.log(
-      'TABLE:',
-      payload?.batch?.tableNo
-    );
-
-    console.log(
-      'ITEM COUNT:',
-      payload?.items?.length
-    );
-
+  
     console.log(
       '===================================='
     );
@@ -428,6 +398,72 @@ console.log(
         items
       );
 
+
+
+
+
+    // =====================================================
+    // QUEUE WAITER KOT FOR KITCHEN PRINTING
+    // =====================================================
+
+ 
+    // =====================================================
+    // QUEUE WAITER KOT FOR KITCHEN PRINTING
+    // Only items with kitchenPrintReq === true are printed.
+    // All items are still saved to the KOT and bill.
+    // =====================================================
+
+    const kitchenItems = items
+      .filter(item => item.kitchenPrintReq === true)
+      .map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        note: item.note || '',
+        createdByName: item.createdByName || '',
+      }));
+
+    let printJobId = null;
+
+    if (kitchenItems.length > 0) {
+      try {
+        printJobId = await printManager.enqueue(
+          'KITCHEN',
+          {
+            kotNumber: result.kotNumber,
+            tableNo: batch.tableNo,
+            tableName: batch.tableName,
+            orderType: batch.orderType,
+            createdAt: batch.createdAt || Date.now(),
+            createdByName:
+              items.find(item => item.createdByName)?.createdByName || '',
+            items: kitchenItems,
+          },
+          'WAITER'
+        );
+
+        console.log(
+          '[WAITER KOT] Kitchen print job queued:',
+          {
+            kotNumber: result.kotNumber,
+            printJobId,
+            itemCount: kitchenItems.length,
+            printedItems: kitchenItems.map(item => item.name),
+          }
+        );
+      } catch (printError) {
+        console.error(
+          '[WAITER KOT] Failed to queue kitchen print:',
+          printError
+        );
+      }
+    } else {
+      console.log(
+        '[WAITER KOT] No items require kitchen printing.'
+      );
+    }
+
+
+
     // =================================================
     // REFRESH TABLE BILL VISUAL STATES
     // =================================================
@@ -436,18 +472,18 @@ console.log(
       tableRepo.refreshAllTableBillVisualStates();
 
 
-for (const win of BrowserWindow.getAllWindows()) {
-  // console.log(
-  //   'SENDING IPC TO WINDOW:',
-  //   win.id
-  // );
+    for (const win of BrowserWindow.getAllWindows()) {
+      // console.log(
+      //   'SENDING IPC TO WINDOW:',
+      //   win.id
+      // );
 
-  win.webContents.send('waiter-kot-received', {
-    tableNo: batch.tableNo,
-    kotNumber: result.kotNumber,
-    itemCount: result.itemCount,
-  });
-}
+      win.webContents.send('waiter-kot-received', {
+        tableNo: batch.tableNo,
+        kotNumber: result.kotNumber,
+        itemCount: result.itemCount,
+      });
+    }
 
     // =================================================
     // LOG
@@ -573,7 +609,7 @@ function createWaiterLanServer() {
           if (
             req.method === 'GET' &&
             req.url ===
-              '/api/waiter/ping'
+            '/api/waiter/ping'
           ) {
 
             handlePing(
@@ -587,7 +623,7 @@ function createWaiterLanServer() {
           if (
             req.method === 'POST' &&
             req.url ===
-              '/api/waiter/kot'
+            '/api/waiter/kot'
           ) {
 
             await handleWaiterKot(

@@ -247,7 +247,7 @@ tableName:
       newProduct.sentToKitchen ?? false,
 
     kitchenPrintReq:
-      newProduct.kitchenPrintReq ?? false,
+      newProduct.kitchenPrintReq ?? true,
 
     printStatus:
       newProduct.printStatus ?? 'PENDING',

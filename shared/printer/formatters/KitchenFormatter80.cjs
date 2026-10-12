@@ -26,6 +26,9 @@ class KitchenFormatter80 {
     out += `KOT NO : ${data.kotNumber}\n`;
     out += `TABLE  : ${data.tableName || data.tableNo}\n`;
     out += `TYPE   : ${data.orderType}\n`;
+if (data.createdByName) {
+  out += `STEWARD: ${data.createdByName}\n`;
+}
 
     const dt = new Date(data.createdAt);
     out += dt.toLocaleString() + '\n';
@@ -45,8 +48,8 @@ class KitchenFormatter80 {
     }
 
     out += line('=') + '\n';
-    out += center('SEND TO KITCHEN') + '\n';
-    out += '\n\n\n';
+    // out += center('SEND TO KITCHEN') + '\n';
+    out += '\n';
 
     return out;
   }

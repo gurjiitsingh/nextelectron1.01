@@ -385,6 +385,109 @@ async function clearCart(partition) {
   return [];
 }
 
+
+
+// =====================================================
+// TOGGLE CART ITEM KITCHEN PRINT
+//
+// itemId   = pos_cart_item.id
+// partition = tableId OR orderNo
+//
+// kitchenPrintReq:
+//   1 = Enabled
+//   0 = Disabled
+// =====================================================
+
+async function updateCartItemKitchenPrint1(
+  itemId,
+  kitchenPrintReq,
+  partition
+) {
+  if (!itemId || !partition) {
+    return getCartItems(partition);
+  }
+
+  const enabled = kitchenPrintReq ? 1 : 0;
+
+  const result = db.prepare(`
+    UPDATE pos_cart_item
+    SET kitchenPrintReq = ?
+    WHERE id = ?
+      AND tableId = ?
+  `).run(
+    enabled,
+    itemId,
+    partition
+  );
+
+  console.log('UPDATE CART KITCHEN PRINT =>', {
+    itemId,
+    partition,
+    kitchenPrintReq: enabled,
+    changes: result.changes,
+  });
+
+  return getCartItems(partition);
+}
+
+
+async function updateCartItemKitchenPrint(
+  itemId,
+  kitchenPrintReq,
+  partition
+) {
+  if (!itemId || !partition) {
+    console.error('[KITCHEN PRINT] Missing itemId or partition.');
+    return getCartItems(partition);
+  }
+
+    const items1 = db.prepare(`
+    SELECT *
+    FROM pos_cart_item
+    WHERE tableId = ?
+    ORDER BY id ASC
+  `).all(partition);
+
+  console.log(
+    '[CART ITEMS BEFORE UPDATE]:',
+    JSON.stringify(items1, null, 2)
+  );
+
+  console.log("set print kitchenPrintReq----------------", kitchenPrintReq)
+  const enabled = kitchenPrintReq ? 1 : 0;
+  console.log("set print req----------------", enabled)
+
+  const result = db.prepare(`
+    UPDATE pos_cart_item
+    SET kitchenPrintReq = ?
+    WHERE id = ?
+      AND tableId = ?
+  `).run(enabled, itemId, partition);
+
+  console.log('[KITCHEN PRINT UPDATE]:', {
+    itemId,
+    partition,
+    kitchenPrintReq: enabled,
+    changes: result.changes,
+  });
+
+  // Show only items belonging to this table/order
+  const items = db.prepare(`
+    SELECT *
+    FROM pos_cart_item
+    WHERE tableId = ?
+    ORDER BY id ASC
+  `).all(partition);
+
+  console.log(
+    '[CART ITEMS AFTER UPDATE]:',
+    JSON.stringify(items, null, 2)
+  );
+
+  return items;
+}
+
+
 // =====================================================
 // EXPORT
 // =====================================================
@@ -395,4 +498,5 @@ module.exports = {
   updateCartItemNote,
   removeCartItem,
   clearCart,
+  updateCartItemKitchenPrint,
 };

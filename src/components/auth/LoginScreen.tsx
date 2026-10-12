@@ -19,7 +19,7 @@ import {
   usePosAuth,
   PosUser,
 } from "@/store/PosAuthContext";
-import SyncButton from "@/app/(home)/SyncButton";
+import SyncButton from "@/app/(home)/SyncButton"; 
 
 
 // =====================================================
