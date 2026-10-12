@@ -1217,11 +1217,12 @@ console.log('=============================================');
             style={{
               backgroundColor:
                 cartData.length === 0
-                  ? '#CBD5E1'
+                  ? '#a3abde'
                   : theme.primary,
 
-              color:
-                '#7f7a7a',
+              color:   cartData.length === 0
+                  ? '#639add'
+                  : "#e4e5ea",
             }}
             className="
               h-8

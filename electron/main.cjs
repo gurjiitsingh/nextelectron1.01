@@ -703,6 +703,38 @@ function registerIpcHandlers() {
     }
   );
 
+
+  
+ipcMain.handle(
+  'pos:getDeletedKotHistoryItems',
+  async (_event, selectedDate) => {
+    try {
+      if (
+        typeof selectedDate !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
+      ) {
+        throw new Error('Invalid date');
+      }
+
+      return {
+        success: true,
+        data: kotHistoryRepo.getDeletedKotHistoryItems(
+          selectedDate
+        ),
+      };
+    } catch (error) {
+      console.error('GET DELETED KOT ITEMS FAILED', error);
+
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to load deleted KOT items',
+      };
+    }
+  }
+);
+
   ipcMain.handle(
     'pos:getRecentKotHistoryItems',
     async (_event, limit = 20) => {

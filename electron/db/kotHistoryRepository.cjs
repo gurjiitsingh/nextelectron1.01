@@ -1024,6 +1024,48 @@ function markKotHistoryPaidByTable({
     rows,
   };
 }
+
+
+
+ // =====================================================
+ // GET DELETED KOT ITEMS
+ // Returns individual deleted items, including items
+ // from KOTs whose overall status is PARTIAL or PAID.
+ // =====================================================
+function getDeletedKotHistoryItems(selectedDate) {
+  console.log('\n========== DELETED KOT DEBUG ==========');
+  console.log('Selected date:', selectedDate);
+
+  const allItems = db.prepare(`
+    SELECT
+      i.*,
+      h.tableName AS tableName,
+      h.orderType AS orderType,
+      h.businessDate AS businessDate
+    FROM pos_kot_history_items AS i
+    LEFT JOIN pos_kot_history AS h
+      ON h.id = i.kotHistoryId
+    WHERE UPPER(i.status) = 'DELETED'
+    ORDER BY i.deletedAt DESC, i.createdAt DESC
+  `).all();
+
+  console.log('Total deleted items:', allItems.length);
+
+  allItems.forEach((item, index) => {
+    console.log(`\n--- Deleted Item ${index + 1} ---`);
+    console.log(item);
+    console.log('All fields:', Object.keys(item));
+    console.log('deletedAt value:', item.deletedAt);
+    console.log('deletedAt type:', typeof item.deletedAt);
+    console.log('createdAt value:', item.createdAt);
+    console.log('status:', item.status);
+  });
+
+  console.log('\n========== END DELETED KOT DEBUG ==========\n');
+
+  return allItems;
+}
+
 // =====================================================
 // EXPORT
 // =====================================================
@@ -1044,5 +1086,9 @@ module.exports = {
   updateKotHistoryStatus,
 
   markKotHistoryPaid,
+
+  getDeletedKotHistoryItems,
+
+  
 
 };

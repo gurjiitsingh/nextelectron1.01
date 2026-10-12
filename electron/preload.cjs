@@ -197,7 +197,11 @@ contextBridge.exposeInMainWorld('posApi', {
       kotHistoryId
     ),
 
-
+getDeletedKotHistoryItems: (selectedDate) =>
+  ipcRenderer.invoke(
+    'pos:getDeletedKotHistoryItems',
+    selectedDate
+  ),
 
   getPendingKotByTable: (tableNo) =>
     ipcRenderer.invoke(

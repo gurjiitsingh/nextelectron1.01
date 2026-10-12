@@ -321,283 +321,306 @@ declare global {
           error?: string;
         }>;
 
-   getConfig: () => Promise<{
-  success: boolean;
-  configured?: boolean;
-  data?: any;
-  error?: string;
-}>;
-
-
-      getPosIPAddress: () => Promise<{
-        success: boolean;
-        ipAddress?: string;
-        error?: string;
-      }>;
-
-
-
-
-      registerPosTerminal: () => Promise<{
-        success: boolean;
-        terminal?: {
-          ipAddress?: string;
-          port?: number;
-          terminalId?: string;
-          terminalName?: string;
-        };
-        error?: string;
-      }>;
-
-      // =====================================================
-      // PRINTER SETTINGS
-      // =====================================================
-      getPrinterSettings: () => Promise<any[]>;
-
-      savePrinterSetting: (
-        config: any
-      ) => Promise<{
-        success: boolean;
-      }>;
-
-
-
-
-
-      getCurrentBusinessDay: () => Promise<any>;
-
-      getDayClosingSummary: (
-        businessDate: string
-      ) => Promise<any>;
-
-      getDayClosingHistory: () => Promise<any>;
-
-      markTableHistoryPaid: (data: {
-        tableNo: string;
-        orderId: string;
-        billItems: KitchenItem[];
-      }) => Promise<{
-        success: boolean;
-        error?: string;
-        paidItems?: number;
-        deletedItems?: number;
-        paidHistory?: number;
-      }>;
-
-      closeBusinessDay: (
-        data: {
-          actualCash: number;
-          notes?: string;
-          cashHandedOver?: number;
-          closedById?: string;
-          closedByName?: string;
-        }
-      ) => Promise<any>;
-      // ######################
-      //USER
-      // #######################
-
-      getAllUsers: () => Promise<any>;
-
-      getPosLoginUsers: () => Promise<{
-        success: boolean;
-        users: Array<{
-          userId: string;
-          outletId: string;
-          fullName: string;
-          username: string;
-          mobile: string;
-          employeeId: string;
-          role: string;
+        getConfig: () => Promise<{
+          success: boolean;
+          configured?: boolean;
+          data?: any;
+          error?: string;
         }>;
-        error?: string;
-      }>;
 
 
-      loginUser: (data: {
-        userId: string;
-        pin: string;
-      }) => Promise<{
-        success: boolean;
+        getPosIPAddress: () => Promise<{
+          success: boolean;
+          ipAddress?: string;
+          error?: string;
+        }>;
 
-        user?: {
+
+
+
+        registerPosTerminal: () => Promise<{
+          success: boolean;
+          terminal?: {
+            ipAddress?: string;
+            port?: number;
+            terminalId?: string;
+            terminalName?: string;
+          };
+          error?: string;
+        }>;
+
+        // =====================================================
+        // PRINTER SETTINGS
+        // =====================================================
+        getPrinterSettings: () => Promise<any[]>;
+
+        savePrinterSetting: (
+          config: any
+        ) => Promise<{
+          success: boolean;
+        }>;
+
+
+
+
+
+        getCurrentBusinessDay: () => Promise<any>;
+
+        getDayClosingSummary: (
+          businessDate: string
+        ) => Promise<any>;
+
+        getDayClosingHistory: () => Promise<any>;
+
+        markTableHistoryPaid: (data: {
+          tableNo: string;
+          orderId: string;
+          billItems: KitchenItem[];
+        }) => Promise<{
+          success: boolean;
+          error?: string;
+          paidItems?: number;
+          deletedItems?: number;
+          paidHistory?: number;
+        }>;
+
+        closeBusinessDay: (
+          data: {
+            actualCash: number;
+            notes?: string;
+            cashHandedOver?: number;
+            closedById?: string;
+            closedByName?: string;
+          }
+        ) => Promise<any>;
+        // ######################
+        //USER
+        // #######################
+
+        getAllUsers: () => Promise<any>;
+
+        getPosLoginUsers: () => Promise<{
+          success: boolean;
+          users: Array<{
+            userId: string;
+            outletId: string;
+            fullName: string;
+            username: string;
+            mobile: string;
+            employeeId: string;
+            role: string;
+          }>;
+          error?: string;
+        }>;
+
+
+        loginUser: (data: {
           userId: string;
-          outletId: string;
-          fullName: string;
-          username: string;
-          mobile: string;
-          employeeId: string;
-          role: string;
-        };
+          pin: string;
+        }) => Promise<{
+          success: boolean;
 
-        session?: {
-          sessionId: string;
-          userId: string;
-          outletId: string;
-          fullName: string;
-          employeeId: string | null;
-          role: string | null;
-          loginAt: number;
-          logoutAt: number | null;
-          lastActivityAt: number;
-          isActive: number;
-        };
+          user?: {
+            userId: string;
+            outletId: string;
+            fullName: string;
+            username: string;
+            mobile: string;
+            employeeId: string;
+            role: string;
+          };
 
-        error?: string;
-      }>;
+          session?: {
+            sessionId: string;
+            userId: string;
+            outletId: string;
+            fullName: string;
+            employeeId: string | null;
+            role: string | null;
+            loginAt: number;
+            logoutAt: number | null;
+            lastActivityAt: number;
+            isActive: number;
+          };
 
-      logoutUser: (
-        sessionId?: string
-      ) => Promise<{
-        success: boolean;
-        error?: string;
-      }>;
+          error?: string;
+        }>;
+
+        logoutUser: (
+          sessionId?: string
+        ) => Promise<{
+          success: boolean;
+          error?: string;
+        }>;
 
 
 
 
 
-      updateBillItemQuantity: (args: {
-        tableNo: string;
-        billItemGroupKey: string;
-        quantity: number;
-      }) => Promise<any>;
+        updateBillItemQuantity: (args: {
+          tableNo: string;
+          billItemGroupKey: string;
+          quantity: number;
+        }) => Promise<any>;
 
-      createKot: (
-        kotBatch: any,
-        kotItems: {
-          categoryName: string;
-          productMode: string;
-          currentStock: number;
-          productId: string;
-          name: string;
-          categoryId: string;
-          sessionId: string;
+        createKot: (
+          kotBatch: any,
+          kotItems: {
+            categoryName: string;
+            productMode: string;
+            currentStock: number;
+            productId: string;
+            name: string;
+            categoryId: string;
+            sessionId: string;
+            tableNo: string;
+            tableName: string;
+            createdById: string;
+            createdByName: string;
+            parentId: string | null;
+            isVariant: boolean;
+            basePrice: number;
+            finalPrice: number;
+            modifierTotal: number;
+            quantity: number;
+            taxRate: number;
+            taxType: "inclusive" | "exclusive";
+            note: string;
+            modifiersJson: string;
+            createdAt: number;
+            source: string;
+            syncedToCloud: boolean;
+            syncedFromCloud: boolean;
+            id: string;
+            kotNumber: any;
+            kotBatchId: string;
+            status: string;
+            kitchenPrintReq: boolean;
+            kitchenPrinted: boolean;
+          }[]
+        ) => Promise<any>;
+
+        getKotHistory: () => Promise<any>;
+
+        getKotHistoryDetail: (
+          kotHistoryId: string
+        ) => Promise<any>;
+
+        getOrdersByBusinessDate: (
+          date: string
+        ) => Promise<any>;
+
+        getOrdersByRealDate: (
+          date: string
+        ) => Promise<any>;
+        getSalesReport: (
+          businessDate: string
+        ) => Promise<any>;
+
+        onKotReceived: (
+          callback: (data: any) => void
+        ) => void;
+
+        onKotReceived: (
+          callback: (data: any) => void
+        ) => () => void;
+
+        generateNextPosOrderNumber: (
+          orderType: string
+        ) => Promise<string>;
+
+        previewBillImage: (data: {
+          billNo: string;
+          orderNo: string;
           tableNo: string;
           tableName: string;
-          createdById: string;
-          createdByName: string;
-          parentId: string | null;
-          isVariant: boolean;
-          basePrice: number;
-          finalPrice: number;
-          modifierTotal: number;
-          quantity: number;
-          taxRate: number;
-          taxType: "inclusive" | "exclusive";
-          note: string;
-          modifiersJson: string;
+          orderType: string;
+          paymentMode: string;
+
           createdAt: number;
-          source: string;
-          syncedToCloud: boolean;
-          syncedFromCloud: boolean;
-          id: string;
-          kotNumber: any;
-          kotBatchId: string;
-          status: string;
-          kitchenPrintReq: boolean;
-          kitchenPrinted: boolean;
-        }[]
-      ) => Promise<any>;
 
-      getKotHistory: () => Promise<any>;
+          items: {
+            name: string;
+            quantity: number;
+            rate: number;
+            amount: number;
+            modifiers: any[];
+            modifiersJson: string;
+            note: string;
+          }[];
 
-      getKotHistoryDetail: (
-        kotHistoryId: string
-      ) => Promise<any>;
+          subtotal: number;
+          tax: number;
+          discount: number;
+          deliveryFee: number;
+          deliveryTax: number;
+          grandTotal: number;
 
-      getOrdersByBusinessDate: (
-        date: string
-      ) => Promise<any>;
+          outletName: string;
+          addressLine1: string;
+          addressLine2: string;
+          addressLine3: string;
+          city: string;
 
-      getOrdersByRealDate: (
-        date: string
-      ) => Promise<any>;
-      getSalesReport: (
-        businessDate: string
-      ) => Promise<any>;
+          phone: string;
+          phone2: string;
+          gstVatNumber: string;
 
-      onKotReceived: (
-        callback: (data: any) => void
-      ) => void;
+          taxMode: string;
+          taxType: string;
+          countryCode: string;
 
-      onKotReceived: (
-        callback: (data: any) => void
-      ) => () => void;
+          customerName: string;
+          customerPhone: string;
 
-      generateNextPosOrderNumber: (
-        orderType: string
-      ) => Promise<string>;
+          qrEnabled: boolean;
+          upiId: string;
+          qrTitle: string;
 
-      previewBillImage: (data: {
-        billNo: string;
-        orderNo: string;
-        tableNo: string;
-        tableName: string;
-        orderType: string;
-        paymentMode: string;
+          stewardName: string;
+          kotNumberText: string;
+        }) => Promise<any>;
 
-        createdAt: number;
+        openFile: (
+          filePath: string
+        ) => Promise<void>;
 
-        items: {
-          name: string;
-          quantity: number;
-          rate: number;
-          amount: number;
-          modifiers: any[];
-          modifiersJson: string;
-          note: string;
-        }[];
+        generateNextKotNumber: () => Promise<string>;
 
-        subtotal: number;
-        tax: number;
-        discount: number;
-        deliveryFee: number;
-        deliveryTax: number;
-        grandTotal: number;
+        getTodayPosOrders: (
+          orderType: string
+        ) => Promise<any[]>;
 
-        outletName: string;
-        addressLine1: string;
-        addressLine2: string;
-        addressLine3: string;
-        city: string;
 
-        phone: string;
-        phone2: string;
-        gstVatNumber: string;
-
-        taxMode: string;
-        taxType: string;
-        countryCode: string;
-
-        customerName: string;
-        customerPhone: string;
-
-        qrEnabled: boolean;
-        upiId: string;
-        qrTitle: string;
-
-        stewardName: string;
-        kotNumberText: string;
-      }) => Promise<any>;
-
-      openFile: (
-        filePath: string
-      ) => Promise<void>;
-
-      generateNextKotNumber: () => Promise<string>;
-
-      getTodayPosOrders: (
-        orderType: string
-      ) => Promise<any[]>;
+        getDeletedKotHistoryItems: () => Promise<{
+          success: boolean;
+          data?: Array<{
+            id: string;
+            kotHistoryId: string;
+            kotNumber: string;
+            tableNo: string;
+            tableName?: string;
+            orderType?: string;
+            name: string;
+            quantity: number;
+            finalTotal: number;
+            status: string;
+            deletedAt: number | null;
+            businessDate?: string;
+          }>;
+          error?: string;
+        }>;
+generateNextKotNumber: () => Promise<string | number>;
+    
 
 
 
+createKot: (kotBatch: any, kotItems: any[]) => Promise<any>;
 
-      // Modifiers
-      getModifierGroups: () => Promise<any[]>;
+        // Modifiers
+        getModifierGroups: () => Promise<any[]>;
 
-      getProductModifiers: () => Promise<any[]>;
-    };
+        getProductModifiers: () => Promise<any[]>;
+      };
+    }
   }
-}

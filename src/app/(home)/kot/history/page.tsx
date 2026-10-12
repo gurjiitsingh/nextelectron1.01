@@ -1,5 +1,6 @@
 'use client';
 
+import BackButton from '@/components/buttons/Back';
 import { useEffect, useState } from 'react';
 
 type KotHistory = {
@@ -105,6 +106,10 @@ export default function KotHistoryPage() {
   const [activeFilter, setActiveFilter] = useState<
   'ALL' | 'OPEN' | 'PARTIAL' | 'DELETED' | 'PAID'
 >('ALL');  
+
+const [activeTab, setActiveTab] = useState<
+  'KOT_HISTORY' | 'DELETED_ITEMS'
+>('KOT_HISTORY');
 
   const [search, setSearch] =
     useState('');
@@ -288,6 +293,17 @@ const filteredHistory =
 
   });
 
+
+  const deletedItems = history
+  .filter(
+    (kot) =>
+      kot.status?.toUpperCase() === 'DELETED'
+  )
+  .flatMap((kot) => {
+    // Items are loaded separately through getKotHistoryDetail.
+    return [];
+  });
+
   // =====================================================
   // FORMAT DATE
   // =====================================================
@@ -424,7 +440,8 @@ return (
             </div>
 
           </div>
-
+          <div className='flex gap-3'>
+<BackButton />
 
           {/* REFRESH */}
           <button
@@ -471,7 +488,7 @@ return (
           </button>
 
         </div>
-
+</div>
 
         {/* =====================================================
             SEARCH
@@ -522,6 +539,34 @@ return (
 
       </div>
 
+
+
+{/* MAIN TABS */}
+<div className="flex gap-2 border-t border-slate-100 px-4 py-3 md:px-6">
+  <button
+    type="button"
+    onClick={() => setActiveTab('KOT_HISTORY')}
+    className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
+      activeTab === 'KOT_HISTORY'
+        ? 'bg-slate-900 text-white'
+        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+    }`}
+  >
+    KOT History
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setActiveTab('DELETED_ITEMS')}
+    className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
+      activeTab === 'DELETED_ITEMS'
+        ? 'bg-red-600 text-white'
+        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+    }`}
+  >
+    Deleted Items
+  </button>
+</div>
 
       {/* =========================================================
           FILTER BAR

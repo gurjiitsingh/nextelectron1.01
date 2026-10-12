@@ -441,7 +441,7 @@ const NavItem = ({
                 />
 
                 <NavItem
-                  href="/kot/history"
+                  href="/kot/deleted-items"
                   label="KOT History"
                   icon={
                     <IoDocumentTextOutline size={18} />
