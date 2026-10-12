@@ -27,6 +27,13 @@ const {
 } = require('./sync/posTerminalRepository.cjs');
 
 const {
+   getOrCreateOrderNo,
+  getExistingOrderNo,
+} = require('./lib/orderSequenceRepository.cjs');
+const {
+  TERMINAL_CODE,
+} = require('./lib/orderSequence.cjs');
+const {
   db,
   getDebugCounts,
 } = require('./db/sqlite.cjs');
@@ -800,7 +807,77 @@ function registerIpcHandlers() {
       }
     }
   );
+  // =====================================================
+  // ORDER NO
+  // =====================================================
 
+  ipcMain.handle('bill:getReservedOrderNo', async (_event, tableNo) => {
+  try {
+    if (!tableNo) {
+      return { success: false, error: 'tableNo is required' };
+    }
+
+    const mapping = getExistingOrderNo(db, tableNo);
+
+    return {
+      success: true,
+      srno: mapping?.srno || null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error?.message || 'Failed to get invoice number',
+    };
+  }
+});
+
+
+// =====================================================
+// RESERVE / GET PRINT ORDER NUMBER
+// =====================================================
+
+ipcMain.handle(
+  'bill:getOrCreateOrderNo',
+  async (_event, tableNo) => {
+    try {
+      if (
+        tableNo === undefined ||
+        tableNo === null ||
+        String(tableNo).trim() === ''
+      ) {
+        return {
+          success: false,
+          error: 'tableNo is required',
+        };
+      }
+
+      const mapping = getOrCreateOrderNo(
+        db,
+        String(tableNo),
+        TERMINAL_CODE
+      );
+
+      return {
+        success: true,
+        srno: mapping.srno,
+        orderSerialNo: mapping.orderSerialNo,
+        mapKey: mapping.mapKey,
+      };
+    } catch (error) {
+      console.error(
+        '[BILL] Failed to reserve order number:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error?.message ||
+          'Failed to generate order number',
+      };
+    }
+  }
+);
 
   // =====================================================
   // BILLING

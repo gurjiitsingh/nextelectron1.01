@@ -144,10 +144,20 @@ function moveTableMapping(
   );
 }
 
+function getExistingOrderNo(db, mapKey) {
+  return db.prepare(`
+    SELECT srno, orderSerialNo, orderId
+    FROM order_serial_map
+    WHERE mapKey = ?
+    LIMIT 1
+  `).get(mapKey);
+}
+
 
 module.exports = {
   getOrCreateOrderNo,
   attachOrderId,
   clearMapping,
   moveTableMapping,
+  getExistingOrderNo,
 };

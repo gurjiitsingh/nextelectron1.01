@@ -74,7 +74,7 @@ class BillFormatter80 {
     // =====================================================
 
     const totalLine = (label, value) =>
-      padRight(label, 38) + padLeft(money(value), 10) + '\n';
+      padRight(label, 38) + padLeft(money(value), 10);
 
     // =====================================================
     // OUTLET HEADER
@@ -335,37 +335,62 @@ class BillFormatter80 {
 
     output.push(line);
 
-    // =====================================================
-    // TOTALS
-    // Do not recalculate tax, discounts, or grand total.
-    // Print the values supplied by the existing POS logic.
-    // =====================================================
+    
+// =====================================================
+// TOTALS
+// Do not recalculate tax, discounts, or grand total.
+// Print the values supplied by the existing POS logic.
+// =====================================================
 
-    const subtotal = Number(data.subtotal ?? 0);
-    const discount = Number(data.discount ?? 0);
-    const deliveryFee = Number(data.deliveryFee ?? 0);
-    const tax = Number(data.tax ?? 0);
-    const deliveryTax = Number(data.deliveryTax ?? 0);
-    const grandTotal = Number(data.grandTotal ?? data.total ?? 0);
+const subtotal = Number(data.subtotal ?? 0);
+const discount = Number(data.discount ?? 0);
+const deliveryFee = Number(data.deliveryFee ?? 0);
+const tax = Number(data.tax ?? 0);
+const deliveryTax = Number(data.deliveryTax ?? 0);
+const grandTotal = Number(data.grandTotal ?? data.total ?? 0);
 
-    output.push(totalLine('Item Total', subtotal));
+output.push(totalLine('Item Total', subtotal));
 
-    if (deliveryFee > 0) {
-      output.push(totalLine('Delivery', deliveryFee));
-    }
+if (deliveryFee > 0) {
+  output.push(totalLine('Delivery', deliveryFee));
+}
 
-    if (discount > 0) {
-      output.push(totalLine('Discount', discount));
-    }
+if (discount > 0) {
+  output.push(totalLine('Discount', discount));
+}
 
-    if (tax > 0) {
-      output.push(totalLine('Tax', tax));
-    }
+// =====================================================
+// CGST / SGST / ROUNDOFF
+// Display only; existing tax calculation remains unchanged.
+// =====================================================
 
-    if (deliveryTax > 0) {
-      output.push(totalLine('Delivery Tax', deliveryTax));
-    }
+const itemTotal = subtotal;
+const roundOff = Number(data.roundOff ?? 0);
 
+if (tax > 0) {
+  const halfTax = tax / 2;
+
+  output.push(
+    totalLine(
+      `CGST 2.5% on [${money(grandTotal)}]`,
+      halfTax
+    )
+  );
+
+  output.push(
+    totalLine(
+      `SGST 2.5% on [${money(grandTotal)}]`,
+      halfTax
+    )
+  );
+}
+
+// if (deliveryTax > 0) {
+//   output.push(totalLine('Delivery Tax', deliveryTax));
+// }
+
+// output.push(totalLine('Round Off', roundOff));
+ 
     output.push(line);
     output.push(totalLine('TOTAL', grandTotal));
     output.push(line);

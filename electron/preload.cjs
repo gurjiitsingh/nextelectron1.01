@@ -327,6 +327,18 @@ contextBridge.exposeInMainWorld('posApi', {
       input
     ),
 
+    // =====================================================
+// GET OR CREATE PRINT ORDER NUMBER
+// =====================================================
+
+getOrCreateOrderNo: (tableNo) =>
+  ipcRenderer.invoke(
+    'bill:getOrCreateOrderNo',
+    tableNo
+  ),
+
+    getReservedOrderNo: (tableNo) =>
+  ipcRenderer.invoke('bill:getReservedOrderNo', tableNo),
 
 
   clearKotByTable: (tableNo) =>

@@ -2150,6 +2150,19 @@ setProcessing(false);
       return;
     }
 
+
+    const numberResult =
+  await window.posApi.getOrCreateOrderNo(currentTableId);
+
+if (!numberResult?.success || !numberResult.srno) {
+  throw new Error(
+    'Invoice number not reserved for this table. Please check the order-number flow.'
+  );
+}
+
+
+const actualBillNo = numberResult.srno;
+console.log("in no--------------- ", actualBillNo)
     console.log(
       'PRINT BILL CLICKED'
     );
@@ -2158,8 +2171,7 @@ setProcessing(false);
 
       const receiptData = {
 
-        billNo:
-          'PREVIEW',
+        billNo:actualBillNo,
 
         orderNo:
           '',
