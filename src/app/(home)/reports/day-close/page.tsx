@@ -199,7 +199,7 @@ async function loadBusinessInfo(
     const result =
       await window.posApi.getBusinessInfoByDate(
         businessDate
-      );
+      ); 
 
     if (!result?.success) {
       setBusinessDay(null);

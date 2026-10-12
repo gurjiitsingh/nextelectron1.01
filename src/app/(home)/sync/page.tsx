@@ -158,10 +158,10 @@ export default function SyncPage() {
         res?.success === false
       ) {
 
-        throw new Error(
-          res?.message ||
-          'Order upload failed.'
-        );
+        // throw new Error(
+        //   res?.message ||
+        //   'Order upload failed.'
+        // );
 
       }
 

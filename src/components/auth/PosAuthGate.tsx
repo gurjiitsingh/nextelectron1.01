@@ -41,8 +41,8 @@ export default function PosAuthGate({
     async function checkConfig() {
       try {
         const result =
-          await window.posApi.firebase.getConfig();
-
+          await window.posApi.getConfig();
+    //  await window.posApi.firebase.getConfig();
         if (cancelled) return;
 
         if (!result.success) {
@@ -108,7 +108,7 @@ export default function PosAuthGate({
 
       // Verify that configuration was saved.
       const check =
-        await window.posApi.firebase.getConfig();
+        await window.posApi.getConfig();
 
       if (!check.success) {
         setConfigError(

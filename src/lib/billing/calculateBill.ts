@@ -7,6 +7,7 @@ export type KitchenItem = {
   quantity: number;
   taxRate?: number;
   taxType?: string;
+  discountEligible?:boolean;
   note?: string;
   modifiersJson?: string;
 };

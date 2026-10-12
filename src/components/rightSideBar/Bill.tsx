@@ -394,11 +394,8 @@ const calculation = useMemo(() => {
     // SQLite INTEGER -> Boolean
     // 0 = false, 1 = true
     // Missing/null defaults to true
-    discountEligible:
-      i.discountEligible == null
-        ? true
-        : i.discountEligible === true ||
-          i.discountEligible === 1,
+    
+     discountEligible: i.discountEligible ?? true,
   }));
 
   console.log('========== BILL DISCOUNT DEBUG ==========');
@@ -680,7 +677,7 @@ async function handleDeleteBillItem(
 item: any,
 reason: string,
 cancelKitchen: boolean
-) {
+) {       
 if (processing) {
 return;
 }
@@ -2162,6 +2159,7 @@ if (!numberResult?.success || !numberResult.srno) {
 
 
 const actualBillNo = numberResult.srno;
+
 console.log("in no--------------- ", actualBillNo)
     console.log(
       'PRINT BILL CLICKED'

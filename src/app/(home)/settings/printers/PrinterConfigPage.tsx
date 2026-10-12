@@ -144,11 +144,12 @@ async function save() {
 
     if (result?.success) {
       setSaveMessage(`${title} saved successfully`);
-    } else {
-      setSaveMessage(
-        result?.error || 'Failed to save printer'
-      );
     }
+    //  else {
+    //   setSaveMessage(
+    //     result?.error || 'Failed to save printer'
+    //   );
+   // }
 
   } catch (error) {
     console.error(

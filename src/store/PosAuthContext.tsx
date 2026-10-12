@@ -23,7 +23,20 @@ export type PosUser = {
   role: string;
 };
 
+export interface PosAuthContextType {
+  currentUser: PosUser | null;
+  session: PosSession | null;
 
+  isAuthenticated: boolean;
+  isInitializing: boolean;
+  isLoading: boolean;
+  isLoggingIn: boolean;
+
+  login: (userId: string, pin: string) => Promise<PosLoginResult>;
+
+  logout: () => Promise<void>;
+  lock: () => void;
+}
 // =====================================================
 // POS SESSION
 // =====================================================
@@ -58,27 +71,7 @@ export type PosLoginResult = {
 // CONTEXT TYPE
 // =====================================================
 
-type PosAuthContextType = {
-  currentUser: PosUser | null;
-
-  session: PosSession | null;
-
-  isAuthenticated: boolean;
-
-  isInitializing: boolean;
-
-  isLoggingIn: boolean;
-
-  login: (
-    userId: string,
-    pin: string
-  ) => Promise<PosLoginResult>;
-
-  logout: () => Promise<void>;
-
-  lock: () => void;
-};
-
+ 
 
 // =====================================================
 // CONTEXT
@@ -380,7 +373,7 @@ export function PosAuthProvider({
     isInitializing,
 
     isLoggingIn,
-
+//isLoading,
     login,
 
     logout,

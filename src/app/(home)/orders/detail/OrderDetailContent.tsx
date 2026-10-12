@@ -42,7 +42,7 @@ type OrderMaster = {
   taxTotal?: number;
   discountTotal?: number;
   grandTotal?: number;
-
+deliveryFee?: number;
   paymentMode?: string;
   paymentStatus?: string;
 
