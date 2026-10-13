@@ -9,6 +9,7 @@ export interface BillItemInput {
   productId?: string;
   name?: string;
   quantity: number;
+  discountEligible: boolean;
   basePrice: number;
   taxRate: number;
   taxType: TaxType;

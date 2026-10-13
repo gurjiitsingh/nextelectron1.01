@@ -1,6 +1,6 @@
 'use client';
 
-import { cartProductType } from '@/lib/types/cartDataType';
+import { CartItem, cartProductType } from '@/lib/types/cartDataType';
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import { usePosUi } from '@/PosUiStore/PosUiContext';
@@ -849,29 +849,36 @@ console.log('=============================================');
     const nextKitchenPrint =
       item.kitchenPrintReq === false;
 
-    const result =
-      await window.posApi.updateKitchenPrint({
-        itemId: item.id,
-        kitchenPrintReq: nextKitchenPrint,
-        partition: item.tableId,
-      });
+ const partition = item.tableId;
 
-    if (result?.success) {
-      setCartData(
-        result.data.map((cartItem) => ({
-          ...cartItem,
-          kitchenPrintReq:
-            cartItem.kitchenPrintReq == null
-              ? true
-              : Boolean(cartItem.kitchenPrintReq),
-        }))
-      );
-    } else {
-      console.error(
-        "Failed to update kitchen printing:",
-        result?.error
-      );
-    }
+if (!partition) {
+  throw new Error("Table ID is missing");
+}
+
+const result = await window.posApi.updateKitchenPrint({
+  itemId: item.id,
+  kitchenPrintReq: nextKitchenPrint,
+  partition,
+});
+
+ if (result?.success) {
+  setCartData(
+    result.data.map((cartItem: CartItem) => ({
+      ...cartItem,
+      kitchenPrintReq:
+        cartItem.kitchenPrintReq == null
+          ? true
+          : Boolean(cartItem.kitchenPrintReq),
+    }))
+  );
+} else {
+  console.error(
+    "Failed to update kitchen printing:",
+    result?.error
+  );
+}
+
+
   }}
   className={`
     flex h-6 w-6 shrink-0

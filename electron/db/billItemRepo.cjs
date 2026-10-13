@@ -59,16 +59,16 @@ function insertBillItems(items) {
 
  const insertMany = db.transaction((rows) => {
   for (const item of rows) {
-    console.log('========== INSERT BILL ITEM: INCOMING ==========');
-    console.log('Product:', item.name);
-    console.log('Product ID:', item.productId);
-    console.log(
-      'discountEligible:',
-      item.discountEligible,
-      '| type:',
-      typeof item.discountEligible
-    );
-    console.log('================================================');
+    // console.log('========== INSERT BILL ITEM: INCOMING ==========');
+    // console.log('Product:', item.name);
+    // console.log('Product ID:', item.productId);
+    // console.log(
+    //   'discountEligible:',
+    //   item.discountEligible,
+    //   '| type:',
+    //   typeof item.discountEligible
+    // );
+    // console.log('================================================');
 
     const normalizedModifiers =
       normalizeModifiersJson(item.modifiersJson);

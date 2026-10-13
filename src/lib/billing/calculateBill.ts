@@ -1,4 +1,6 @@
 export type KitchenItem = {
+  id: string;
+  tableNo: string;
   productId: string;
   name: string;
   basePrice: number;
@@ -7,7 +9,7 @@ export type KitchenItem = {
   quantity: number;
   taxRate?: number;
   taxType?: string;
-  discountEligible?:boolean;
+  discountEligible?: boolean;
   note?: string;
   modifiersJson?: string;
 };
@@ -33,12 +35,76 @@ export function groupBillItems(items: KitchenItem[]) {
       map.set(key, {
         ...item,
         quantity: Number(item.quantity || 0),
+
+        // SQLite INTEGER -> Boolean
+        // 0 = false, 1 = true
+        // Missing/null defaults to true
+        discountEligible:
+          item.discountEligible == null
+            ? true
+            : Boolean(item.discountEligible),
       });
     }
   }
 
   return Array.from(map.values());
 }
+
+// export function groupBillItems(items: KitchenItem[]) {
+//   const map = new Map<string, KitchenItem>();
+
+//   for (const item of items) {
+//     const key = [
+//       item.productId,
+//       item.basePrice,
+//       item.taxRate ?? 0,
+//       item.taxType ?? 'exclusive',
+//       item.note ?? '',
+//       item.modifiersJson ?? '',
+//     ].join('|');
+
+//     const existing = map.get(key);
+
+//     if (existing) {
+//       existing.quantity += Number(item.quantity || 0);
+//     } else {
+//       map.set(key, {
+//         ...item,
+//         quantity: Number(item.quantity || 0),
+//       });
+//     }
+//   }
+
+//   return Array.from(map.values());
+// }
+
+// export function groupBillItems(items: KitchenItem[]) {
+//   const map = new Map<string, KitchenItem>();
+
+//   for (const item of items) {
+//     const key = [
+//       item.productId,
+//       item.basePrice,
+//       item.taxRate ?? 0,
+//       item.taxType ?? 'exclusive',
+//       item.note ?? '',
+//       item.modifiersJson ?? '',
+//     ].join('|');
+
+//     const existing = map.get(key);
+
+//     if (existing) {
+//       existing.quantity += Number(item.quantity || 0);
+//     } else {
+//       map.set(key, {
+//         ...item,
+//         quantity: Number(item.quantity || 0),
+//       });
+//     }
+//   }
+
+//   return Array.from(map.values());
+// }
 
 export function calculateBill(
   items: KitchenItem[],

@@ -316,22 +316,21 @@ getConfig: () => Promise<{
 
 
 
-      firebase: {
-        initialize: (
-          clientId: string
-        ) => Promise<{
-          success: boolean;
-          data?: any;
-          error?: string;
-        }>;
+  firebase: {
+  initialize: (
+    clientId: string
+  ) => Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }>;
 
-      }
-      getConfig: () => Promise<{
-        success: boolean;
-        configured?: boolean;
-        data?: any;
-        error?: string;
-      }>;
+getConfig: () => Promise<{
+  success: boolean;
+  configured?: boolean;
+  error?: string;
+}>;
+};
 
 
       getPosIPAddress: () => Promise<{
@@ -679,6 +678,14 @@ moveFullTableToTable: (params: {
   success: boolean;
   error?: string;
 }>;
+
+updateKitchenPrint: (data: {
+  itemId: number;
+  kitchenPrintReq: boolean; // change if nextKitchenPrint has another type
+  partition: string;
+}) => Promise<any>;
+
+
 
 
 countOpenBillItems: (currentTableId: string) => Promise<number>;

@@ -140,6 +140,7 @@ export type CartItem = {
   currentStock: number | null;
   productMode?: string;
   // category + tax info copied from product
+  kitchenPrintReq: boolean;
   categoryId: string;
   productCat: string;
   taxRate?: number;

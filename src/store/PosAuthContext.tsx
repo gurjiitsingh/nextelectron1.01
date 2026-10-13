@@ -71,7 +71,7 @@ export type PosLoginResult = {
 // CONTEXT TYPE
 // =====================================================
 
- 
+
 
 // =====================================================
 // CONTEXT
@@ -306,7 +306,7 @@ export function PosAuthProvider({
       if (
         window.posApi &&
         typeof window.posApi.logoutUser ===
-          "function"
+        "function"
       ) {
 
         await window.posApi.logoutUser(
@@ -361,26 +361,22 @@ export function PosAuthProvider({
   // CONTEXT VALUE
   // ===================================================
 
-  const value: PosAuthContextType = {
 
-    currentUser,
+const value: PosAuthContextType = {
+  currentUser,
+  session,
 
-    session,
+  isAuthenticated: currentUser !== null,
+  isInitializing,
 
-    isAuthenticated:
-      currentUser !== null,
+  isLoggingIn,
+  isLoading: isLoggingIn,
 
-    isInitializing,
+  login,
+  logout,
+  lock,
+};
 
-    isLoggingIn,
-//isLoading,
-    login,
-
-    logout,
-
-    lock,
-
-  };
 
 
   // ===================================================

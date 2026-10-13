@@ -42,6 +42,7 @@ export function calculateBillAndroid(
     deliveryTaxPercent?: number;
   }
 ): BillCalculationResult {
+  
   const {
     items,
     taxMode = 'PER_ITEM',
@@ -50,7 +51,7 @@ export function calculateBillAndroid(
     deliveryFee = 0,
     deliveryTaxPercent = 0,
   } = params;
-
+console.log("items------------------",items)
   // =========================
   // ITEM SUBTOTAL
   // Includes ALL items
@@ -67,7 +68,7 @@ export function calculateBillAndroid(
   // =========================
   const eligibleSubtotalPaise = items.reduce(
     (sum, item) => {
-      if (item.discountEligible !== true) {
+      if (item.discountEligible === false) {
         return sum;
       }
 

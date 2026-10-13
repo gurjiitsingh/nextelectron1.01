@@ -140,15 +140,15 @@ async function reloadCart(
     newProduct: cartProductType
   ) {
 
-    console.log('========== CART CONTEXT RECEIVED ==========');
-console.log('Product name:', newProduct.name);
-console.log(
-  'discountEligible:',
-  newProduct.discountEligible,
-  typeof newProduct.discountEligible
-);
-console.log('Full product:', newProduct);
-console.log('===========================================');
+//     console.log('========== CART CONTEXT RECEIVED ==========');
+// console.log('Product name:', newProduct.name);
+// console.log(
+//   'discountEligible:',
+//   newProduct.discountEligible,
+//   typeof newProduct.discountEligible
+// );
+// console.log('Full product:', newProduct);
+// console.log('===========================================');
 
     if (!activeOrder) {
   console.warn(

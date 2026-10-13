@@ -262,22 +262,22 @@ const billItems = useMemo(() => {
 
   const grouped = groupBillItems(billRows);
 
-  console.log(
-    '========== BILL ITEMS AFTER GROUPING =========='
-  );
+  // console.log(
+  //   '========== BILL ITEMS AFTER GROUPING =========='
+  // );
 
-  grouped.forEach((item) => {
-    console.log(
-      'GROUPED ITEM:',
-      item.name,
-      '| productId:',
-      item.productId,
-      '| discountEligible:',
-      item.discountEligible,
-      '| type:',
-      typeof item.discountEligible
-    );
-  });
+  // grouped.forEach((item) => {
+  //   console.log(
+  //     'GROUPED ITEM:',
+  //     item.name,
+  //     '| productId:',
+  //     item.productId,
+  //     '| discountEligible:',
+  //     item.discountEligible,
+  //     '| type:',
+  //     typeof item.discountEligible
+  //   );
+  // });
 
   return grouped;
 }, [billRows]);
@@ -381,7 +381,9 @@ const billItems = useMemo(() => {
 
  
 const calculation = useMemo(() => {
+ 
   const mappedItems = billItems.map((i) => ({
+    
     productId: i.productId,
     name: i.name,
     quantity: Number(i.quantity || 0),
@@ -395,9 +397,12 @@ const calculation = useMemo(() => {
     // 0 = false, 1 = true
     // Missing/null defaults to true
     
-     discountEligible: i.discountEligible ?? true,
+     discountEligible:
+  i.discountEligible == null
+    ? true
+    : Boolean(i.discountEligible),
   }));
-
+ 
   console.log('========== BILL DISCOUNT DEBUG ==========');
 
   mappedItems.forEach((item) => {
