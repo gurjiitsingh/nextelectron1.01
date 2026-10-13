@@ -368,7 +368,106 @@ function registerIpcHandlers() {
     }
   );
 
+// =====================================================
+// USB PRINTER SETTINGS - SEPARATE IPC FLOW
+// =====================================================
 
+ipcMain.handle(
+  'usb-printer:get-settings',
+  async () => {
+    try {
+
+      console.log(
+  '[USB PRINTER] Repository available:',
+  typeof printerSettingsRepo
+);
+
+console.log(
+  '[USB PRINTER] Repository methods:',
+  typeof printerSettingsRepo?.readAll,
+  typeof printerSettingsRepo?.saveAll
+);
+      const all = printerSettingsRepo.readAll();
+
+      const config = all.find(
+        (item) =>
+          item.role === 'BILL' &&
+          item.connectionType === 'USB'
+      );
+
+      return {
+        success: true,
+        data: config || null,
+      };
+    } catch (error) {
+      console.error(
+        '[USB PRINTER] Failed to load settings:',
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message || 'Failed to load USB printer settings',
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  'usb-printer:save-settings',
+  async (_event, config) => {
+    try {
+      if (!config || typeof config !== 'object') {
+        throw new Error('Invalid USB printer configuration');
+      }
+
+      // Force the configuration to remain in the USB BILL flow.
+      const usbConfig = {
+        ...config,
+        role: 'BILL',
+        connectionType: 'USB',
+        ip: '',
+        port: 9100,
+      };
+
+      // Read all settings so LAN and Bluetooth configurations
+      // remain untouched.
+      const all = printerSettingsRepo.readAll();
+
+      const updated = all.filter(
+        (item) =>
+          !(
+            item.role === 'BILL' &&
+            item.connectionType === 'USB'
+          )
+      );
+
+      updated.push(usbConfig);
+
+      printerSettingsRepo.saveAll(updated);
+
+      console.log(
+        '[USB PRINTER] Settings saved:',
+        usbConfig
+      );
+
+      return {
+        success: true,
+        data: usbConfig,
+      };
+    } catch (error) {
+      console.error(
+        '[USB PRINTER] Failed to save settings:',
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message || 'Failed to save USB printer settings',
+      };
+    }
+  }
+);
 
 
   // =====================================================

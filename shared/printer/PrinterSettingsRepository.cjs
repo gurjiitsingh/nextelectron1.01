@@ -52,6 +52,7 @@ class PrinterSettingsRepository {
       'utf8'
     );
   }
+  
 
  // =====================================================
   // SAVE ALL PRINTER SETTINGS AT ONCE
@@ -78,4 +79,5 @@ class PrinterSettingsRepository {
 
 module.exports = {
   PrinterSettingsRepository,
+  
 };

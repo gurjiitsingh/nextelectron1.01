@@ -506,6 +506,17 @@ getOrCreateOrderNo: (tableNo) =>
     ),
 
 
+    // =====================================================
+// USB PRINTER SETTINGS
+// =====================================================
+
+getUsbPrinterSettings: () =>
+  ipcRenderer.invoke('usb-printer:get-settings'),
+
+saveUsbPrinterSettings: (config) =>
+  ipcRenderer.invoke('usb-printer:save-settings', config),
+
+
   // =====================================================
   // BUSINESS DAY
   // =====================================================
