@@ -118,12 +118,12 @@ class PrintManager {
     );
   }
 
-  if (!config.enabled) {
-    console.log(
-      `[PRINT] Printer disabled for role ${job.role}`
-    );
-    return;
-  }
+  // if (!config.enabled) {
+  //   console.log(
+  //     `[PRINT] Printer disabled for role ${job.role}`
+  //   );
+  //   return;
+  // }
 
   console.log(
     '[PRINT] Connection:',

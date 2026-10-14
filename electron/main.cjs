@@ -284,57 +284,52 @@ function registerIpcHandlers() {
 
 
 
-  // =====================================================
-  // PRINTER IPC
-  // =====================================================
+  // // =====================================================
+  // // PRINTER IPC
+  // // =====================================================
 
-  ipcMain.handle(
-    'printer:print',
-    async (_event, payload) => {
-      try {
-        const {
-          role,
-          data,
-          source,
-        } = payload;
+ 
+ipcMain.handle(
+  'printer:print',
+  async (_event, payload) => {
+    try {
+      const {
+        role,
+        data,
+        source,
+      } = payload;
 
-        const jobId =
-          await printManager.enqueue(
-            role,
-            data,
-            source || 'POS'
-          );
+      const jobId = await printManager.enqueue(
+        role,
+        data,
+        source || 'POS'
+      );
 
-        if (
-          role === 'BILL' &&
-          data?.tableNo
-        ) {
-          tableRepo.updateTableStatus(
-            data.tableNo,
-            'PAYMENT_PENDING'
-          );
-        }
-
-        return {
-          success: true,
-          jobId,
-        };
-
-      } catch (e) {
-        console.error(
-          'PRINTER PRINT FAILED',
-          e
+      if (role === 'BILL' && data?.tableNo) {
+        tableRepo.updateTableStatus(
+          data.tableNo,
+          'PAYMENT_PENDING'
         );
-
-        return {
-          success: false,
-          error:
-            e?.message ||
-            String(e),
-        };
       }
+
+      return {
+        success: true,
+        jobId,
+      };
+    } catch (e) {
+      console.error(
+        'PRINTER PRINT FAILED',
+        e
+      );
+
+      return {
+        success: false,
+        error: e?.message || String(e),
+      };
     }
-  );
+  }
+);
+
 
   ipcMain.handle(
     'printer:queue-length',
@@ -344,6 +339,33 @@ function registerIpcHandlers() {
   );
 
 
+  // // =====================================================
+  // // PRINTER SETTINGS
+  // // =====================================================
+
+  // ipcMain.handle(
+  //   'printer-settings:get-all',
+  //   async () => {
+  //     return printerSettingsRepo.readAll();
+  //   }
+  // );
+
+  // ipcMain.handle(
+  //   'printer-settings:save',
+  //   async (_event, config) => {
+  //     printerSettingsRepo.saveConfig(
+  //       config
+  //     );
+
+  //     return {
+  //       success: true,
+  //     };
+  //   }
+  // );
+
+
+
+  
   // =====================================================
   // PRINTER SETTINGS
   // =====================================================
@@ -358,124 +380,31 @@ function registerIpcHandlers() {
   ipcMain.handle(
     'printer-settings:save',
     async (_event, config) => {
-      printerSettingsRepo.saveConfig(
-        config
-      );
-
-      return {
-        success: true,
-      };
-    }
-  );
-
-  // =====================================================
-  // USB PRINTER SETTINGS - SEPARATE IPC FLOW
-  // =====================================================
-
-  ipcMain.handle(
-    'usb-printer:get-settings',
-    async () => {
-      try {
-
-        console.log(
-          '[USB PRINTER] Repository available:',
-          typeof printerSettingsRepo
-        );
-
-        console.log(
-          '[USB PRINTER] Repository methods:',
-          typeof printerSettingsRepo?.readAll,
-          typeof printerSettingsRepo?.saveAll
-        );
-        const all = printerSettingsRepo.readAll();
-
-        const config = all.find(
-          (item) =>
-            item.role === 'BILL' &&
-            item.connectionType === 'USB'
-        );
-
-        return {
-          success: true,
-          data: config || null,
-        };
-      } catch (error) {
-        console.error(
-          '[USB PRINTER] Failed to load settings:',
-          error
-        );
-
-        return {
-          success: false,
-          error: error.message || 'Failed to load USB printer settings',
-        };
-      }
-    }
-  );
-
-  ipcMain.handle(
-    'usb-printer:save-settings',
-    async (_event, config) => {
       try {
         if (!config || typeof config !== 'object') {
           throw new Error(
-            'Invalid USB printer configuration'
+            'Invalid printer configuration'
           );
         }
 
-        // const usbConfig = {
-        //   ...config,
-        //   role: 'BILL',
-        //   connectionType: 'USB',
-        //   ip: '',
-        //   port: 9100,
-        //   active: true,
-        // };
-
-        const usbConfig = {
-          ...config,
-          role: 'BILL',
-          connectionType: 'USB',
-          printerName: 'TVS-E RP 3230',
-          ip: '',
-          port: 9100,
-          active: true,
-        };
-
-        const all = printerSettingsRepo.readAll();
-
-        // Preserve other roles and settings, but deactivate
-        // other BILL printer connections.
-        const updated = all
-          .filter(
-            (item) =>
-              !(
-                item.role === 'BILL' &&
-                item.connectionType === 'USB'
-              )
-          )
-          .map((item) =>
-            item.role === 'BILL'
-              ? { ...item, active: false }
-              : item
-          );
-
-        updated.push(usbConfig);
-
-        printerSettingsRepo.saveAll(updated);
+        const savedConfig =
+          printerSettingsRepo.saveConfig(config);
 
         console.log(
-          '[USB PRINTER] Active printer saved:',
-          usbConfig
+          '[PRINTER SETTINGS] Saved:',
+          savedConfig.role,
+          savedConfig.connectionType,
+          'active:',
+          savedConfig.active
         );
 
         return {
           success: true,
-          data: usbConfig,
+          data: savedConfig,
         };
       } catch (error) {
         console.error(
-          '[USB PRINTER] Failed to save settings:',
+          '[PRINTER SETTINGS] Save failed:',
           error
         );
 
@@ -483,11 +412,100 @@ function registerIpcHandlers() {
           success: false,
           error:
             error.message ||
-            'Failed to save USB printer settings',
+            'Failed to save printer settings',
         };
       }
     }
   );
+
+ 
+// =====================================================
+// USB PRINTER SETTINGS
+// Uses PrinterSettingsRepository for independent
+// connection settings and active printer selection.
+// =====================================================
+
+ipcMain.handle(
+  'usb-printer:get-settings',
+  async () => {
+    try {
+      const config =
+        printerSettingsRepo.getConfigByConnection(
+          'BILL',
+          'USB'
+        );
+
+      return {
+        success: true,
+        data: config,
+      };
+    } catch (error) {
+      console.error(
+        '[USB PRINTER] Failed to load settings:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message ||
+          'Failed to load USB printer settings',
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  'usb-printer:save-settings',
+  async (_event, config) => {
+    try {
+      if (!config || typeof config !== 'object') {
+        throw new Error(
+          'Invalid USB printer configuration'
+        );
+      }
+
+      const usbConfig = {
+        ...config,
+        role: 'BILL',
+        connectionType: 'USB',
+        printerName:
+          config.printerName || 'TVS-E RP 3230',
+        ip: '',
+        port: config.port ?? 9100,
+        active: config.active === true,
+      };
+
+      const savedConfig =
+        printerSettingsRepo.saveConfig(usbConfig);
+
+      console.log(
+        '[USB PRINTER] Saved:',
+        savedConfig,
+        'active:',
+        savedConfig.active
+      );
+
+      return {
+        success: true,
+        data: savedConfig,
+      };
+    } catch (error) {
+      console.error(
+        '[USB PRINTER] Failed to save settings:',
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message ||
+          'Failed to save USB printer settings',
+      };
+    }
+  }
+);
+ 
 
 
   // =====================================================

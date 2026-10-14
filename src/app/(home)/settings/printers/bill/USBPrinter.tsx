@@ -14,7 +14,8 @@ import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 export default function USBPrinter() {
   const { theme, background } = usePosTheme();
 
-  const [enabled, setEnabled] = useState(true);
+
+  const [active, setActive] = useState(false);
   const [name, setName] = useState('BILL USB Printer');
   const [paperSize, setPaperSize] = useState('80mm');
   const [renderMode, setRenderMode] = useState('TEXT');
@@ -45,7 +46,8 @@ export default function USBPrinter() {
         const config = result.data;
 
         if (config) {
-          setEnabled(config.enabled ?? true);
+          setActive(config.active === true);
+          setActive(config.active === true);
           setName(config.name || 'BILL USB Printer');
           setPaperSize(config.paperSize || '80mm');
           setRenderMode(config.renderMode || 'TEXT');
@@ -83,20 +85,21 @@ export default function USBPrinter() {
     setSaveMessage('');
 
     try {
-    
 
-const config = {
-  role: 'BILL',
-  enabled,
-  name: name.trim() || 'BILL USB Printer',
-  connectionType: 'USB',
-  paperSize,
-  renderMode,
-  ip: '',
-  port: null,
-  printerName: 'TVS-E RP 3230',
-  active: true,
-};
+
+
+      const config = {
+        role: 'BILL',
+        active,
+        name: name.trim() || 'BILL USB Printer',
+        connectionType: 'USB',
+        paperSize,
+        renderMode,
+        ip: '',
+        port: null,
+        printerName: 'TVS-E RP 3230',
+      };
+
 
 
       console.log(
@@ -122,17 +125,17 @@ const config = {
         );
       }
     } catch (error: unknown) {
-  const message =
-    error instanceof Error
-      ? error.message
-      : String(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : String(error);
 
-  console.error(
-    '[USB PRINTER] Save error:',
-    error
-  );
+      console.error(
+        '[USB PRINTER] Save error:',
+        error
+      );
 
-  setSaveMessage(`USB save failed: ${message}`);
+      setSaveMessage(`USB save failed: ${message}`);
 
     } finally {
       setSaving(false);
@@ -180,6 +183,43 @@ const config = {
     }
   }
 
+
+
+  
+async function handleActiveChange(checked: boolean) {
+  try {
+    const config = {
+      role: 'BILL',
+      active: checked,
+      name: name.trim() || 'BILL USB Printer',
+      connectionType: 'USB',
+      paperSize,
+      renderMode,
+      ip: '',
+      port: 9100,
+      printerName: 'TVS-E RP 3230',
+    };
+
+    const result = await window.posApi.saveUsbPrinterSettings(config);
+
+    if (!result?.success) {
+      throw new Error(
+        result?.error || 'Failed to update USB printer selection'
+      );
+    }
+
+    setActive(checked);
+  } catch (error) {
+    console.error('[USB PRINTER] Failed to change active state:', error);
+    alert(
+      error instanceof Error
+        ? error.message
+        : 'Failed to update USB printer selection'
+    );
+  }
+}
+
+
   // =====================================================
   // LOADING STATE
   // =====================================================
@@ -199,7 +239,7 @@ const config = {
   return (
     <div>
       <div className=" p-1 mb-20">
-   
+
 
         <div className="mb-8 flex items-center gap-4">
           <div
@@ -229,24 +269,27 @@ const config = {
         <div
           className={`space-y-6 rounded-xl border ${background.border} p-6`}
         >
-          {/* ENABLE PRINTER */}
+
+          {/* SELECT USB CONNECTION */}
           <div
             className={`flex items-center justify-between rounded-xl border ${background.border} p-4`}
           >
-            <span className="font-medium">
-              Enable Printer
-            </span>
+            <div>
+              <p className="font-medium">Use USB Printer</p>
+              <p className="mt-1 text-sm opacity-60">
+                Select USB as the active BILL printer connection.
+              </p>
+            </div>
 
             <input
               type="checkbox"
-              checked={enabled}
-              onChange={(e) =>
-                setEnabled(e.target.checked)
-              }
+              checked={active}
+            onChange={(e) => handleActiveChange(e.target.checked)}
               className="h-5 w-5"
               style={{ accentColor: theme.primary }}
             />
           </div>
+
 
           {/* PRINTER NAME */}
           <div>
@@ -280,10 +323,10 @@ const config = {
                   style={
                     paperSize === size
                       ? {
-                          borderColor: theme.primary,
-                          backgroundColor: theme.primaryLight,
-                          color: theme.primaryText,
-                        }
+                        borderColor: theme.primary,
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                      }
                       : undefined
                   }
                 >
@@ -309,10 +352,10 @@ const config = {
                   style={
                     renderMode === mode
                       ? {
-                          borderColor: theme.primary,
-                          backgroundColor: theme.primaryLight,
-                          color: theme.primaryText,
-                        }
+                        borderColor: theme.primary,
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                      }
                       : undefined
                   }
                 >
@@ -361,4 +404,3 @@ const config = {
     </div>
   );
 }
- 

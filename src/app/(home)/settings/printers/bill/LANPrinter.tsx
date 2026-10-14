@@ -15,7 +15,8 @@ import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 export default function LANPrinter() {
   const { theme, background } = usePosTheme();
 
-  const [enabled, setEnabled] = useState(true);
+
+  const [active, setActive] = useState(false);
   const [name, setName] = useState('BILL Printer');
   const [paperSize, setPaperSize] = useState('80mm');
   const [renderMode, setRenderMode] = useState('TEXT');
@@ -43,7 +44,7 @@ export default function LANPrinter() {
         );
 
         if (config) {
-          setEnabled(config.enabled ?? true);
+          setActive(config.active === true);
           setName(config.name || 'BILL Printer');
           setPaperSize(config.paperSize || '80mm');
           setRenderMode(config.renderMode || 'TEXT');
@@ -64,46 +65,7 @@ export default function LANPrinter() {
     };
   }, []);
 
-  // SAVE LAN PRINTER SETTINGS
-  async function save() {
-    if (saving) return;
 
-    setSaving(true);
-    setSaveMessage('');
-
-    try {
-      const config = {
-        role: 'BILL',
-        enabled,
-        name,
-        connectionType: 'LAN',
-        paperSize,
-        renderMode,
-        ip,
-        port: Number(port) || 9100,
-      };
-
-      console.log('SAVING LAN PRINTER:', config);
-
-      const result =
-        await window.posApi.savePrinterSetting(config);
-
-      console.log('LAN SAVE RESULT:', result);
-
-      if (result?.success) {
-        setSaveMessage('Bill LAN Printer saved successfully');
-      } else {
-        setSaveMessage(
-          result?.error || 'Failed to save LAN printer'
-        );
-      }
-    } catch (error) {
-      console.error('SAVE LAN PRINTER ERROR:', error);
-      setSaveMessage('Failed to save LAN printer');
-    } finally {
-      setSaving(false);
-    }
-  }
 
   // TEST LAN PRINTER
   async function testPrint() {
@@ -134,6 +96,80 @@ export default function LANPrinter() {
     }
   }
 
+  // SAVE LAN PRINTER SETTINGS
+  async function save() {
+    if (saving) return;
+
+    setSaving(true);
+    setSaveMessage('');
+
+    try {
+      const config = {
+        role: 'BILL',
+        active,
+        name: name.trim() || 'BILL Printer',
+        connectionType: 'LAN',
+        paperSize,
+        renderMode,
+        ip: ip.trim(),
+        port: Number(port) || 9100,
+      };
+
+      console.log('SAVING LAN PRINTER:', config);
+
+      const result =
+        await window.posApi.savePrinterSetting(config);
+
+      console.log('LAN SAVE RESULT:', result);
+
+      if (result?.success) {
+        setSaveMessage('Bill LAN Printer saved successfully');
+      } else {
+        setSaveMessage(
+          result?.error || 'Failed to save LAN printer'
+        );
+      }
+    } catch (error) {
+      console.error('SAVE LAN PRINTER ERROR:', error);
+      setSaveMessage('Failed to save LAN printer');
+    } finally {
+      setSaving(false);
+    }
+  }
+  
+async function handleActiveChange(checked: boolean) {
+  try {
+    const config = {
+      role: 'BILL',
+      active: checked,
+      name: name.trim() || 'BILL Printer',
+      connectionType: 'LAN',
+      paperSize,
+      renderMode,
+      ip: ip.trim(),
+      port: Number(port) || 9100,
+    };
+
+    const result = await window.posApi.savePrinterSetting(config);
+
+    if (!result?.success) {
+      throw new Error(
+        result?.error || 'Failed to update LAN printer selection'
+      );
+    }
+
+    setActive(checked);
+  } catch (error) {
+    console.error('[LAN PRINTER] Failed to change active state:', error);
+    alert(
+      error instanceof Error
+        ? error.message
+        : 'Failed to update LAN printer selection'
+    );
+  }
+}
+
+
   if (loading) {
     return (
       <div
@@ -147,7 +183,7 @@ export default function LANPrinter() {
   return (
     <div>
       <div className=" p-1 mb-20">
-    
+
 
         <div className="mb-8 flex items-center gap-4">
           <div
@@ -176,19 +212,27 @@ export default function LANPrinter() {
         <div
           className={`space-y-6 rounded-xl border ${background.border} p-6`}
         >
-          <div
-            className={`flex items-center justify-between rounded-xl border ${background.border} p-4`}
-          >
-            <span className="font-medium">Enable Printer</span>
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              className="h-5 w-5"
-              style={{ accentColor: theme.primary }}
-            />
-          </div>
+       
+{/* SELECT LAN CONNECTION */}
+<div
+  className={`flex items-center justify-between rounded-xl border ${background.border} p-4`}
+>
+  <div>
+    <p className="font-medium">Use LAN Printer</p>
+    <p className="mt-1 text-sm opacity-60">
+      Select LAN as the active BILL printer connection.
+    </p>
+  </div>
 
+  <input
+    type="checkbox"
+    checked={active}
+  onChange={(e) => handleActiveChange(e.target.checked)}
+    className="h-5 w-5"
+    style={{ accentColor: theme.primary }}
+  />
+</div>
+ 
           <div>
             <label className="mb-2 block text-sm font-medium">
               Printer Name
@@ -215,10 +259,10 @@ export default function LANPrinter() {
                   style={
                     paperSize === size
                       ? {
-                          borderColor: theme.primary,
-                          backgroundColor: theme.primaryLight,
-                          color: theme.primaryText,
-                        }
+                        borderColor: theme.primary,
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                      }
                       : undefined
                   }
                 >
@@ -242,10 +286,10 @@ export default function LANPrinter() {
                   style={
                     renderMode === mode
                       ? {
-                          borderColor: theme.primary,
-                          backgroundColor: theme.primaryLight,
-                          color: theme.primaryText,
-                        }
+                        borderColor: theme.primary,
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                      }
                       : undefined
                   }
                 >
