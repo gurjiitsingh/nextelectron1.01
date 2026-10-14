@@ -94,7 +94,7 @@ const {
 
   const [message, setMessage] =
     useState('');
-
+const [printing, setPrinting] = useState(false);
 
   // ===================================================
   // INITIAL DATE
@@ -256,6 +256,76 @@ console.log("businessDate-----------------", businessDate)
   }
 
 
+
+  
+async function handlePrintReport() {
+  if (!report || !selectedDate || printing) {
+    return;
+  }
+
+  try {
+    setPrinting(true);
+    setError('');
+    setMessage('');
+
+    const reportData = {
+      reportTitle: 'SALES REPORT',
+      businessDate: selectedDate,
+      printedAt: new Date().toISOString(),
+
+      overview: {
+        totalOrders: Number(report.overview.totalOrders || 0),
+        totalSales: Number(report.overview.totalSales || 0),
+        totalDiscount: Number(report.overview.totalDiscount || 0),
+        totalTax: Number(report.overview.totalTax || 0),
+        totalPaid: Number(report.overview.totalPaid || 0),
+        totalDue: Number(report.overview.totalDue || 0),
+      },
+
+      payments: {
+        cash: Number(report.payments.cash || 0),
+        card: Number(report.payments.card || 0),
+        upi: Number(report.payments.upi || 0),
+        wallet: Number(report.payments.wallet || 0),
+        credit: Number(report.payments.credit || 0),
+      },
+
+      categorySales: report.categorySales || [],
+      orderTypeSales: report.orderTypeSales || [],
+      productSales: report.productSales || [],
+      staffSales: report.staffSales || [],
+      hourlySales: report.hourlySales || [],
+    };
+
+    console.log('[REPORT PRINT] Data:', reportData);
+
+    // This requires REPORT support in the Electron printer pipeline.
+    const result = await window.posApi.print({
+      role: 'REPORT',
+      source: 'POS',
+      data: reportData,
+    });
+
+    console.log('[REPORT PRINT] Result:', result);
+
+    if (!result?.success) {
+      throw new Error(
+        result?.error || 'Failed to print sales report.'
+      );
+    }
+
+    setMessage('Sales report sent to printer.');
+  } catch (e: any) {
+    console.error('[REPORT PRINT] Failed:', e);
+
+    setError(
+      e?.message || 'Failed to print sales report.'
+    );
+  } finally {
+    setPrinting(false);
+  }
+}
+
   // ===================================================
   // LOADING
   // ===================================================
@@ -385,6 +455,7 @@ console.log("businessDate-----------------", businessDate)
         </div>
 
 
+
         <div
           className="
             flex
@@ -503,6 +574,31 @@ console.log("businessDate-----------------", businessDate)
           >
             ↻ Refresh
           </button>
+
+
+          
+<button
+  type="button"
+  onClick={handlePrintReport}
+  disabled={loading || printing || !report}
+  className="
+    h-10
+    rounded-xl
+    px-4
+    text-xs
+    font-semibold
+    text-white
+    transition
+    hover:opacity-90
+    disabled:cursor-not-allowed
+    disabled:opacity-50
+  "
+  style={{
+    backgroundColor: theme.primary,
+  }}
+>
+  {printing ? 'Printing...' : '🖨 Print Report'}
+</button>
 
         </div>
 

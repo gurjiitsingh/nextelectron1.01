@@ -30,6 +30,9 @@ export default function OrdersPage() {
   const [detailsLoading, setDetailsLoading] =
     useState(false);
 
+  const [printingOrderId, setPrintingOrderId] =
+  useState<string | null>(null);  
+
   const [selectedDate, setSelectedDate] =
     useState(() => {
       const now = new Date();
@@ -110,6 +113,137 @@ export default function OrdersPage() {
     }
   }
 
+
+async function printBill(orderId: string) {
+  if (printingOrderId) return;
+
+  try {
+    setPrintingOrderId(orderId);
+
+    console.log('[ORDER LIST] Reprint requested:', orderId);
+
+    // 1. Fetch the saved order from SQLite.
+    const orderResult =
+      await window.posApi.getOrderById(orderId);
+
+    // Support either a direct order object or an IPC
+    // result shaped as { success, data }.
+    const savedOrder =
+      orderResult?.data ?? orderResult;
+
+    if (
+      !savedOrder ||
+      savedOrder.success === false ||
+      !savedOrder.id
+    ) {
+      throw new Error('Saved order not found.');
+    }
+
+    // 2. Fetch the saved items for this order.
+    const itemsResult =
+      await window.posApi.getOrderItems(orderId);
+
+    const savedItems =
+      itemsResult?.data ?? itemsResult;
+
+    if (!Array.isArray(savedItems) || savedItems.length === 0) {
+      throw new Error(
+        'No saved order items found. Check the order items status in SQLite.'
+      );
+    }
+
+    console.log('[ORDER LIST] Saved order:', savedOrder);
+    console.log('[ORDER LIST] Saved items:', savedItems);
+
+    // 3. Build the receipt from saved database values.
+    const receiptData = {
+      billNo: savedOrder.srno,
+      orderNo: savedOrder.srno,
+
+      tableNo: savedOrder.tableNo ?? '',
+      tableName: savedOrder.tableName ?? '',
+      orderType: savedOrder.orderType ?? '',
+
+      paymentMode: savedOrder.paymentMode ?? 'CASH',
+      createdAt: savedOrder.createdAt ?? Date.now(),
+
+      items: savedItems.map((item: any) => {
+        const quantity = Number(item.quantity ?? 0);
+
+        const price = Number(
+          item.finalPricePerItem ??
+          item.basePrice ??
+          0
+        );
+
+        return {
+          name: item.name ?? '',
+          quantity,
+          price,
+          subtotal: Number(
+            item.finalTotal ?? price * quantity
+          ),
+          modifiersJson: item.modifiersJson ?? '',
+          note: item.note ?? '',
+        };
+      }),
+
+      subtotal: Number(savedOrder.itemTotal ?? 0),
+      tax: Number(
+        savedOrder.taxTotal ?? savedOrder.itemTax ?? 0
+      ),
+      discount: Number(savedOrder.discountTotal ?? 0),
+      deliveryFee: Number(savedOrder.deliveryFee ?? 0),
+      deliveryTax: 0,
+
+      grandTotal: Number(savedOrder.grandTotal ?? 0),
+
+      customerName: savedOrder.customerName ?? '',
+      customerPhone: savedOrder.customerPhone ?? '',
+
+      kotNumberText: '',
+      stewardName: savedOrder.finalizedByName ?? '',
+
+      paymentStatus: savedOrder.paymentStatus ?? '',
+      paidAmount: Number(savedOrder.paidAmount ?? 0),
+      dueAmount: Number(savedOrder.dueAmount ?? 0),
+      businessDate: savedOrder.businessDate ?? '',
+
+      isReprint: true,
+    };
+
+    console.log(
+      '[ORDER LIST] Sending saved bill to printer:',
+      receiptData
+    );
+
+    // 4. Use the existing BILL printer pipeline.
+    const result = await window.posApi.print({
+      role: 'BILL',
+      source: 'POS',
+      data: receiptData,
+    });
+
+    console.log('[ORDER LIST] Print result:', result);
+
+    if (!result?.success) {
+      throw new Error(
+        result?.error || 'Printer failed to print the bill.'
+      );
+    }
+
+    alert(`Bill ${savedOrder.srno ?? ''} sent to printer.`);
+  } catch (error: any) {
+    console.error('[ORDER LIST] Reprint failed:', error);
+
+    alert(
+      'Bill printing failed: ' +
+      (error?.message || 'Unknown error')
+    );
+  } finally {
+    setPrintingOrderId(null);
+  }
+}
 
   // =====================================================
   // TOTAL SALES
@@ -809,7 +943,9 @@ export default function OrdersPage() {
                   <th className="px-4 py-3">
                     Status
                   </th>
-
+<th className="px-4 py-3 text-center">
+  Actions
+</th>
                 </tr>
 
               </thead>
@@ -970,6 +1106,42 @@ export default function OrdersPage() {
                           </span>
 
                         </td>
+                        
+<td className="px-4 py-3 text-center">
+  <button
+    type="button"
+    disabled={printingOrderId !== null}
+    onClick={(e) => {
+      e.stopPropagation();
+      void printBill(order.id);
+    }}
+    className="
+      inline-flex
+      items-center
+      justify-center
+      gap-2
+      rounded-lg
+      border
+      px-3
+      py-2
+      text-xs
+      font-semibold
+      transition
+      hover:opacity-80
+      disabled:cursor-not-allowed
+      disabled:opacity-50
+    "
+    style={{
+      borderColor: background.line,
+      color: theme.primary,
+    }}
+  >
+    {printingOrderId === order.id
+      ? 'Printing...'
+      : '🖨 Print Bill'}
+  </button>
+</td>
+
 
                       </tr>
 

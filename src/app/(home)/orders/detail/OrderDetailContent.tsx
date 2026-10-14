@@ -16,6 +16,7 @@ import {
   User,
   CreditCard,
   Utensils,
+  ReceiptCent,
 } from 'lucide-react';
 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
@@ -265,6 +266,97 @@ export default function OrderDetailContent() {
   }
   console.log("Order------------------", order)
 
+
+  async function reprintBill() {
+  if (!order) {
+    alert('Order not loaded');
+    return;
+  }
+
+  if (items.length === 0) {
+    alert('No saved items found for this order');
+    return;
+  }
+
+  try {
+    console.log('REPRINT SAVED BILL:', order.id, order.srno);
+
+    const receiptData = {
+      // Reuse the original saved order number.
+      billNo: order.srno,
+      orderNo: order.srno,
+
+      tableNo: order.tableNo ?? '',
+      tableName: order.tableName ?? '',
+      orderType: order.orderType ?? '',
+
+      paymentMode: order.paymentMode ?? 'CASH',
+      createdAt: order.createdAt ?? Date.now(),
+
+      items: items.map((item) => {
+        const quantity = Number(item.quantity ?? 0);
+        const price = Number(
+          item.finalPricePerItem ?? item.basePrice ?? 0
+        );
+
+        return {
+          name: item.name ?? '',
+          quantity,
+          price,
+          subtotal: Number(
+            item.finalTotal ?? price * quantity
+          ),
+          modifiersJson: item.modifiersJson ?? '',
+          note: item.note ?? '',
+        };
+      }),
+
+      subtotal: Number(order.itemTotal ?? 0),
+      tax: Number(order.taxTotal ?? order.itemTax ?? 0),
+      discount: Number(order.discountTotal ?? 0),
+      deliveryFee: Number(order.deliveryFee ?? 0),
+      deliveryTax: 0,
+      grandTotal: Number(order.grandTotal ?? 0),
+
+      customerName: order.customerName ?? 'Customer',
+      customerPhone: order.customerPhone ?? '',
+
+      kotNumberText: '',
+      stewardName: '',
+
+      // Extra saved-order context for formatters that use it.
+      paymentStatus: order.paymentStatus ?? '',
+      paidAmount: Number(order.paidAmount ?? 0),
+      dueAmount: Number(order.dueAmount ?? 0),
+      businessDate: order.businessDate ?? '',
+      isReprint: true,
+    };
+
+    console.log('SAVED BILL RECEIPT DATA:', receiptData);
+
+    const res = await window.posApi.print({
+      role: 'BILL',
+      source: 'POS',
+      data: receiptData,
+    });
+
+    console.log('SAVED BILL REPRINT RESULT:', res);
+
+    if (!res?.success) {
+      throw new Error(res?.error || 'Print failed');
+    }
+
+   
+  } catch (e: any) {
+    console.error('SAVED BILL REPRINT FAILED:', e);
+
+    alert(
+      'Bill reprint failed: ' +
+      (e?.message || 'Unknown error')
+    );
+  }
+}
+
   // =====================================================
   // LOADING
   // =====================================================
@@ -481,7 +573,16 @@ export default function OrderDetailContent() {
             text-right
           "
         >
+<button
+type="button"
+onClick={reprintBill}
+className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold"
 
+>
+
+  <ReceiptCent size={16} />
+  Reprint Bill
+</button>
           <p
             className="
               text-[10px]
