@@ -16,6 +16,10 @@ const {
 } = require('./BillFormatter80.cjs');
 
 const {
+  ReportFormatter,
+} = require('./ReportFormatter.cjs');
+
+const {
   BillImageFormatter80,
 } = require('./BillImageFormatter80.cjs');
 
@@ -78,31 +82,57 @@ class FormatterFactory {
   // MAIN TEXT FACTORY
   // =====================================================
 
-  static create(role, paperSize) {
+  // static create(role, paperSize) {
 
-    switch (role) {
+  //   switch (role) {
 
-      case PrinterRole.KITCHEN:
-        return this.createKitchenFormatter(
-          paperSize
-        );
+  //     case PrinterRole.KITCHEN:
+  //       return this.createKitchenFormatter(
+  //         paperSize
+  //       );
 
-      case PrinterRole.BILL:
-        return this.createBillFormatter(
-          paperSize
-        );
+  //     case PrinterRole.BILL:
+  //       return this.createBillFormatter(
+  //         paperSize
+  //       );
 
-      case PrinterRole.BAR:
-        throw new Error(
-          'Bar formatter not implemented yet'
-        );
+  //     case PrinterRole.BAR:
+  //       throw new Error(
+  //         'Bar formatter not implemented yet'
+  //       );
 
-      default:
-        throw new Error(
-          `Unsupported printer role: ${role}`
-        );
-    }
+  //     default:
+  //       throw new Error(
+  //         `Unsupported printer role: ${role}`
+  //       );
+  //   }
+  // }
+
+
+static create(role, paperSize) {
+  switch (role) {
+    case PrinterRole.KITCHEN:
+      return this.createKitchenFormatter(paperSize);
+
+    case PrinterRole.BILL:
+      return this.createBillFormatter(paperSize);
+
+    case 'REPORT':
+      return new ReportFormatter(paperSize);
+
+    case PrinterRole.BAR:
+      throw new Error(
+        'Bar formatter not implemented yet'
+      );
+
+    default:
+      throw new Error(
+        `Unsupported printer role: ${role}`
+      );
   }
+}
+
+
 }
 
 module.exports = {

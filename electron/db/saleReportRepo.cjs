@@ -14,10 +14,9 @@ function getSalesReport(realDate) {
   `)
   .all();
 
-console.log("=== ALL POS ORDER ITEMS ===");
-console.log(JSON.stringify(allItems, null, 2));
+ 
 
-console.table(allItems);
+ 
 
   // ===================================================
   // OVERALL SALES

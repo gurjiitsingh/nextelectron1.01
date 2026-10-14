@@ -7,6 +7,10 @@ const {
 } = require('./formatters/BillImageFormatter80.cjs');
 
 const {
+  ReportFormatter,
+} = require('./formatters/ReportFormatter.cjs');
+
+const {
   PrinterSettingsRepository,
 } = require('./PrinterSettingsRepository.cjs');
 
@@ -88,191 +92,123 @@ class PrintManager {
 
 
 
+
+
+
+
   async handleJob(job) {
-  // console.log(
-  //   '\n========== PRINT JOB =========='
-  // );
+    console.log('[PRINT JOB] Started:', {
+      id: job.id,
+      role: job.role,
+      source: job.source,
+    });
 
-  // console.log(
-  //   '[PRINT] Processing:',
-  //   job.role,
-  //   job.id
-  // );
+    // REPORT uses BILL printer settings, but keeps REPORT formatting.
+    const printerRole =
+      job.role === 'REPORT' ? PrinterRole.BILL : job.role;
 
-  // console.log(
-  //   '[PRINT] DATA:',
-  //   JSON.stringify(job.data, null, 2)
-  // );
+    const config = this.settingsRepo.getConfig(printerRole);
 
-  const config =
-    this.settingsRepo.getConfig(job.role);
+    console.log('[PRINT JOB] Printer config:', {
+      requestedRole: job.role,
+      printerRole,
+      configFound: Boolean(config),
+      connectionType: config?.connectionType,
+      renderMode: config?.renderMode,
+      paperSize: config?.paperSize,
+    });
 
-  // console.log(
-  //   '[PRINT] CONFIG:',
-  //   JSON.stringify(config, null, 2)
-  // );
+    if (!config) {
+      throw new Error(
+        `Printer configuration not found for role ${printerRole}`
+      );
+    }
 
-  if (!config) {
-    throw new Error(
-      `Printer configuration not found for role ${job.role}`
-    );
-  }
+    // =====================================================
+    // TEXT PRINTING
+    // =====================================================
+    if (config.renderMode === ReceiptRenderMode.TEXT) {
+      console.log('[PRINT JOB] Creating formatter:', job.role);
 
-  // if (!config.enabled) {
-  //   console.log(
-  //     `[PRINT] Printer disabled for role ${job.role}`
-  //   );
-  //   return;
-  // }
-
-  console.log(
-    '[PRINT] Connection:',
-    config.connectionType
-  );
-
-
-if (config.connectionType === 'USB') {
-  console.log(
-    '[PRINT] Windows printer:',
-    config.printerName || '(printer name missing)'
-  );
-} else {
-  console.log(
-    '[PRINT] Address:',
-    config.ip,
-    config.port
-  );
-}
-
-
-  console.log(
-    '[PRINT] Paper:',
-    config.paperSize
-  );
-
-  console.log(
-    '[PRINT] Render:',
-    config.renderMode
-  );
-
-  // =====================================================
-  // TEXT MODE
-  // =====================================================
-
-  if (
-    config.renderMode ===
-    ReceiptRenderMode.TEXT
-  ) {
-
-    console.log(
-      '[PRINT] Creating formatter for:',
-      job.role
-    );
-
-    const formatter =
-      FormatterFactory.create(
+      const formatter = FormatterFactory.create(
         job.role,
         config.paperSize
       );
 
-    console.log(
-      '[PRINT] Formatter created:',
-      formatter?.constructor?.name
-    );
+      console.log('[PRINT JOB] Formatter created:', {
+        formatter: formatter?.constructor?.name,
+      });
 
-   const outletInfo =
-  job.data?.outletInfo ||
-  outletRepo.getOutlet() ||
-  {};
+      const outletInfo =
+        job.data?.outletInfo || outletRepo.getOutlet() || {};
 
-const printData = {
-  ...job.data,
-  outletInfo,
-};
+      const printData = {
+        ...job.data,
+        outletInfo,
+      };
 
-const text =
-  formatter.format(
-    printData,
-    config.paperSize
-  );
+      console.log('[PRINT JOB] Formatting data:', {
+        role: job.role,
+        reportTitle: printData.reportTitle,
+        businessDate: printData.businessDate,
+      });
 
-    console.log(
-      '[PRINT] FORMATTED TEXT:\n' +
-      text
-    );
-
-    console.log(
-      '[PRINT] Creating transport'
-    );
-
-    const transport =
-      TransportFactory.create(config);
-
-    console.log(
-      '[PRINT] Transport created:',
-      transport?.constructor?.name
-    );
-
-  
-if (config.connectionType === 'USB') {
-  console.log(
-    '[PRINT] Sending to Windows printer:',
-    config.printerName || '(printer name missing)'
-  );
-} else {
-  console.log(
-    '[PRINT] Sending to:',
-    config.ip,
-    config.port
-  );
-}
-
-
-    const ok =
-      await transport.printText(
-        config,
-        text
+      const output = formatter.format(
+        printData,
+        config.paperSize
       );
 
-    console.log(
-      '[PRINT] Transport result:',
-      ok
-    );
+      if (typeof output !== 'string' || !output.trim()) {
+        throw new Error(
+          `Formatter returned empty text for role ${job.role}`
+        );
+      }
 
-    if (!ok) {
+      console.log('[PRINT JOB] Formatted output:', {
+        length: output.length,
+        preview: output.slice(0, 300),
+      });
+
+      const transport = TransportFactory.create(config);
+
+      console.log('[PRINT JOB] Transport created:', {
+        transport: transport?.constructor?.name,
+      });
+
+      const ok = await transport.printText(config, output);
+
+      console.log('[PRINT JOB] Transport result:', {
+        role: job.role,
+        ok,
+      });
+
+      if (!ok) {
+        throw new Error(
+          `Text printing failed for role ${job.role}`
+        );
+      }
+
+      console.log('[PRINT JOB] Completed:', {
+        role: job.role,
+        id: job.id,
+      });
+
+      return;
+    }
+
+    // =====================================================
+    // IMAGE PRINTING
+    // =====================================================
+    if (config.renderMode === ReceiptRenderMode.IMAGE) {
       throw new Error(
-        'Text printing failed'
+        `Image printing is not implemented for role ${job.role}`
       );
     }
 
-    console.log(
-      `[PRINT] Text printed successfully for ${job.role}`
-    );
-
-    return;
-  }
-
-  // =====================================================
-  // IMAGE MODE
-  // =====================================================
-
-  if (
-    config.renderMode ===
-    ReceiptRenderMode.IMAGE
-  ) {
-    console.log(
-      `[PRINT] IMAGE mode requested for ${job.role}`
-    );
-
     throw new Error(
-      'Image printing not implemented yet'
+      `Unsupported render mode: ${config.renderMode}`
     );
   }
-
-  throw new Error(
-    `Unsupported render mode: ${config.renderMode}`
-  );
-}
 
 
 

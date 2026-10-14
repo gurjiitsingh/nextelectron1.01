@@ -2084,10 +2084,10 @@ ipcMain.handle(
     'saleReport:getReport',
     async (_event, businessDate) => {
 
-      console.log(
-        'REPORT IPC RECEIVED:',
-        businessDate
-      );
+      // console.log(
+      //   'REPORT IPC RECEIVED:',
+      //   businessDate
+      // );
 
       try {
 
@@ -2098,20 +2098,20 @@ ipcMain.handle(
           };
         }
 
-        console.log(
-          'CALLING REPORT REPOSITORY:',
-          businessDate
-        );
+        // console.log(
+        //   'CALLING REPORT REPOSITORY:',
+        //   businessDate
+        // );
 
         const report =
           saleReportRepo.getSalesReport(
             businessDate
           );
 
-        console.log(
-          'REPORT FROM REPOSITORY:',
-          report
-        );
+        // console.log(
+        //   'REPORT FROM REPOSITORY:',
+        //   report
+        // );
 
         return {
           success: true,
