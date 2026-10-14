@@ -29,11 +29,25 @@ class PrinterSettingsRepository {
     }
   }
 
+  // getConfig(role) {
+  //   return this.readAll().find(
+  //     (p) => p.role === role
+  //   );
+  // }
+
   getConfig(role) {
-    return this.readAll().find(
-      (p) => p.role === role
-    );
-  }
+  const configs = this.readAll().filter(
+    (printer) => printer.role === role
+  );
+
+  // Prefer the printer explicitly marked as active.
+  const activeConfig = configs.find(
+    (printer) => printer.active === true
+  );
+
+  // Backward compatibility for existing settings.
+  return activeConfig || configs[0] || null;
+}
 
   saveConfig(config) {
     const all = this.readAll().filter(

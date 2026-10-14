@@ -130,11 +130,20 @@ class PrintManager {
     config.connectionType
   );
 
+
+if (config.connectionType === 'USB') {
+  console.log(
+    '[PRINT] Windows printer:',
+    config.printerName || '(printer name missing)'
+  );
+} else {
   console.log(
     '[PRINT] Address:',
     config.ip,
     config.port
   );
+}
+
 
   console.log(
     '[PRINT] Paper:',
@@ -204,11 +213,20 @@ const text =
       transport?.constructor?.name
     );
 
-    console.log(
-      '[PRINT] Sending to:',
-      config.ip,
-      config.port
-    );
+  
+if (config.connectionType === 'USB') {
+  console.log(
+    '[PRINT] Sending to Windows printer:',
+    config.printerName || '(printer name missing)'
+  );
+} else {
+  console.log(
+    '[PRINT] Sending to:',
+    config.ip,
+    config.port
+  );
+}
+
 
     const ok =
       await transport.printText(

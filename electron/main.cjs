@@ -27,7 +27,7 @@ const {
 } = require('./sync/posTerminalRepository.cjs');
 
 const {
-   getOrCreateOrderNo,
+  getOrCreateOrderNo,
   getExistingOrderNo,
 } = require('./lib/orderSequenceRepository.cjs');
 const {
@@ -368,106 +368,126 @@ function registerIpcHandlers() {
     }
   );
 
-// =====================================================
-// USB PRINTER SETTINGS - SEPARATE IPC FLOW
-// =====================================================
+  // =====================================================
+  // USB PRINTER SETTINGS - SEPARATE IPC FLOW
+  // =====================================================
 
-ipcMain.handle(
-  'usb-printer:get-settings',
-  async () => {
-    try {
+  ipcMain.handle(
+    'usb-printer:get-settings',
+    async () => {
+      try {
 
-      console.log(
-  '[USB PRINTER] Repository available:',
-  typeof printerSettingsRepo
-);
+        console.log(
+          '[USB PRINTER] Repository available:',
+          typeof printerSettingsRepo
+        );
 
-console.log(
-  '[USB PRINTER] Repository methods:',
-  typeof printerSettingsRepo?.readAll,
-  typeof printerSettingsRepo?.saveAll
-);
-      const all = printerSettingsRepo.readAll();
+        console.log(
+          '[USB PRINTER] Repository methods:',
+          typeof printerSettingsRepo?.readAll,
+          typeof printerSettingsRepo?.saveAll
+        );
+        const all = printerSettingsRepo.readAll();
 
-      const config = all.find(
-        (item) =>
-          item.role === 'BILL' &&
-          item.connectionType === 'USB'
-      );
-
-      return {
-        success: true,
-        data: config || null,
-      };
-    } catch (error) {
-      console.error(
-        '[USB PRINTER] Failed to load settings:',
-        error
-      );
-
-      return {
-        success: false,
-        error: error.message || 'Failed to load USB printer settings',
-      };
-    }
-  }
-);
-
-ipcMain.handle(
-  'usb-printer:save-settings',
-  async (_event, config) => {
-    try {
-      if (!config || typeof config !== 'object') {
-        throw new Error('Invalid USB printer configuration');
-      }
-
-      // Force the configuration to remain in the USB BILL flow.
-      const usbConfig = {
-        ...config,
-        role: 'BILL',
-        connectionType: 'USB',
-        ip: '',
-        port: 9100,
-      };
-
-      // Read all settings so LAN and Bluetooth configurations
-      // remain untouched.
-      const all = printerSettingsRepo.readAll();
-
-      const updated = all.filter(
-        (item) =>
-          !(
+        const config = all.find(
+          (item) =>
             item.role === 'BILL' &&
             item.connectionType === 'USB'
-          )
-      );
+        );
 
-      updated.push(usbConfig);
+        return {
+          success: true,
+          data: config || null,
+        };
+      } catch (error) {
+        console.error(
+          '[USB PRINTER] Failed to load settings:',
+          error
+        );
 
-      printerSettingsRepo.saveAll(updated);
-
-      console.log(
-        '[USB PRINTER] Settings saved:',
-        usbConfig
-      );
-
-      return {
-        success: true,
-        data: usbConfig,
-      };
-    } catch (error) {
-      console.error(
-        '[USB PRINTER] Failed to save settings:',
-        error
-      );
-
-      return {
-        success: false,
-        error: error.message || 'Failed to save USB printer settings',
-      };
+        return {
+          success: false,
+          error: error.message || 'Failed to load USB printer settings',
+        };
+      }
     }
-  }
-);
+  );
+
+  ipcMain.handle(
+    'usb-printer:save-settings',
+    async (_event, config) => {
+      try {
+        if (!config || typeof config !== 'object') {
+          throw new Error(
+            'Invalid USB printer configuration'
+          );
+        }
+
+        // const usbConfig = {
+        //   ...config,
+        //   role: 'BILL',
+        //   connectionType: 'USB',
+        //   ip: '',
+        //   port: 9100,
+        //   active: true,
+        // };
+
+        const usbConfig = {
+          ...config,
+          role: 'BILL',
+          connectionType: 'USB',
+          printerName: 'TVS-E RP 3230',
+          ip: '',
+          port: 9100,
+          active: true,
+        };
+
+        const all = printerSettingsRepo.readAll();
+
+        // Preserve other roles and settings, but deactivate
+        // other BILL printer connections.
+        const updated = all
+          .filter(
+            (item) =>
+              !(
+                item.role === 'BILL' &&
+                item.connectionType === 'USB'
+              )
+          )
+          .map((item) =>
+            item.role === 'BILL'
+              ? { ...item, active: false }
+              : item
+          );
+
+        updated.push(usbConfig);
+
+        printerSettingsRepo.saveAll(updated);
+
+        console.log(
+          '[USB PRINTER] Active printer saved:',
+          usbConfig
+        );
+
+        return {
+          success: true,
+          data: usbConfig,
+        };
+      } catch (error) {
+        console.error(
+          '[USB PRINTER] Failed to save settings:',
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error.message ||
+            'Failed to save USB printer settings',
+        };
+      }
+    }
+  );
 
 
   // =====================================================
@@ -803,36 +823,36 @@ ipcMain.handle(
   );
 
 
-  
-ipcMain.handle(
-  'pos:getDeletedKotHistoryItems',
-  async (_event, selectedDate) => {
-    try {
-      if (
-        typeof selectedDate !== 'string' ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
-      ) {
-        throw new Error('Invalid date');
+
+  ipcMain.handle(
+    'pos:getDeletedKotHistoryItems',
+    async (_event, selectedDate) => {
+      try {
+        if (
+          typeof selectedDate !== 'string' ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
+        ) {
+          throw new Error('Invalid date');
+        }
+
+        return {
+          success: true,
+          data: kotHistoryRepo.getDeletedKotHistoryItems(
+            selectedDate
+          ),
+        };
+      } catch (error) {
+        console.error('GET DELETED KOT ITEMS FAILED', error);
+
+        return {
+          success: false,
+          error:
+            error?.message ||
+            'Failed to load deleted KOT items',
+        };
       }
-
-      return {
-        success: true,
-        data: kotHistoryRepo.getDeletedKotHistoryItems(
-          selectedDate
-        ),
-      };
-    } catch (error) {
-      console.error('GET DELETED KOT ITEMS FAILED', error);
-
-      return {
-        success: false,
-        error:
-          error?.message ||
-          'Failed to load deleted KOT items',
-      };
     }
-  }
-);
+  );
 
   ipcMain.handle(
     'pos:getRecentKotHistoryItems',
@@ -943,72 +963,72 @@ ipcMain.handle(
   // =====================================================
 
   ipcMain.handle('bill:getReservedOrderNo', async (_event, tableNo) => {
-  try {
-    if (!tableNo) {
-      return { success: false, error: 'tableNo is required' };
-    }
-
-    const mapping = getExistingOrderNo(db, tableNo);
-
-    return {
-      success: true,
-      srno: mapping?.srno || null,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error?.message || 'Failed to get invoice number',
-    };
-  }
-});
-
-
-// =====================================================
-// RESERVE / GET PRINT ORDER NUMBER
-// =====================================================
-
-ipcMain.handle(
-  'bill:getOrCreateOrderNo',
-  async (_event, tableNo) => {
     try {
-      if (
-        tableNo === undefined ||
-        tableNo === null ||
-        String(tableNo).trim() === ''
-      ) {
-        return {
-          success: false,
-          error: 'tableNo is required',
-        };
+      if (!tableNo) {
+        return { success: false, error: 'tableNo is required' };
       }
 
-      const mapping = getOrCreateOrderNo(
-        db,
-        String(tableNo),
-        TERMINAL_CODE
-      );
+      const mapping = getExistingOrderNo(db, tableNo);
 
       return {
         success: true,
-        srno: mapping.srno,
-        orderSerialNo: mapping.orderSerialNo,
-        mapKey: mapping.mapKey,
+        srno: mapping?.srno || null,
       };
     } catch (error) {
-      console.error(
-        '[BILL] Failed to reserve order number:',
-        error
-      );
-
       return {
         success: false,
-        error:
-          error?.message ||
-          'Failed to generate order number',
+        error: error?.message || 'Failed to get invoice number',
       };
     }
-  }
-);
+  });
+
+
+  // =====================================================
+  // RESERVE / GET PRINT ORDER NUMBER
+  // =====================================================
+
+  ipcMain.handle(
+    'bill:getOrCreateOrderNo',
+    async (_event, tableNo) => {
+      try {
+        if (
+          tableNo === undefined ||
+          tableNo === null ||
+          String(tableNo).trim() === ''
+        ) {
+          return {
+            success: false,
+            error: 'tableNo is required',
+          };
+        }
+
+        const mapping = getOrCreateOrderNo(
+          db,
+          String(tableNo),
+          TERMINAL_CODE
+        );
+
+        return {
+          success: true,
+          srno: mapping.srno,
+          orderSerialNo: mapping.orderSerialNo,
+          mapKey: mapping.mapKey,
+        };
+      } catch (error) {
+        console.error(
+          '[BILL] Failed to reserve order number:',
+          error
+        );
+
+        return {
+          success: false,
+          error:
+            error?.message ||
+            'Failed to generate order number',
+        };
+      }
+    }
+  );
 
   // =====================================================
   // BILLING
@@ -1397,12 +1417,12 @@ ipcMain.handle(
   );
 
 
-ipcMain.handle(
-  'bill-items:count',
-  async (_e, tableNo) => {
-    return billItemRepo.countOpenBillItems(tableNo);
-  }
-);
+  ipcMain.handle(
+    'bill-items:count',
+    async (_e, tableNo) => {
+      return billItemRepo.countOpenBillItems(tableNo);
+    }
+  );
 
 
 
@@ -1547,32 +1567,32 @@ ipcMain.handle(
 
 
   ipcMain.handle(
-  'cart:updateKitchenPrint',
-  async (_event, { itemId, kitchenPrintReq, partition }) => {
-    try {
-      const items = await cartRepo.updateCartItemKitchenPrint(
-        itemId,
-        kitchenPrintReq,
-        partition
-      );
+    'cart:updateKitchenPrint',
+    async (_event, { itemId, kitchenPrintReq, partition }) => {
+      try {
+        const items = await cartRepo.updateCartItemKitchenPrint(
+          itemId,
+          kitchenPrintReq,
+          partition
+        );
 
-      return {
-        success: true,
-        data: items,
-      };
-    } catch (error) {
-      console.error(
-        '[CART] Failed to update kitchen print:',
-        error
-      );
+        return {
+          success: true,
+          data: items,
+        };
+      } catch (error) {
+        console.error(
+          '[CART] Failed to update kitchen print:',
+          error
+        );
 
-      return {
-        success: false,
-        error: error.message || 'Failed to update kitchen print',
-      };
+        return {
+          success: false,
+          error: error.message || 'Failed to update kitchen print',
+        };
+      }
     }
-  }
-);
+  );
 
 
   // =====================================================

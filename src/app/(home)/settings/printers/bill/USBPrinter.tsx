@@ -83,16 +83,21 @@ export default function USBPrinter() {
     setSaveMessage('');
 
     try {
-      const config = {
-        role: 'BILL',
-        enabled,
-        name: name.trim() || 'BILL USB Printer',
-        connectionType: 'USB',
-        paperSize,
-        renderMode,
-        ip: '',
-        port: 9100,
-      };
+    
+
+const config = {
+  role: 'BILL',
+  enabled,
+  name: name.trim() || 'BILL USB Printer',
+  connectionType: 'USB',
+  paperSize,
+  renderMode,
+  ip: '',
+  port: null,
+  printerName: 'TVS-E RP 3230',
+  active: true,
+};
+
 
       console.log(
         '[USB PRINTER] Saving settings:',
@@ -192,17 +197,9 @@ export default function USBPrinter() {
   // UI
   // =====================================================
   return (
-    <div
-      className={`h-[calc(100vh-64px)] overflow-y-auto app-scrollbar ${background.className} ${background.text}`}
-    >
-      <div className="mx-auto max-w-2xl p-6">
-        <Link
-          href="/settings/printers"
-          className="mb-6 inline-flex items-center gap-2 text-sm opacity-60 hover:opacity-100"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Printer Settings
-        </Link>
+    <div>
+      <div className=" p-1 mb-20">
+   
 
         <div className="mb-8 flex items-center gap-4">
           <div
