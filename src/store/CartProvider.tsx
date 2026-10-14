@@ -45,61 +45,62 @@ export const CartProvider: React.FC<Props> = ({ children }) => {
   const [scheduledAt, setScheduledAt] = useState<
     string | null
   >(null);
-const {
-  activeTable,
-  activeOrder,
-} = usePosSession();
- 
+  const {
+    activeTable,
+    activeOrder,
+  } = usePosSession();
+
 
   // =====================================================
   // LOAD CART FROM SQLITE
   // =====================================================
 
- 
-const currentPartition =
-  activeOrder?.orderType === 'DINE_IN'
-    ? (
+
+  const currentPartition =
+    activeOrder?.orderType === 'DINE_IN'
+      ? (
         activeTable?.tableId ||
         activeTable?.tableName ||
         ''
       )
-    : (
+      : (
         activeOrder?.orderNo ||
         ''
       );
- 
-useEffect(() => {
-  if (!currentPartition) {
-    setCartData([]);
-    return;
+
+  useEffect(() => {
+    if (!currentPartition) {
+      setCartData([]);
+      return;
+    }
+
+    reloadCart(currentPartition);
+  }, [currentPartition]);
+  // =====================================================
+  // RELOAD CART FROM SQLITE
+  // Location: src/store/CartProvider.tsx
+  // =====================================================
+
+
+  async function reloadCart(
+    partition?: string
+  ) {
+    const key =
+      partition || currentPartition;
+
+    if (!key) {
+      setCartData([]);
+      return;
+    }
+
+    const rows =
+      await posApi.getCartItems(key);
+      console.log("row cartitems------------------",rows)
+
+    setCartData(
+      rows as cartProductType[]
+    );
   }
-
-  reloadCart(currentPartition);
-}, [currentPartition]);
-      // =====================================================
-    // RELOAD CART FROM SQLITE
-    // Location: src/store/CartProvider.tsx
-    // =====================================================
-
-
-async function reloadCart(
-  partition?: string
-) {
-  const key =
-    partition || currentPartition;
-
-  if (!key) {
-    setCartData([]);
-    return;
-  }
-
-  const rows =
-    await posApi.getCartItems(key);
-
-  setCartData(
-    rows as cartProductType[]
-  );
-}
   // =====================================================
   // CALCULATE TOTALS
   // =====================================================
@@ -140,34 +141,34 @@ async function reloadCart(
     newProduct: cartProductType
   ) {
 
-//     console.log('========== CART CONTEXT RECEIVED ==========');
-// console.log('Product name:', newProduct.name);
-// console.log(
-//   'discountEligible:',
-//   newProduct.discountEligible,
-//   typeof newProduct.discountEligible
-// );
-// console.log('Full product:', newProduct);
-// console.log('===========================================');
+    //     console.log('========== CART CONTEXT RECEIVED ==========');
+    // console.log('Product name:', newProduct.name);
+    // console.log(
+    //   'discountEligible:',
+    //   newProduct.discountEligible,
+    //   typeof newProduct.discountEligible
+    // );
+    // console.log('Full product:', newProduct);
+    // console.log('===========================================');
 
     if (!activeOrder) {
-  console.warn(
-    'Cannot add product: no active order'
-  );
+      console.warn(
+        'Cannot add product: no active order'
+      );
 
-  return;
-}
+      return;
+    }
 
-if (
-  activeOrder.orderType === 'DINE_IN' &&
-  !activeTable?.tableId
-) {
-  console.warn(
-    'Cannot add product: no table selected'
-  );
+    if (
+      activeOrder.orderType === 'DINE_IN' &&
+      !activeTable?.tableId
+    ) {
+      console.warn(
+        'Cannot add product: no table selected'
+      );
 
-  return;
-}
+      return;
+    }
 
     if (
       isNaN(Number(newProduct.quantity)) ||
@@ -181,238 +182,238 @@ if (
       return;
     }
 
-  await posApi.addCartItem(
-  {
-    id: newProduct.id ?? 0,
+    await posApi.addCartItem(
+      {
+        id: newProduct.id ?? 0,
 
-    productId: newProduct.productId,
-    productMode: newProduct.productMode,
+        productId: newProduct.productId,
+        productMode: newProduct.productMode,
 
-    currentStock: newProduct.currentStock ?? 0,
+        currentStock: newProduct.currentStock ?? 0,
 
-    name: newProduct.name,
+        name: newProduct.name,
 
-    categoryId: newProduct.categoryId,
-    categoryName: newProduct.categoryName,
+        categoryId: newProduct.categoryId,
+        categoryName: newProduct.categoryName,
 
-    parentId: newProduct.parentId ?? null,
-  discountEligible: newProduct.discountEligible,
-    isVariant: newProduct.isVariant ?? false,
+        parentId: newProduct.parentId ?? null,
+        discountEligible: newProduct.discountEligible,
+        isVariant: newProduct.isVariant ?? false,
 
-    basePrice: Number(newProduct.basePrice),
-    finalPrice: Number(newProduct.finalPrice),
-    modifierTotal: Number(newProduct.modifierTotal ?? 0),
+        basePrice: Number(newProduct.basePrice),
+        finalPrice: Number(newProduct.finalPrice),
+        modifierTotal: Number(newProduct.modifierTotal ?? 0),
 
-    quantity: 1,
+        quantity: 1,
 
-    taxRate: Number(newProduct.taxRate ?? 0),
-    taxType: newProduct.taxType ?? 'exclusive',
+        taxRate: Number(newProduct.taxRate ?? 0),
+        taxType: newProduct.taxType ?? 'exclusive',
 
-    sessionId: newProduct.sessionId ?? 'DEFAULT',
+        sessionId: newProduct.sessionId ?? 'DEFAULT',
 
-    // ACTIVE TABLE
-   tableId:
-  activeOrder.orderType === 'DINE_IN'
-    ? (
-        newProduct.tableId ??
-        activeTable?.tableId ??
-        ''
-      )
-    : activeOrder.orderNo,
+        // ACTIVE TABLE
+        tableId:
+          activeOrder.orderType === 'DINE_IN'
+            ? (
+              newProduct.tableId ??
+              activeTable?.tableId ??
+              ''
+            )
+            : activeOrder.orderNo,
 
-tableName:
-  activeOrder.orderType === 'DINE_IN'
-    ? (
-        newProduct.tableName ??
-        activeTable?.tableName ??
-        ''
-      )
-    : activeOrder.orderNo,
+        tableName:
+          activeOrder.orderType === 'DINE_IN'
+            ? (
+              newProduct.tableName ??
+              activeTable?.tableName ??
+              ''
+            )
+            : activeOrder.orderNo,
 
-    createdById:
-      newProduct.createdById ?? '',
+        createdById:
+          newProduct.createdById ?? '',
 
-    createdByName:
-      newProduct.createdByName ?? '',
+        createdByName:
+          newProduct.createdByName ?? '',
 
-    note: newProduct.note ?? '',
+        note: newProduct.note ?? '',
 
-    modifiersJson:
-      newProduct.modifiersJson ??
-      JSON.stringify(
-        newProduct.modifiers ?? []
-      ),
+        modifiersJson:
+          newProduct.modifiersJson ??
+          JSON.stringify(
+            newProduct.modifiers ?? []
+          ),
 
-    sentToKitchen:
-      newProduct.sentToKitchen ?? false,
+        sentToKitchen:
+          newProduct.sentToKitchen ?? false,
 
-    kitchenPrintReq:
-      newProduct.kitchenPrintReq ?? true,
+        kitchenPrintReq:
+          newProduct.kitchenPrintReq ?? true,
 
-    printStatus:
-      newProduct.printStatus ?? 'PENDING',
+        printStatus:
+          newProduct.printStatus ?? 'PENDING',
 
-    createdAt:
-      newProduct.createdAt ?? Date.now(),
-  },
+        createdAt:
+          newProduct.createdAt ?? Date.now(),
+      },
 
-  // SQLITE PARTITION KEY
-     currentPartition
-);
+      // SQLITE PARTITION KEY
+      currentPartition
+    );
 
-await reloadCart(currentPartition);
+    await reloadCart(currentPartition);
 
-   
+
 
   }
 
   // =====================================================
-// UPDATE CART ITEM NOTE
-// =====================================================
+  // UPDATE CART ITEM NOTE
+  // =====================================================
 
-async function updateCartItemNote(
-  itemId: number,
-  note: string
-) {
-  const table =
-    activeTable?.tableId ||
-    activeTable?.tableName ||
-    'T1';
+  async function updateCartItemNote(
+    itemId: number,
+    note: string
+  ) {
+    const table =
+      activeTable?.tableId ||
+      activeTable?.tableName ||
+      'T1';
 
-  await posApi.updateCartItemNote(
-    itemId,
-    note,
-    table
-  );
+    await posApi.updateCartItemNote(
+      itemId,
+      note,
+      table
+    );
 
-  await reloadCart(table);
+    await reloadCart(table);
 
-}
+  }
   // =====================================================
   // DECREASE QUANTITY BY 1
   // =====================================================
 
-async function decCartProduct(
-  item: cartProductType
-) {
-  if (!currentPartition) {
-    return;
+  async function decCartProduct(
+    item: cartProductType
+  ) {
+    if (!currentPartition) {
+      return;
+    }
+
+    await posApi.removeCartItem(
+      String(item.id),
+      currentPartition,
+      false
+    );
+
+    await reloadCart(currentPartition);
   }
-
-  await posApi.removeCartItem(
-    String(item.id),
-    currentPartition,
-    false
-  );
-
-  await reloadCart(currentPartition);
-}
 
   // =====================================================
   // REMOVE ALL OF A PRODUCT LINE
   // =====================================================
 
-async function decCartProductAll(
-  item: cartProductType
-) {
-  if (!item.uniqueKey) return;
+  async function decCartProductAll(
+    item: cartProductType
+  ) {
+    if (!item.uniqueKey) return;
 
-  if (!currentPartition) {
-    return;
+    if (!currentPartition) {
+      return;
+    }
+
+    await posApi.removeCartItem(
+      item.uniqueKey,
+      currentPartition,
+      true
+    );
+
+    await reloadCart(currentPartition);
   }
-
-  await posApi.removeCartItem(
-    item.uniqueKey,
-    currentPartition,
-    true
-  );
-
-  await reloadCart(currentPartition);
-}
   // =====================================================
   // REMOVE PRODUCT
   // =====================================================
 
-async function removeCartProduct(
-  item: cartProductType | undefined
-) {
-  if (!item?.uniqueKey) return;
+  async function removeCartProduct(
+    item: cartProductType | undefined
+  ) {
+    if (!item?.uniqueKey) return;
 
-  if (!currentPartition) {
-    return;
+    if (!currentPartition) {
+      return;
+    }
+
+    await posApi.removeCartItem(
+      item.uniqueKey,
+      currentPartition
+    );
+
+    await reloadCart(currentPartition);
   }
-
-  await posApi.removeCartItem(
-    item.uniqueKey,
-    currentPartition
-  );
-
-  await reloadCart(currentPartition);
-}
 
   // =====================================================
   // EMPTY CART
   // =====================================================
 
-async function emptyCart() {
-  if (!currentPartition) {
-    return;
+  async function emptyCart() {
+    if (!currentPartition) {
+      return;
+    }
+
+    await posApi.clearCart(
+      currentPartition
+    );
+
+    await reloadCart(
+      currentPartition
+    );
   }
-
-  await posApi.clearCart(
-    currentPartition
-  );
-
-  await reloadCart(
-    currentPartition
-  );
-}
 
   // =====================================================
   // ADD PRODUCT (LEGACY HELPER)
   // =====================================================
 
- 
-async function addProduct(
-  newProduct: cartProductType
-) {
-  console.log(
-    '========== ADD PRODUCT TO CART DEBUG =========='
-  );
 
-  console.log('Product ID:', newProduct.productId);
-  console.log('Product name:', newProduct.name);
-  console.log(
-    'discountEligible:',
-    newProduct.discountEligible
-  );
-  console.log(
-    'discountEligible type:',
-    typeof newProduct.discountEligible
-  );
-  console.log('Full product:', newProduct);
+  async function addProduct(
+    newProduct: cartProductType
+  ) {
+    console.log(
+      '========== ADD PRODUCT TO CART DEBUG =========='
+    );
 
-  const cartProduct = {
-    ...newProduct,
-    quantity: 1,
-  };
+    console.log('Product ID:', newProduct.productId);
+    console.log('Product name:', newProduct.name);
+    console.log(
+      'discountEligible:',
+      newProduct.discountEligible
+    );
+    console.log(
+      'discountEligible type:',
+      typeof newProduct.discountEligible
+    );
+    console.log('Full product:', newProduct);
 
-  console.log(
-    'Product passed to addProductToCart:',
-    cartProduct
-  );
-  console.log(
-    'discountEligible passed to cart:',
-    cartProduct.discountEligible
-  );
+    const cartProduct = {
+      ...newProduct,
+      quantity: 1,
+    };
 
-  await addProductToCart(cartProduct);
+    console.log(
+      'Product passed to addProductToCart:',
+      cartProduct
+    );
+    console.log(
+      'discountEligible passed to cart:',
+      cartProduct.discountEligible
+    );
 
-  console.log(
-    '========== ADD PRODUCT DEBUG END =========='
-  );
-}
- 
+    await addProductToCart(cartProduct);
+
+    console.log(
+      '========== ADD PRODUCT DEBUG END =========='
+    );
+  }
+
 
   // =====================================================
   // ADDRESS
@@ -434,50 +435,51 @@ async function addProduct(
     setTotalDiscountL(d);
   }
 
-  
-return (
-<CartContext.Provider
-  value={{
-    cartData,
-    setCartData,
 
-    address,
-    addProduct,
-    addAddress,
+  return (
+    <CartContext.Provider
+      value={{
+        cartData,
+        setCartData,
 
-    endTotalG,
-    setEndTotalG,
+        address,
+        addProduct,
+        addAddress,
 
-    counter,
-    productTotalCost,
+        endTotalG,
+        setEndTotalG,
 
-    reloadCart,
+        counter,
+        productTotalCost,
 
-    updateCartItemNote,
+        reloadCart,
 
-    addProductToCart,
-    decCartProduct,
-    decCartProductAll,
-    removeCartProduct,
-    emptyCart,
+        updateCartItemNote,
 
-    totalDiscountG,
-    setTotalDiscountG,
+        addProductToCart,
+        decCartProduct,
+        decCartProductAll,
+        removeCartProduct,
+        emptyCart,
 
-   orderType:
-  activeOrder?.orderType ?? 'DINE_IN',
+        totalDiscountG,
+        setTotalDiscountG,
 
-setOrderType: () => {},
+        orderType:
+          activeOrder?.orderType ?? 'DINE_IN',
 
-tableNo:
-  currentPartition || null,
+        setOrderType: () => { },
 
-setTableNo: () => {},
+        tableNo:
+          currentPartition || null,
 
-    scheduledAt,
-    setScheduledAt,
-  }}
->
-    {children}
-  </CartContext.Provider>
-);}
+        setTableNo: () => { },
+
+        scheduledAt,
+        setScheduledAt,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}

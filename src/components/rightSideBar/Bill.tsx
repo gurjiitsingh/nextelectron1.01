@@ -118,15 +118,15 @@ export default function Bill({
   useEffect(() => {
 
     if (!window.posApi?.onKotReceived) {
-      console.log(
-        'WAITER KOT LISTENER API NOT AVAILABLE'
-      );
+      // console.log(
+      //   'WAITER KOT LISTENER API NOT AVAILABLE'
+      // );
       return;
     }
 
-    console.log(
-      'REGISTERING BILL WAITER KOT LISTENER'
-    );
+    // console.log(
+    //   'REGISTERING BILL WAITER KOT LISTENER'
+    // );
 
     const unsubscribe =
       window.posApi.onKotReceived((data) => {
@@ -243,22 +243,22 @@ export default function Bill({
   // =====================================================
 
 const billItems = useMemo(() => {
-  console.log(
-    '========== BILL ROWS BEFORE GROUPING =========='
-  );
+  // console.log(
+  //   '========== BILL ROWS BEFORE GROUPING =========='
+  // );
 
-  billRows.forEach((item) => {
-    console.log(
-      'BILL ROW:',
-      item.name,
-      '| productId:',
-      item.productId,
-      '| discountEligible:',
-      item.discountEligible,
-      '| type:',
-      typeof item.discountEligible
-    );
-  });
+  // billRows.forEach((item) => {
+  //   console.log(
+  //     'BILL ROW:',
+  //     item.name,
+  //     '| productId:',
+  //     item.productId,
+  //     '| discountEligible:',
+  //     item.discountEligible,
+  //     '| type:',
+  //     typeof item.discountEligible
+  //   );
+  // });
 
   const grouped = groupBillItems(billRows);
 
@@ -403,20 +403,20 @@ const calculation = useMemo(() => {
     : Boolean(i.discountEligible),
   }));
  
-  console.log('========== BILL DISCOUNT DEBUG ==========');
+  // console.log('========== BILL DISCOUNT DEBUG ==========');
 
-  mappedItems.forEach((item) => {
-    console.log(
-      'BILL CALCULATION ITEM:',
-      item.name,
-      '| productId:',
-      item.productId,
-      '| discountEligible:',
-      item.discountEligible,
-      '| type:',
-      typeof item.discountEligible
-    );
-  });
+  // mappedItems.forEach((item) => {
+  //   console.log(
+  //     'BILL CALCULATION ITEM:',
+  //     item.name,
+  //     '| productId:',
+  //     item.productId,
+  //     '| discountEligible:',
+  //     item.discountEligible,
+  //     '| type:',
+  //     typeof item.discountEligible
+  //   );
+  // });
 
   const result = calculateBillAndroid({
     items: mappedItems,
@@ -427,7 +427,7 @@ const calculation = useMemo(() => {
     deliveryTaxPercent: 0,
   });
 
-  console.log('=========================================');
+//  console.log('=========================================');
 
   return {
     itemSubtotal: fromPaise(result.itemSubtotalPaise),

@@ -11,13 +11,13 @@ export type cartModifierItem = {
   price: number;
 };
 
-export type cartProductType = { 
+export type cartProductType = {
   // =====================================================
   // Android PosCartEntity compatible fields
   // =====================================================
 
   id: number; // local SQLite row id (0 before insert)
- 
+
   productId: string;
   productMode: string;
 
@@ -27,7 +27,7 @@ export type cartProductType = {
 
   categoryId: string;
   categoryName: string;
-discountEligible?: boolean;
+  discountEligible?: boolean;
   parentId?: string | null;
 
   isVariant: boolean;
@@ -148,11 +148,11 @@ export type CartItem = {
   image: string;
 
   modifiers?: cartModifierItem[];
-  note?: string; 
+  note?: string;
 };
 
 export type CartItemWithTax = CartItem & {
-  itemSubtotal:number;
+  itemSubtotal: number;
   taxAmount: number;   // per one item
   taxTotal: number;    // tax * quantity
   finalPrice: number;  // price + tax

@@ -98,26 +98,26 @@ useEffect(() => {
 
       if (Array.isArray(rows)) {
         rows.forEach((table, index) => {
-          console.log(
-            `TABLE [${index}]`,
-            table
-          );
+          // console.log(
+          //   `TABLE [${index}]`,
+          //   table
+          // );
 
-          console.log(
-            `TABLE [${index}] COUNTS`,
-            {
-              id: table.id,
-              tableName: table.tableName,
-              status: table.status,
+          // console.log(
+          //   `TABLE [${index}] COUNTS`,
+          //   {
+          //     id: table.id,
+          //     tableName: table.tableName,
+          //     status: table.status,
 
-              cartCount: table.cartCount,
-              billCount: table.billCount,
-              billAmount: table.billAmount,
+          //     cartCount: table.cartCount,
+          //     billCount: table.billCount,
+          //     billAmount: table.billAmount,
 
-              cartItems: table.cartItems,
-              billItems: table.billItems,
-            }
-          );
+          //     cartItems: table.cartItems,
+          //     billItems: table.billItems,
+          //   }
+          // );
         });
       }
 

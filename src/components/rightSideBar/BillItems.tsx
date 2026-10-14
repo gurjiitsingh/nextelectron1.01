@@ -188,18 +188,18 @@ export default function BillItem({
 
       const rows = await window.posApi.getTables();
 
-      console.log(
-        "========== GET TABLES RESULT =========="
-      );
+      // console.log(
+      //   "========== GET TABLES RESULT =========="
+      // );
 
-      console.log("ROWS:", rows);
+     // console.log("ROWS:", rows);
 
       if (Array.isArray(rows)) {
         rows.forEach((table, index) => {
-          console.log(
-            `TABLE [${index}]`,
-            table
-          );
+          // console.log(
+          //   `TABLE [${index}]`,
+          //   table
+          // );
         });
 
         setTables(rows);

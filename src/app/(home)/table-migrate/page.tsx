@@ -48,11 +48,12 @@ export default function Page() {
 
       if (Array.isArray(rows)) {
         rows.forEach((table, index) => {
-          console.log(
-            `TABLE [${index}]`,
-            table
-          );
-        });
+          // console.log(
+          //   `TABLE [${index}]`,
+          //   table
+          // );
+        }
+      );
 
         setTables(rows);
       } else {
@@ -167,37 +168,37 @@ export default function Page() {
     try {
       setMigrating(true);
 
-      console.log(
-        "========================================"
-      );
+      // console.log(
+      //   "========================================"
+      // );
 
-      console.log(
-        "FULL TABLE MIGRATION"
-      );
+      // console.log(
+      //   "FULL TABLE MIGRATION"
+      // );
 
-      console.log(
-        "SOURCE TABLE:",
-        sourceTableNo
-      );
+      // console.log(
+      //   "SOURCE TABLE:",
+      //   sourceTableNo
+      // );
 
-      console.log(
-        "SOURCE NAME:",
-        sourceTableName
-      );
+      // console.log(
+      //   "SOURCE NAME:",
+      //   sourceTableName
+      // );
 
-      console.log(
-        "DESTINATION TABLE:",
-        selectedTableNo
-      );
+      // console.log(
+      //   "DESTINATION TABLE:",
+      //   selectedTableNo
+      // );
 
-      console.log(
-        "DESTINATION NAME:",
-        targetTableName
-      );
+      // console.log(
+      //   "DESTINATION NAME:",
+      //   targetTableName
+      // );
 
-      console.log(
-        "========================================"
-      );
+      // console.log(
+      //   "========================================"
+      // );
 
       const result =
         await window.posApi.moveFullTableToTable(
@@ -216,9 +217,9 @@ export default function Page() {
           }
         );
 
-      console.log(
-        "========== FULL TABLE MIGRATION RESULT =========="
-      );
+      // console.log(
+      //   "========== FULL TABLE MIGRATION RESULT =========="
+      // );
 
       console.log(
         "RESULT:",
@@ -232,9 +233,9 @@ export default function Page() {
         );
       }
 
-      console.log(
-        "TABLE MIGRATED SUCCESSFULLY"
-      );
+      // console.log(
+      //   "TABLE MIGRATED SUCCESSFULLY"
+      // );
 
       // Reset
       setSourceTableNo("");

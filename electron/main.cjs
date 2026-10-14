@@ -1506,20 +1506,51 @@ ipcMain.handle(
     }
   );
 
-  ipcMain.handle(
-    'cart:add',
-    async (_e, item, tableNo) => {
-      const result =
-        await cartRepo.addCartItem(
-          item,
-          tableNo
-        );
+  // ipcMain.handle(
+  //   'cart:add',
+  //   async (_e, item, tableNo) => {
+  //     const result =
+  //       await cartRepo.addCartItem(
+  //         item,
+  //         tableNo
+  //       );
 
-      tableRepo.refreshAllTableCartVisualStates();
+  //     tableRepo.refreshAllTableCartVisualStates();
 
-      return result;
-    }
-  );
+  //     return result;
+  //   }
+  // );
+
+ipcMain.handle(
+  'cart:add',
+  async (_e, item, tableNo) => {
+    console.log('\n========== CART ADD: BEFORE SQLITE SAVE ==========');
+    console.log({
+      productId: item?.productId,
+      name: item?.name,
+      kitchenPrintReq: item?.kitchenPrintReq,
+      type: typeof item?.kitchenPrintReq,
+      tableNo,
+    });
+
+    const result =
+      await cartRepo.addCartItem(
+        item,
+        tableNo
+      );
+
+    console.log('\n========== CART ADD: AFTER SQLITE SAVE ==========');
+    console.log('Repository result:', result);
+
+    tableRepo.refreshAllTableCartVisualStates();
+
+    return result;
+  }
+);
+
+
+
+
 
   ipcMain.handle(
     'cart:remove',

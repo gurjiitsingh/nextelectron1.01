@@ -254,9 +254,9 @@ getDeletedKotHistoryItems: (selectedDate) =>
 
   onKotReceived: (callback) => {
 
-    console.log(
-      'REGISTERING WAITER KOT IPC LISTENER'
-    );
+    // console.log(
+    //   'REGISTERING WAITER KOT IPC LISTENER'
+    // );
 
     const listener = (_event, data) => {
 
