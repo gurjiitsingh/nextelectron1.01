@@ -74,7 +74,7 @@ export default function BluetoothPrinter() {
     try {
       const result = await window.posApi.savePrinterSetting({
         role,
-        enabled,
+        active:enabled,
         name,
         connectionType: 'BLUETOOTH',
         paperSize,

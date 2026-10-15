@@ -143,8 +143,7 @@ async function printBill(orderId: string) {
     const itemsResult =
       await window.posApi.getOrderItems(orderId);
 
-    const savedItems =
-      itemsResult?.data ?? itemsResult;
+  const savedItems = itemsResult;
 
     if (!Array.isArray(savedItems) || savedItems.length === 0) {
       throw new Error(

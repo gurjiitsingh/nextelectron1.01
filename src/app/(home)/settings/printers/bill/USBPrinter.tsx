@@ -43,15 +43,14 @@ export default function USBPrinter() {
           );
         }
 
-        const config = result.data;
+      const config = result.data;
 
-        if (config) {
-          setActive(config.active === true);
-          setActive(config.active === true);
-          setName(config.name || 'BILL USB Printer');
-          setPaperSize(config.paperSize || '80mm');
-          setRenderMode(config.renderMode || 'TEXT');
-        }
+if (config) {
+  setActive(config.active === true);
+  setName(config.name || 'BILL USB Printer');
+  setPaperSize(config.paperSize || '80mm');
+  setRenderMode(config.renderMode || 'TEXT');
+}
       } catch (error) {
         console.error(
           'Failed to load USB printer:',

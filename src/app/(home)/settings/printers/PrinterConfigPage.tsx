@@ -126,7 +126,7 @@ async function save() {
   try {
     const config = {
       role,
-      enabled,
+      active: enabled,
       name,
       connectionType,
       paperSize,

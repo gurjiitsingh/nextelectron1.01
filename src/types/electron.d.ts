@@ -358,14 +358,52 @@ getConfig: () => Promise<{
       // =====================================================
       getPrinterSettings: () => Promise<any[]>;
 
-      savePrinterSetting: (
-        config: any
-      ) => Promise<{
-        success: boolean;
-      }>;
+  savePrinterSetting: (settings: {
+  role: string;
+  active: boolean;
+  name: string;
+  connectionType: string;
+  paperSize: string; // Keep your existing type if different
+  renderMode: string; // Keep your existing type if different
+  ip: string;
+  port: number;
+}) => Promise<{
+  success: boolean;
+  error?: string;
+}>;
 
 
+getUsbPrinterSettings: () => Promise<{
+  success: boolean;
+  error?: string;
+  data?: {
+    role: string;
+    active: boolean;
+    name: string;
+    connectionType: string;
+    paperSize: string;
+    renderMode: string;
+    ip: string;
+    port: number | null;
+    printerName?: string;
+  } | null;
+}>;
 
+
+saveUsbPrinterSettings: (config: {
+  role: string;
+  active: boolean;
+  name: string;
+  connectionType: string;
+  paperSize: string;
+  renderMode: string;
+  ip: string;
+  port: number | null;
+  printerName?: string;
+}) => Promise<{
+  success: boolean;
+  error?: string;
+}>;
 
 
       getCurrentBusinessDay: () => Promise<any>;
