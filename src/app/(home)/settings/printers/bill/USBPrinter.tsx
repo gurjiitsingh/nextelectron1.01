@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Printer,
@@ -8,8 +8,12 @@ import {
   TestTube,
   ArrowLeft,
 } from 'lucide-react';
-
+ 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
+
+import { useToast } from '@/hooks/useToast';
+
+ 
 
 export default function USBPrinter() {
   const { theme, background } = usePosTheme();
@@ -23,6 +27,20 @@ export default function USBPrinter() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+const { showToast, toastComponent } = useToast();
+  const [installedPrinters, setInstalledPrinters] =
+    useState<
+      {
+        name: string;
+        displayName: string;
+        status: number;
+        isDefault: boolean;
+      }[]
+    >([]);
+
+  const [printerName, setPrinterName] = useState('');
+  const [loadingPrinters, setLoadingPrinters] = useState(false);
+  const [printerListError, setPrinterListError] = useState('');
 
   // =====================================================
   // LOAD USB PRINTER SETTINGS
@@ -43,14 +61,15 @@ export default function USBPrinter() {
           );
         }
 
-      const config = result.data;
+        const config = result.data;
 
-if (config) {
-  setActive(config.active === true);
-  setName(config.name || 'BILL USB Printer');
-  setPaperSize(config.paperSize || '80mm');
-  setRenderMode(config.renderMode || 'TEXT');
-}
+        if (config) {
+          setActive(config.active === true);
+          setName(config.name || 'BILL USB Printer');
+          setPaperSize(config.paperSize || '80mm');
+          setRenderMode(config.renderMode || 'TEXT');
+          setPrinterName(config.printerName || '');
+        }
       } catch (error) {
         console.error(
           'Failed to load USB printer:',
@@ -83,6 +102,13 @@ if (config) {
     setSaving(true);
     setSaveMessage('');
 
+if (active && !printerName.trim()) {
+  setSaveMessage('Please select an installed Windows printer.');
+  return;
+}
+
+
+
     try {
 
 
@@ -96,7 +122,7 @@ if (config) {
         renderMode,
         ip: '',
         port: null,
-        printerName: 'TVS-E RP 3230',
+        printerName: printerName.trim(),
       };
 
 
@@ -171,53 +197,84 @@ if (config) {
         result
       );
 
-      alert(JSON.stringify(result));
+     showToast(JSON.stringify(result));
     } catch (error) {
       console.error(
         '[USB PRINTER] Test print error:',
         error
       );
 
-      alert('USB test print failed');
+     showToast('USB test print failed');
     }
   }
 
 
 
-  
-async function handleActiveChange(checked: boolean) {
-  try {
-    const config = {
-      role: 'BILL',
-      active: checked,
-      name: name.trim() || 'BILL USB Printer',
-      connectionType: 'USB',
-      paperSize,
-      renderMode,
-      ip: '',
-      port: 9100,
-      printerName: 'TVS-E RP 3230',
-    };
 
-    const result = await window.posApi.saveUsbPrinterSettings(config);
+  async function handleActiveChange(checked: boolean) {
+    const previousActive = active;
 
-    if (!result?.success) {
-      throw new Error(
-        result?.error || 'Failed to update USB printer selection'
-      );
+    if (checked && !printerName.trim()) {
+showToast('Please select an installed Windows printer.');
+      return;
     }
 
     setActive(checked);
-  } catch (error) {
-    console.error('[USB PRINTER] Failed to change active state:', error);
-    alert(
-      error instanceof Error
-        ? error.message
-        : 'Failed to update USB printer selection'
-    );
-  }
-}
+    setSaveMessage('');
 
+    try {
+      const config = {
+        role: 'BILL',
+        active: checked,
+        name: name.trim() || 'BILL USB Printer',
+        connectionType: 'USB',
+        paperSize,
+        renderMode,
+        ip: '',
+        port: 9100,
+        printerName: printerName.trim(),
+      };
+
+      const result = await window.posApi.saveUsbPrinterSettings(config);
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error || 'Failed to update USB printer selection'
+        );
+      }
+
+      setActive(checked);
+    } catch (error) {
+      console.error('[USB PRINTER] Failed to change active state:', error);
+    showToast(
+  error instanceof Error
+    ? error.message
+    : 'Failed to update USB printer selection'
+);
+    }
+  }
+
+
+const loadInstalledPrinters = useCallback(async () => {
+  setLoadingPrinters(true);
+  setPrinterListError('');
+
+  try {
+    const printers = await window.posApi.listInstalledUsbPrinters();
+    setInstalledPrinters(printers);
+  } catch (error) {
+    console.error('Failed to load Windows printers:', error);
+    setPrinterListError('Could not load installed Windows printers.');
+  } finally {
+    setLoadingPrinters(false);
+  }
+}, []);
+
+useEffect(() => {
+  if (!loading) {
+    loadInstalledPrinters();
+  }
+}, [loading, loadInstalledPrinters]);
 
   // =====================================================
   // LOADING STATE
@@ -236,6 +293,7 @@ async function handleActiveChange(checked: boolean) {
   // UI
   // =====================================================
   return (
+    <>
     <div>
       <div className=" p-1 mb-20">
 
@@ -283,27 +341,63 @@ async function handleActiveChange(checked: boolean) {
             <input
               type="checkbox"
               checked={active}
-            onChange={(e) => handleActiveChange(e.target.checked)}
+              onChange={(e) => handleActiveChange(e.target.checked)}
               className="h-5 w-5"
               style={{ accentColor: theme.primary }}
             />
           </div>
 
 
-          {/* PRINTER NAME */}
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Printer Name
+ 
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">
+              Select Printer
             </label>
 
-            <input
-              type="text"
-              value={name}
-              onChange={(e) =>
-                setName(e.target.value)
-              }
-              className={`w-full rounded-xl border ${background.border} px-3 py-3 outline-none`}
-            />
+            <div className="flex gap-2">
+              <select
+                value={printerName}
+                onChange={(e) => setPrinterName(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 bg-slate-400"
+                disabled={loadingPrinters}
+              >
+                <option value="">
+                  {loadingPrinters
+                    ? 'Loading printers...'
+                    : 'Select a Windows printer'}
+                </option>
+
+                {installedPrinters.map((printer) => (
+                  <option key={printer.name} value={printer.name}>
+                    {printer.name}
+                    {printer.isDefault ? ' (Default)' : ''}
+                  </option>
+                ))}
+
+                {printerName &&
+                  !installedPrinters.some((printer) => printer.name === printerName) && (
+                    <option value={printerName}>
+                      {printerName} (Not currently available)
+                    </option>
+                  )}
+              </select>
+
+              <button
+                type="button"
+                onClick={loadInstalledPrinters}
+                disabled={loadingPrinters}
+                className="rounded-lg border px-3 py-2"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {printerListError && (
+              <p className="text-sm text-red-600">
+                {printerListError}
+              </p>
+            )}
           </div>
 
           {/* PAPER SIZE */}
@@ -401,5 +495,7 @@ async function handleActiveChange(checked: boolean) {
         </div>
       </div>
     </div>
+{toastComponent}
+    </>
   );
 }

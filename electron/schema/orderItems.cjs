@@ -28,6 +28,9 @@ module.exports = function createOrderItemsTable(db) {
       taxRate REAL NOT NULL DEFAULT 0,
       taxType TEXT NOT NULL DEFAULT 'exclusive',
 
+      taxRate1 REAL,
+      taxType1 TEXT,
+
       taxAmountPerItem REAL NOT NULL DEFAULT 0,
       taxTotal REAL NOT NULL DEFAULT 0,
 

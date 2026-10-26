@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
-
+import { useToast } from '@/hooks/useToast';
 type Props = {
   role: 'BILL' | 'KITCHEN' | 'BAR';
   title: string;
@@ -33,6 +33,7 @@ export default function PrinterConfigPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 const [saveMessage, setSaveMessage] = useState('');
+const { showToast, toastComponent } = useToast();
   // =====================================================
   // LOAD ONCE
   // =====================================================
@@ -197,18 +198,14 @@ async function save() {
         result
       );
 
-      alert(
-        JSON.stringify(result)
-      );
+     showToast(JSON.stringify(result), 'error');
     } catch (error) {
       console.error(
         'TEST PRINT ERROR:',
         error
       );
 
-      alert(
-        'Test print failed'
-      );
+    showToast('Test print failed', 'error');
     }
   }
 
@@ -236,6 +233,7 @@ async function save() {
   // =====================================================
 
   return (
+    <>
     <div
       className={`
         h-[calc(100vh-64px)]
@@ -635,5 +633,7 @@ async function save() {
 
       </div>
     </div>
+       {toastComponent}
+  </>
   );
 }

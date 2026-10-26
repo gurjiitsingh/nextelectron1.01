@@ -1,6 +1,6 @@
 import "@/app/globals.css";
 
-import { Toaster } from "react-hot-toast";
+ 
 
 import "@/css/style.css";
 
@@ -121,37 +121,7 @@ export default function RootLayout({
             TOASTER
         ================================================= */}
 
-        <Toaster
-          position="top-center"
-          containerStyle={{
-            top: "30%",
-          }}
-          toastOptions={{
-            style: {
-              borderRadius: "10px",
-              padding: "12px 16px",
-            },
-
-            className:
-              "toast-default",
-
-            success: {
-              className:
-                "toast-success",
-            },
-
-            error: {
-              className:
-                "toast-error",
-            },
-
-            loading: {
-              className:
-                "toast-loading",
-            },
-          }}
-          reverseOrder={false}
-        />
+        
 
       </div>
 

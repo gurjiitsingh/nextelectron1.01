@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-
+import { useToast } from '@/hooks/useToast';
 import { groupBillItems } from '@/lib/billing/calculateBill';
 import { usePosSession } from '@/PosSessionStore/PosSessionContext';
 import { fromPaise } from '@/lib/pos/billing/money';
@@ -11,7 +11,7 @@ import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 import PaymentAllocation, { PaymentAllocationValue } from './PaymentAllocationValue';
 import { usePosAuth } from "@/store/PosAuthContext";
 import BillItem from './BillItems';
-import toast from 'react-hot-toast';
+ 
 
 type PaymentAllocationProps = {
   totalAmount: number;
@@ -63,7 +63,7 @@ export default function Bill({
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showPaymentSummary, setShowPaymentSummary] =
     useState(false);
-
+const { showToast, toastComponent } = useToast();
   const [paymentAllocation, setPaymentAllocation] =
     useState<PaymentAllocationValue>({
       cash: 0,
@@ -72,10 +72,10 @@ export default function Bill({
       credit: 0,
     });
 
-    const {
-  currentUser,
-  session,
-} = usePosAuth();
+  const {
+    currentUser,
+    session,
+  } = usePosAuth();
 
 
   const [showComplimentaryMenu, setShowComplimentaryMenu] =
@@ -179,7 +179,7 @@ export default function Bill({
       //     currentTableId
       //   );
 
-    
+
 
       // =============================================
       // COMBINE
@@ -242,204 +242,113 @@ export default function Bill({
   // GROUP BILL ITEMS
   // =====================================================
 
-const billItems = useMemo(() => {
-  // console.log(
-  //   '========== BILL ROWS BEFORE GROUPING =========='
-  // );
+  const billItems = useMemo(() => {
+    // console.log(
+    //   '========== BILL ROWS BEFORE GROUPING =========='
+    // );
 
-  // billRows.forEach((item) => {
-  //   console.log(
-  //     'BILL ROW:',
-  //     item.name,
-  //     '| productId:',
-  //     item.productId,
-  //     '| discountEligible:',
-  //     item.discountEligible,
-  //     '| type:',
-  //     typeof item.discountEligible
-  //   );
-  // });
+    // billRows.forEach((item) => {
+    //   console.log(
+    //     'BILL ROW:',
+    //     item.name,
+    //     '| productId:',
+    //     item.productId,
+    //     '| discountEligible:',
+    //     item.discountEligible,
+    //     '| type:',
+    //     typeof item.discountEligible
+    //   );
+    // });
 
-  const grouped = groupBillItems(billRows);
+    const grouped = groupBillItems(billRows);
 
-  // console.log(
-  //   '========== BILL ITEMS AFTER GROUPING =========='
-  // );
+    // console.log(
+    //   '========== BILL ITEMS AFTER GROUPING =========='
+    // );
 
-  // grouped.forEach((item) => {
-  //   console.log(
-  //     'GROUPED ITEM:',
-  //     item.name,
-  //     '| productId:',
-  //     item.productId,
-  //     '| discountEligible:',
-  //     item.discountEligible,
-  //     '| type:',
-  //     typeof item.discountEligible
-  //   );
-  // });
+    // grouped.forEach((item) => {
+    //   console.log(
+    //     'GROUPED ITEM:',
+    //     item.name,
+    //     '| productId:',
+    //     item.productId,
+    //     '| discountEligible:',
+    //     item.discountEligible,
+    //     '| type:',
+    //     typeof item.discountEligible
+    //   );
+    // });
 
-  return grouped;
-}, [billRows]);
+    return grouped;
+  }, [billRows]);
   // =====================================================
   // BILL CALCULATION
   // =====================================================
 
-  // const calculation = useMemo(() => {
-
-  //   const result =
-  //     calculateBillAndroid({
-
-  //       items: billItems.map((i) => ({
-  //         productId:
-  //           i.productId,
-
-  //         name:
-  //           i.name,
-
-  //         quantity:
-  //           Number(
-  //             i.quantity || 0
-  //           ),
-
-  //         basePrice:
-  //           Number(
-  //             i.basePrice || 0
-  //           ),
-
-  //         taxRate:
-  //           Number(
-  //             i.taxRate || 0
-  //           ),
-
-  //         taxType:
-  //           (i.taxType ||
-  //             'exclusive') as
-  //           | 'inclusive'
-  //           | 'exclusive',
-  //       })),
-
-  //       taxMode:
-  //         'PER_ITEM',
-
-  //       discountFlat:
-  //         discount,
-
-  //       discountPercent,
-
-  //       deliveryFee,
-
-  //       deliveryTaxPercent:
-  //         0,
-  //     });
-
-  //   return {
-
-  //     itemSubtotal:
-  //       fromPaise(
-  //         result.itemSubtotalPaise
-  //       ),
-
-  //     itemTax:
-  //       fromPaise(
-  //         result.totalTaxPaise
-  //       ),
-
-  //     discount:
-  //       fromPaise(
-  //         result.discountPaise
-  //       ),
-
-  //     deliveryFee:
-  //       fromPaise(
-  //         result.deliveryFeePaise
-  //       ),
-
-  //     deliveryTax:
-  //       fromPaise(
-  //         result.deliveryTaxPaise
-  //       ),
-
-  //     grandTotal:
-  //       fromPaise(
-  //         result.grandTotalPaise
-  //       ),
-
-  //     raw:
-  //       result,
-  //   };
-
-  // }, [
-  //   billItems,
-  //   discount,
-  //   discountPercent,
-  //   deliveryFee,
-  // ]);
 
 
-  
 
- 
-const calculation = useMemo(() => {
- 
-  const mappedItems = billItems.map((i) => ({
-    
-    productId: i.productId,
-    name: i.name,
-    quantity: Number(i.quantity || 0),
-    basePrice: Number(i.basePrice || 0),
-    taxRate: Number(i.taxRate || 0),
-    taxType: (i.taxType || 'exclusive') as
-      | 'inclusive'
-      | 'exclusive',
 
-    // SQLite INTEGER -> Boolean
-    // 0 = false, 1 = true
-    // Missing/null defaults to true
-    
-     discountEligible:
-  i.discountEligible == null
-    ? true
-    : Boolean(i.discountEligible),
-  }));
- 
-  // console.log('========== BILL DISCOUNT DEBUG ==========');
+  const calculation = useMemo(() => {
 
-  // mappedItems.forEach((item) => {
-  //   console.log(
-  //     'BILL CALCULATION ITEM:',
-  //     item.name,
-  //     '| productId:',
-  //     item.productId,
-  //     '| discountEligible:',
-  //     item.discountEligible,
-  //     '| type:',
-  //     typeof item.discountEligible
-  //   );
-  // });
+    const mappedItems = billItems.map((i) => ({
 
-  const result = calculateBillAndroid({
-    items: mappedItems,
-    taxMode: 'PER_ITEM',
-    discountFlat: discount,
-    discountPercent,
-    deliveryFee,
-    deliveryTaxPercent: 0,
-  });
+      productId: i.productId,
+      name: i.name,
+      quantity: Number(i.quantity || 0),
+      basePrice: Number(i.basePrice || 0),
+      taxRate: Number(i.taxRate || 0),
+      taxType: (i.taxType || 'exclusive') as
+        | 'inclusive'
+        | 'exclusive',
 
-//  console.log('=========================================');
+      // SQLite INTEGER -> Boolean
+      // 0 = false, 1 = true
+      // Missing/null defaults to true
 
-  return {
-    itemSubtotal: fromPaise(result.itemSubtotalPaise),
-    itemTax: fromPaise(result.totalTaxPaise),
-    discount: fromPaise(result.discountPaise),
-    deliveryFee: fromPaise(result.deliveryFeePaise),
-    deliveryTax: fromPaise(result.deliveryTaxPaise),
-    grandTotal: fromPaise(result.grandTotalPaise),
-    raw: result,
-  };
-}, [billItems, discount, discountPercent, deliveryFee]);
- 
+      discountEligible:
+        i.discountEligible == null
+          ? true
+          : Boolean(i.discountEligible),
+    }));
+
+    // console.log('========== BILL DISCOUNT DEBUG ==========');
+
+    // mappedItems.forEach((item) => {
+    //   console.log(
+    //     'BILL CALCULATION ITEM:',
+    //     item.name,
+    //     '| productId:',
+    //     item.productId,
+    //     '| discountEligible:',
+    //     item.discountEligible,
+    //     '| type:',
+    //     typeof item.discountEligible
+    //   );
+    // });
+
+    const result = calculateBillAndroid({
+      items: mappedItems,
+      taxMode: 'PER_ITEM',
+      discountFlat: discount,
+      discountPercent,
+      deliveryFee,
+      deliveryTaxPercent: 0,
+    });
+
+    //  console.log('=========================================');
+
+    return {
+      itemSubtotal: fromPaise(result.itemSubtotalPaise),
+      itemTax: fromPaise(result.totalTaxPaise),
+      discount: fromPaise(result.discountPaise),
+      deliveryFee: fromPaise(result.deliveryFeePaise),
+      deliveryTax: fromPaise(result.deliveryTaxPaise),
+      grandTotal: fromPaise(result.grandTotalPaise),
+      raw: result,
+    };
+  }, [billItems, discount, discountPercent, deliveryFee]);
+
 
 
 
@@ -471,100 +380,100 @@ const calculation = useMemo(() => {
   // UPDATE BILL ITEM QUANTITY
   // =====================================================
 
-async function updateBillItemQuantity(
-  item: any,
-  newQuantity: number,
-  reason: string,
-  cancelKitchen: boolean
-) {
-  if (!item?.id) {
-    throw new Error("Bill item id is missing");
-  }
-
-  try {
-    setProcessing(true);
-    setError(null);
-
-    const quantity = Math.max(
-      0,
-      Number(newQuantity)
-    );
-
-    const finalReason =
-      String(reason || "").trim();
-
-    if (!finalReason) {
-      throw new Error(
-        "Reason is required for decreasing quantity"
-      );
+  async function updateBillItemQuantity(
+    item: any,
+    newQuantity: number,
+    reason: string,
+    cancelKitchen: boolean
+  ) {
+    if (!item?.id) {
+      throw new Error("Bill item id is missing");
     }
 
+    try {
+      setProcessing(true);
+      setError(null);
+
+      const quantity = Math.max(
+        0,
+        Number(newQuantity)
+      );
+
+      const finalReason =
+        String(reason || "").trim();
+
+      if (!finalReason) {
+        throw new Error(
+          "Reason is required for decreasing quantity"
+        );
+      }
 
 
-    const result =
-      await window.posApi.updateBillItemQuantity({
-        id: item.id,
-        tableNo: currentTableId,
-        billItemGroupKey: item.billItemGroupKey,
-        quantity,
-        reason: finalReason,
-        cancelKitchen,
-      });
 
-    console.log(
-      "UPDATE BILL ITEM RESULT:",
-      result
-    );
+      const result =
+        await window.posApi.updateBillItemQuantity({
+          id: item.id,
+          tableNo: currentTableId,
+          billItemGroupKey: item.billItemGroupKey,
+          quantity,
+          reason: finalReason,
+          cancelKitchen,
+        });
 
-    if (!result?.success) {
-      throw new Error(
-        result?.error ||
+      console.log(
+        "UPDATE BILL ITEM RESULT:",
+        result
+      );
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error ||
           "Failed to update item quantity"
+        );
+      }
+
+      await loadBillItems();
+
+    } catch (e) {
+      console.error(
+        "FAILED TO UPDATE BILL ITEM:",
+        e
       );
+
+      const message =
+        e instanceof Error
+          ? e.message
+          : String(e);
+
+      setError(
+        message || "Failed to update item"
+      );
+
+    } finally {
+      setProcessing(false);
     }
-
-    await loadBillItems();
-
-  } catch (e) {
-    console.error(
-      "FAILED TO UPDATE BILL ITEM:",
-      e
-    );
-
-    const message =
-      e instanceof Error
-        ? e.message
-        : String(e);
-
-    setError(
-      message || "Failed to update item"
-    );
-
-  } finally {
-    setProcessing(false);
   }
-}
 
 
   // =====================================================
   // DECREASE
   // =====================================================
 
-async function decreaseBillItem(
-  item: any,
-  newQuantity: number,
-  reason: string,
-  cancelKitchen: boolean
-) {
-  
+  async function decreaseBillItem(
+    item: any,
+    newQuantity: number,
+    reason: string,
+    cancelKitchen: boolean
+  ) {
 
-  await updateBillItemQuantity(
-    item,
-    newQuantity,
-    reason,
-    cancelKitchen
-  );
-}
+
+    await updateBillItemQuantity(
+      item,
+      newQuantity,
+      reason,
+      cancelKitchen
+    );
+  }
 
 
 
@@ -573,203 +482,203 @@ async function decreaseBillItem(
   // INCREASE
   // =====================================================
 
- async function increaseBillItem(item: any) {
-  const currentQuantity =
-    Number(item?.quantity || 0);
+  async function increaseBillItem(item: any) {
+    const currentQuantity =
+      Number(item?.quantity || 0);
 
-  const newQuantity =
-    currentQuantity + 1;
+    const newQuantity =
+      currentQuantity + 1;
 
- 
 
-  try {
-    setProcessing(true);
-    setError(null);
 
-    const result =
-      await window.posApi.increaseBillItemQuantity({
-        id: item.id,
-        tableNo: currentTableId,
-        billItemGroupKey:
-          item.billItemGroupKey,
-        quantity: newQuantity,
-      });
+    try {
+      setProcessing(true);
+      setError(null);
 
-    console.log(
-      "INCREASE RESULT:",
-      result
-    );
+      const result =
+        await window.posApi.increaseBillItemQuantity({
+          id: item.id,
+          tableNo: currentTableId,
+          billItemGroupKey:
+            item.billItemGroupKey,
+          quantity: newQuantity,
+        });
 
-    if (!result?.success) {
-      throw new Error(
-        result?.error ||
-          "Failed to increase item quantity"
+      console.log(
+        "INCREASE RESULT:",
+        result
       );
-    }
 
-    await loadBillItems();
+      if (!result?.success) {
+        throw new Error(
+          result?.error ||
+          "Failed to increase item quantity"
+        );
+      }
 
-  } catch (e) {
-    console.error(
-      "FAILED TO INCREASE BILL ITEM:",
-      e
-    );
+      await loadBillItems();
 
-    const message =
-      e instanceof Error
-        ? e.message
-        : String(e);
+    } catch (e) {
+      console.error(
+        "FAILED TO INCREASE BILL ITEM:",
+        e
+      );
 
-    setError(
-      message ||
+      const message =
+        e instanceof Error
+          ? e.message
+          : String(e);
+
+      setError(
+        message ||
         "Failed to increase item"
-    );
+      );
 
-  } finally {
-    setProcessing(false);
-  }
-}
-
-
-// =====================================================
-// DELETE BILL ITEM
-// =====================================================
-
-// async function handleDeleteBillItem(
-//   item: any,
-//   reason: string,
-//   cancelKitchen: boolean
-// ) {
-//   try {
-//     setProcessing(true);
-//     setError(null);
-
-   
-
-//     const result = await window.posApi.deleteBillItemAll({
-//       tableNo: currentTableId,
-//       billItemGroupKey: item.billItemGroupKey,
-//       reason,
-//       cancelKitchen,
-//     });
-
-//     if (!result?.success) {
-//       throw new Error(
-//         result?.error || "Failed to delete bill item"
-//       );
-//     }
-
-//     await loadBillItems();
-
-//   } catch (e) {
-//     console.error("FAILED TO DELETE BILL ITEM:", e);
-
-//     const message =
-//       e instanceof Error ? e.message : String(e);
-
-//     setError(message || "Failed to delete item");
-//   } finally {
-//     setProcessing(false);
-//   }
-// }
-
- 
-// =====================================================
-// DELETE BILL ITEM
-// =====================================================
-
-async function handleDeleteBillItem(
-item: any,
-reason: string,
-cancelKitchen: boolean
-) {       
-if (processing) {
-return;
-}
-
-try {
-const itemCount = Number(
-await window.posApi.countOpenBillItems(
-currentTableId
-)
-);
-
- 
-console.log(
-  "OPEN BILL ITEM COUNT:",
-  itemCount,
-  "TABLE:",
-  currentTableId
-);
-
-
-if (itemCount < 1) {
-  console.log("NO OPEN BILL ITEMS FOUND");
-  return;
-}
-
-// Delete only when more than one item exists.
-setProcessing(true);
-setError(null);
-
-const result =
-  await window.posApi.deleteBillItemAll({
-    tableNo: currentTableId,
-    billItemGroupKey: item.billItemGroupKey,
-    reason,
-    cancelKitchen,
-  });
-
-if (!result?.success) {
-  throw new Error(
-    result?.error || "Failed to delete bill item"
-  );
-} 
-  if (itemCount <= 1) {
-  console.log(
-    "LAST ITEM DETECTED — CANCELLING BILL",
-    {
-      processing,
-      billItemsLength: billItems.length,
-      currentTableId,
+    } finally {
+      setProcessing(false);
     }
-  );
-await window.posApi.updateKotStatus(
-  item.id,
-  'DELETED'
-);
-  //await handleCancel("CANCEL", reason);
+  }
 
-  return;
 
-}
+  // =====================================================
+  // DELETE BILL ITEM
+  // =====================================================
 
- 
+  // async function handleDeleteBillItem(
+  //   item: any,
+  //   reason: string,
+  //   cancelKitchen: boolean
+  // ) {
+  //   try {
+  //     setProcessing(true);
+  //     setError(null);
 
-await loadBillItems();
 
-toast.success("Item deleted successfully.");
- 
 
-} catch (e) {
-console.error(
-"FAILED TO DELETE BILL ITEM:",
-e
-);
+  //     const result = await window.posApi.deleteBillItemAll({
+  //       tableNo: currentTableId,
+  //       billItemGroupKey: item.billItemGroupKey,
+  //       reason,
+  //       cancelKitchen,
+  //     });
 
- 
-const message =
-  e instanceof Error ? e.message : String(e);
+  //     if (!result?.success) {
+  //       throw new Error(
+  //         result?.error || "Failed to delete bill item"
+  //       );
+  //     }
 
-setError(message || "Failed to delete item");
- 
+  //     await loadBillItems();
 
-} finally {
-setProcessing(false);
-}
-}
+  //   } catch (e) {
+  //     console.error("FAILED TO DELETE BILL ITEM:", e);
 
- 
+  //     const message =
+  //       e instanceof Error ? e.message : String(e);
+
+  //     setError(message || "Failed to delete item");
+  //   } finally {
+  //     setProcessing(false);
+  //   }
+  // }
+
+
+  // =====================================================
+  // DELETE BILL ITEM
+  // =====================================================
+
+  async function handleDeleteBillItem(
+    item: any,
+    reason: string,
+    cancelKitchen: boolean
+  ) {
+    if (processing) {
+      return;
+    }
+
+    try {
+      const itemCount = Number(
+        await window.posApi.countOpenBillItems(
+          currentTableId
+        )
+      );
+
+
+      console.log(
+        "OPEN BILL ITEM COUNT:",
+        itemCount,
+        "TABLE:",
+        currentTableId
+      );
+
+
+      if (itemCount < 1) {
+        console.log("NO OPEN BILL ITEMS FOUND");
+        return;
+      }
+
+      // Delete only when more than one item exists.
+      setProcessing(true);
+      setError(null);
+
+      const result =
+        await window.posApi.deleteBillItemAll({
+          tableNo: currentTableId,
+          billItemGroupKey: item.billItemGroupKey,
+          reason,
+          cancelKitchen,
+        });
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error || "Failed to delete bill item"
+        );
+      }
+      if (itemCount <= 1) {
+        console.log(
+          "LAST ITEM DETECTED — CANCELLING BILL",
+          {
+            processing,
+            billItemsLength: billItems.length,
+            currentTableId,
+          }
+        );
+        await window.posApi.updateKotStatus(
+          item.id,
+          'DELETED'
+        );
+        //await handleCancel("CANCEL", reason);
+
+        return;
+
+      }
+
+
+
+      await loadBillItems();
+
+      showToast("Item deleted successfully.");
+
+
+    } catch (e) {
+      console.error(
+        "FAILED TO DELETE BILL ITEM:",
+        e
+      );
+
+
+      const message =
+        e instanceof Error ? e.message : String(e);
+
+      setError(message || "Failed to delete item");
+
+
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+
 
   // =====================================================
   // FINALIZE BILL
@@ -825,7 +734,7 @@ setProcessing(false);
         ) || 0;
 
 
-     
+
 
 
       // =================================================
@@ -861,11 +770,11 @@ setProcessing(false);
             calculation.deliveryTax,
 
 
-              // =============================================
+          // =============================================
           // USER SNAPSHOT
           // =============================================
 
-        
+
 
           finalizedById:
             currentUser?.userId || '',
@@ -954,7 +863,7 @@ setProcessing(false);
       //
       // ================================================
 
-      const kotResult = 
+      const kotResult =
         await window.posApi.markTableHistoryPaid({
 
           tableNo:
@@ -969,9 +878,9 @@ setProcessing(false);
 
         });
 
- 
-        
- 
+
+
+
 
 
       if (!kotResult.success) {
@@ -1070,30 +979,30 @@ setProcessing(false);
       | 'CANCEL',
     reason = ""
   ) {
-  console.log("HANDLE CANCEL CALLED", {
-    selectedPaymentMode,
-    reason,
-    processing,
-    billItemsLength: billItems.length,
-    currentTableId,
-  });
+    console.log("HANDLE CANCEL CALLED", {
+      selectedPaymentMode,
+      reason,
+      processing,
+      billItemsLength: billItems.length,
+      currentTableId,
+    });
 
-  if (processing) {
-    console.log("CANCEL BLOCKED: processing is true");
-    return;
-  }
+    if (processing) {
+      console.log("CANCEL BLOCKED: processing is true");
+      return;
+    }
 
-  if (billItems.length === 0) {
-    console.log("CANCEL BLOCKED: billItems is empty");
-    setError("No items in bill");
-    return;
-  }
+    if (billItems.length === 0) {
+      console.log("CANCEL BLOCKED: billItems is empty");
+      setError("No items in bill");
+      return;
+    }
 
-  if (!currentTableId) {
-    console.log("CANCEL BLOCKED: no table selected");
-    setError("No table selected");
-    return;
-  }
+    if (!currentTableId) {
+      console.log("CANCEL BLOCKED: no table selected");
+      setError("No table selected");
+      return;
+    }
 
     if (processing) {
       return;
@@ -1577,7 +1486,7 @@ setProcessing(false);
         );
       }
 
-  
+
 
       // =================================================
       // MARK KOT HISTORY PAID
@@ -1667,7 +1576,7 @@ setProcessing(false);
 
     } catch (e) {
 
- 
+
 
       const message =
         e instanceof Error
@@ -1954,9 +1863,7 @@ setProcessing(false);
 
     if (billItems.length === 0) {
 
-      alert(
-        'No items to preview'
-      );
+     showToast('No items to preview');
 
       return;
     }
@@ -2098,7 +2005,7 @@ setProcessing(false);
             '',
         });
 
-   
+
 
       if (!res?.success) {
 
@@ -2127,13 +2034,11 @@ setProcessing(false);
         e
       );
 
-      alert(
-        'Preview failed: ' +
-        (
-          e?.message ||
-          'Unknown error'
-        )
-      );
+   showToast(
+  'Preview failed: ' +
+    (e?.message || 'Unknown error'),
+  'error'
+);
     }
   }
 
@@ -2145,27 +2050,25 @@ setProcessing(false);
 
     if (billItems.length === 0) {
 
-      alert(
-        'No items to print'
-      );
+showToast('No items to preview');
 
       return;
     }
 
 
     const numberResult =
-  await window.posApi.getOrCreateOrderNo(currentTableId);
+      await window.posApi.getOrCreateOrderNo(currentTableId);
 
-if (!numberResult?.success || !numberResult.srno) {
-  throw new Error(
-    'Invoice number not reserved for this table. Please check the order-number flow.'
-  );
-}
+    if (!numberResult?.success || !numberResult.srno) {
+      throw new Error(
+        'Invoice number not reserved for this table. Please check the order-number flow.'
+      );
+    }
 
 
-const actualBillNo = numberResult.srno;
+    const actualBillNo = numberResult.srno;
 
-console.log("in no--------------- ", actualBillNo)
+    console.log("in no--------------- ", actualBillNo)
     console.log(
       'PRINT BILL CLICKED'
     );
@@ -2174,7 +2077,7 @@ console.log("in no--------------- ", actualBillNo)
 
       const receiptData = {
 
-        billNo:actualBillNo,
+        billNo: actualBillNo,
 
         orderNo:
           '',
@@ -2296,13 +2199,11 @@ console.log("in no--------------- ", actualBillNo)
         e
       );
 
-      alert(
-        'Print failed: ' +
-        (
-          e?.message ||
-          'Unknown error'
-        )
-      );
+showToast(
+  'Print failed: ' +
+    (e?.message || 'Unknown error'),
+  'error'
+);
     }
   }
 
@@ -2353,15 +2254,18 @@ console.log("in no--------------- ", actualBillNo)
 
 
   return (
+    <>
     <div
-      className={`
-        flex
-        h-full
-        flex-col
-        ${background.className}
-        ${background.text}
-      `}
-    >
+  className={`
+    flex
+    h-full
+    min-h-0
+    flex-col
+    overflow-hidden
+    ${background.className}
+    ${background.text}
+  `}
+>
 
       {/* =================================================
           HEADER
@@ -2396,51 +2300,59 @@ console.log("in no--------------- ", actualBillNo)
           ITEM LIST
       ================================================= */}
 
+{/* =================================================
+    ITEM LIST — USE ALL REMAINING SPACE
+================================================= */}
+
 <div
-  className={`min-h-100
+  className={`
+    flex-1
+    min-h-0
+    pb-6
+    overflow-y-auto
     divide-y
     ${background.divide}
   `}
 >
-{billItems.map((item) => (
-  <BillItem
-    key={item.id}
-    item={item}
-    processing={processing}
-    onDecrease={decreaseBillItem}
-    onIncrease={increaseBillItem}
-    onDelete={handleDeleteBillItem}
-    onMigrateSuccess={async () => {
-      await loadBillItems();
-    }}
-  />
-))}
+  {billItems.map((item) => (
+    <BillItem
+      key={item.id}
+      item={item}
+      processing={processing}
+      onDecrease={decreaseBillItem}
+      onIncrease={increaseBillItem}
+      onDelete={handleDeleteBillItem}
+      onMigrateSuccess={async () => {
+        await loadBillItems();
+      }}
+    />
+  ))}
 </div>
 
 
 
+    <div className="flex shrink-0 flex-col">
+        {/* =================================================
+          BILL BUTTONS
+        ================================================= */}
 
-      {/* =================================================
-    BILL BUTTONS
-================================================= */}
-
-      <div
-        className="
+        <div
+          className="
     relative
     shrink-0
     px-2
     bg-zinc-800
     py-1
   "
-      >
+        >
 
-        {/* =================================================
+          {/* =================================================
       PAYMENT SUMMARY STRIP
   ================================================= */}
 
-        {showPaymentSummary && (
-          <div
-            className="
+          {showPaymentSummary && (
+            <div
+              className="
         absolute
         bottom-[100%]
         left-2
@@ -2454,11 +2366,11 @@ console.log("in no--------------- ", actualBillNo)
         bg-zinc-900
         shadow-xl
       "
-          >
+            >
 
-            {/* HEADER */}
+              {/* HEADER */}
 
-            <div
+              {/* <div
               className="
           flex
           items-center
@@ -2492,116 +2404,116 @@ console.log("in no--------------- ", actualBillNo)
               >
                 ₹{Number(grandTotal || 0).toFixed(2)}
               </div>
-            </div>
+            </div> */}
 
 
-            {/* PAYMENT BREAKDOWN */}
+              {/* PAYMENT BREAKDOWN */}
 
-            <div
-              className="
-          max-h-32
+              <div
+                className="
+          max-h-95
           overflow-y-auto
           px-3
           py-2
         "
-            >
+              >
 
-              {/* CASH */}
+                {/* CASH */}
 
-              {cashPaid > 0 && (
-                <div
-                  className="
+                {cashPaid > 0 && (
+                  <div
+                    className="
               flex
               items-center
               justify-between
               py-1
               text-xs
             "
-                >
-                  <span className="text-zinc-400">
-                    CASH
-                  </span>
+                  >
+                    <span className="text-zinc-400">
+                      CASH
+                    </span>
 
-                  <span className="font-semibold text-white">
-                    ₹{Number(cashPaid).toFixed(2)}
-                  </span>
-                </div>
-              )}
+                    <span className="font-semibold text-white">
+                      ₹{Number(cashPaid).toFixed(2)}
+                    </span>
+                  </div>
+                )}
 
 
-              {/* CARD */}
+                {/* CARD */}
 
-              {cardPaid > 0 && (
-                <div
-                  className="
+                {cardPaid > 0 && (
+                  <div
+                    className="
               flex
               items-center
               justify-between
               py-1
               text-xs
             "
-                >
-                  <span className="text-zinc-400">
-                    CARD
-                  </span>
+                  >
+                    <span className="text-zinc-400">
+                      CARD
+                    </span>
 
-                  <span className="font-semibold text-white">
-                    ₹{Number(cardPaid).toFixed(2)}
-                  </span>
-                </div>
-              )}
+                    <span className="font-semibold text-white">
+                      ₹{Number(cardPaid).toFixed(2)}
+                    </span>
+                  </div>
+                )}
 
 
-              {/* UPI */}
+                {/* UPI */}
 
-              {upiPaid > 0 && (
-                <div
-                  className="
+                {upiPaid > 0 && (
+                  <div
+                    className="
               flex
               items-center
               justify-between
               py-1
               text-xs
             "
-                >
-                  <span className="text-zinc-400">
-                    UPI
-                  </span>
+                  >
+                    <span className="text-zinc-400">
+                      UPI
+                    </span>
 
-                  <span className="font-semibold text-white">
-                    ₹{Number(upiPaid).toFixed(2)}
-                  </span>
-                </div>
-              )}
-
-
-              {/* CREDIT */}
-
-              {/* {showPaymentAllocation && ( */}
-              <PaymentAllocation
-                totalAmount={calculation.grandTotal}
-                value={paymentAllocation}
-                onChange={setPaymentAllocation}
-                onPay={handlePaymentAllocation}
-                onCancel={() => {
-                  setShowPaymentSummary(false);
-
-                  setPaymentAllocation({
-                    cash: 0,
-                    card: 0,
-                    upi: 0,
-                    credit: 0,
-                  });
-                }}
-              />
-              {/* )} */}
-
-            </div>
+                    <span className="font-semibold text-white">
+                      ₹{Number(upiPaid).toFixed(2)}
+                    </span>
+                  </div>
+                )}
 
 
-            {/* TOTALS */}
+                {/* CREDIT */}
 
-            <div
+                {/* {showPaymentAllocation && ( */}
+                <PaymentAllocation
+                  totalAmount={calculation.grandTotal}
+                  value={paymentAllocation}
+                  onChange={setPaymentAllocation}
+                  onPay={handlePaymentAllocation}
+                  onCancel={() => {
+                    setShowPaymentSummary(false);
+
+                    setPaymentAllocation({
+                      cash: 0,
+                      card: 0,
+                      upi: 0,
+                      credit: 0,
+                    });
+                  }}
+                />
+                {/* )} */}
+
+              </div>
+
+
+              {/* TOTALS */}
+
+              {/* <div
               className="
           border-t
           border-zinc-700
@@ -2651,25 +2563,25 @@ console.log("in no--------------- ", actualBillNo)
                 </span>
               </div>
 
+            </div> */}
+
             </div>
-
-          </div>
-        )}
+          )}
 
 
-        {/* =================================================
+          {/* =================================================
       PAYMENT STATUS BADGE
   ================================================= */}
 
-        {(isPartialPayment || isCreditSale) && (
-          <button
-            type="button"
-            onClick={() =>
-              setShowPaymentSummary(
-                (prev) => !prev
-              )
-            }
-            className="
+          {(isPartialPayment || isCreditSale) && (
+            <button
+              type="button"
+              onClick={() =>
+                setShowPaymentSummary(
+                  (prev) => !prev
+                )
+              }
+              className="
         absolute
         bottom-[100%]
         left-1/2
@@ -2695,49 +2607,49 @@ console.log("in no--------------- ", actualBillNo)
         transition-colors
         hover:bg-zinc-700
       "
-          >
+            >
 
-            {/* UP ARROW */}
+              {/* UP ARROW */}
 
-            <span
-              className={`
+              <span
+                className={`
           text-[11px]
           transition-transform
           duration-200
           ${showPaymentSummary
-                  ? 'rotate-180'
-                  : ''
-                }
+                    ? 'rotate-180'
+                    : ''
+                  }
         `}
-            >
-              ↑
-            </span>
+              >
+                ↑
+              </span>
 
 
-            {/* TITLE */}
+              {/* TITLE */}
 
-            <span>
-              {isCreditSale
-                ? 'CREDIT + Mix Pay'
-                : 'PARTIAL'}
-            </span>
+              <span>
+                {isCreditSale
+                  ? 'CREDIT + Mix Pay'
+                  : 'PARTIAL'}
+              </span>
 
-          </button>
-        )}
+            </button>
+          )}
 
 
-        {/* =================================================
+          {/* =================================================
       PAYMENT BUTTONS
   ================================================= */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
 
-            {/* PRINT */}
+              {/* PRINT */}
 
-            <button
-              type="button"
-              onClick={printBill}
-              className={`
+              <button
+                type="button"
+                onClick={printBill}
+                className={`
         h-8
         w-fit
         rounded
@@ -2746,17 +2658,341 @@ console.log("in no--------------- ", actualBillNo)
         font-semibold
         ${POS_THEME.BillButton}
       `}
-            >
-              PRINT
-            </button>
+              >
+                PRINT
+              </button>
 
+
+              {/* CASH */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleCheckout('CASH')
+                }
+                disabled={
+                  processing ||
+                  billItems.length === 0
+                }
+                className="
+        h-8
+        w-fit
+        rounded-md
+        bg-green-600
+        px-3
+        text-xs
+        font-semibold
+        text-white
+        transition-colors
+        hover:bg-green-700
+        disabled:cursor-not-allowed
+        disabled:opacity-50
+      "
+              >
+                {processing
+                  ? 'PROCESSING...'
+                  : 'CASH'}
+              </button>
+
+
+              {/* CARD */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleCheckout('CARD')
+                }
+                disabled={
+                  processing ||
+                  billItems.length === 0
+                }
+                className="
+        h-8
+        w-fit
+        rounded-md
+        bg-blue-600
+        px-3
+        text-xs
+        font-semibold
+        text-white
+        transition-colors
+        hover:bg-blue-700
+        disabled:cursor-not-allowed
+        disabled:opacity-50
+      "
+              >
+                CARD
+              </button>
+
+
+              {/* UPI */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleCheckout('UPI')
+                }
+                disabled={
+                  processing ||
+                  billItems.length === 0
+                }
+                className="
+        h-8
+        w-fit
+        rounded-md
+        bg-purple-600
+        px-3
+        text-xs
+        font-semibold
+        text-white
+        transition-colors
+        hover:bg-purple-700
+        disabled:cursor-not-allowed
+        disabled:opacity-50
+      "
+              >
+                UPI
+              </button>
+
+
+              {/* MORE */}
+
+              {/* =================================================
+    MORE STATUS STRIP
+================================================= */}
+
+
+              {/* MORE BUTTON */}
+              <button
+                type="button"
+                onClick={() => setShowMoreMenu((prev) => !prev)}
+                className="
+    absolute
+    bottom-[100%]
+    right-2
+    z-50
+    flex
+    items-center
+    gap-1
+    rounded-t-md
+    border
+    border-b-0
+    border-zinc-600
+    bg-zinc-900
+    px-3
+    py-1
+    text-[10px]
+    font-bold
+    uppercase
+    tracking-wide
+    text-white
+    shadow-md
+    transition-colors
+    hover:bg-zinc-800
+  "
+              >
+                <span
+                  className={`
+      inline-block
+      text-[11px]
+      transition-transform
+      duration-200
+      ${showMoreMenu ? 'rotate-180' : ''}
+    `}
+                >
+                  ↑
+                </span>
+
+                <span>Complimentary</span>
+              </button>
+
+              {/* MORE MENU */}
+              {showMoreMenu && (
+                <div
+                  className="
+      absolute
+      bottom-[100%]
+      right-2
+      z-40
+      mb-1
+      w-48
+      overflow-hidden
+      rounded-t-md
+      border
+      border-zinc-600
+      bg-zinc-900
+      px-1
+      pt-1
+      pb-7
+      shadow-xl
+    "
+                >
+                  {/* COMPLIMENTARY */}
+                  <div className='flex  items-center
+      justify-between border-b'>
+                    <div className='text-md'> Complimentary</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowComplimentaryMenu(true);
+                      }}
+                      className="
+        flex
+        w-full
+        items-center
+        rounded-sm
+        px-3
+        py-1.5
+        text-left
+        text-xs
+        font-medium
+        text-white
+        transition-colors
+        hover:bg-zinc-800
+      "
+                    >
+                      X
+                    </button></div>
+
+                  {/* DRIVER */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleComplimentaryCheckout('DRIVER');
+                      setShowMoreMenu(false);
+                    }}
+                    className="
+        flex
+        w-full
+        items-center
+        rounded-sm
+        px-3
+        py-1.5
+        text-left
+        text-xs
+        font-medium
+        text-white
+        transition-colors
+        hover:bg-zinc-800
+      "
+                  >
+                    Driver
+                  </button>
+
+                  {/* FRIEND */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleComplimentaryCheckout('FRIEND');
+                      setShowMoreMenu(false);
+                    }}
+                    className="
+        flex
+        w-full
+        items-center
+        rounded-sm
+        px-3
+        py-1.5
+        text-left
+        text-xs
+        font-medium
+        text-white
+        transition-colors
+        hover:bg-zinc-800
+      "
+                  >
+                    Friend
+                  </button>
+
+                  {/* FAMILY */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleComplimentaryCheckout('FAMILY');
+                      setShowMoreMenu(false);
+                    }}
+                    className="
+        flex
+        w-full
+        items-center
+        rounded-sm
+        px-3
+        py-1.5
+        text-left
+        text-xs
+        font-medium
+        text-white
+        transition-colors
+        hover:bg-zinc-800
+      "
+                  >
+                    Family
+                  </button>
+
+                  {/* STAFF */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleComplimentaryCheckout('STAFF');
+                      setShowMoreMenu(false);
+                    }}
+                    className="
+        flex
+        w-full
+        items-center
+        rounded-sm
+        px-3
+        py-1.5
+        text-left
+        text-xs
+        font-medium
+        text-white
+        transition-colors
+        hover:bg-zinc-800
+      "
+                  >
+                    Staff
+                  </button>
+
+                  {/* OWNER */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleComplimentaryCheckout('OWNER');
+                      setShowMoreMenu(false);
+                    }}
+                    className="
+        flex
+        w-full
+        items-center
+        rounded-sm
+        px-3
+        py-1.5
+        text-left
+        text-xs
+        font-medium
+        text-white
+        transition-colors
+        hover:bg-zinc-800
+      "
+                  >
+                    Owner
+                  </button>
+                </div>
+              )}
+
+
+            </div>
 
             {/* CASH */}
 
             <button
               type="button"
-              onClick={() =>
-                handleCheckout('CASH')
+              onClick={() => {
+                setCancelBillReason('');
+                setShowCancelBillConfirm(true);
+              }
               }
               disabled={
                 processing ||
@@ -2779,458 +3015,105 @@ console.log("in no--------------- ", actualBillNo)
             >
               {processing
                 ? 'PROCESSING...'
-                : 'CASH'}
+                : 'CANCEL'}
             </button>
-
-
-            {/* CARD */}
-
-            <button
-              type="button"
-              onClick={() =>
-                handleCheckout('CARD')
-              }
-              disabled={
-                processing ||
-                billItems.length === 0
-              }
-              className="
-        h-8
-        w-fit
-        rounded-md
-        bg-blue-600
-        px-3
-        text-xs
-        font-semibold
-        text-white
-        transition-colors
-        hover:bg-blue-700
-        disabled:cursor-not-allowed
-        disabled:opacity-50
-      "
-            >
-              CARD
-            </button>
-
-
-            {/* UPI */}
-
-            <button
-              type="button"
-              onClick={() =>
-                handleCheckout('UPI')
-              }
-              disabled={
-                processing ||
-                billItems.length === 0
-              }
-              className="
-        h-8
-        w-fit
-        rounded-md
-        bg-purple-600
-        px-3
-        text-xs
-        font-semibold
-        text-white
-        transition-colors
-        hover:bg-purple-700
-        disabled:cursor-not-allowed
-        disabled:opacity-50
-      "
-            >
-              UPI
-            </button>
-
-
-            {/* MORE */}
-
-            {/* =================================================
-    MORE STATUS STRIP
-================================================= */}
-
-            <button
-              type="button"
-              onClick={() =>
-                setShowMoreMenu(
-                  (prev) => !prev
-                )
-              }
-              className="
-    absolute
-    bottom-[100%]
-    right-2
-    z-50
-    flex
-    items-center
-    gap-1
-    rounded-t-md
-    border
-    border-b-0
-    border-zinc-600
-    bg-zinc-800
-    px-3
-    py-1
-    text-[10px]
-    font-bold
-    uppercase
-    tracking-wide
-    text-white
-    shadow-md
-    transition-colors
-    hover:bg-zinc-700
-  "
-            >
-              {/* ARROW */}
-
-              <span
-                className="
-      text-[11px]
-      transition-transform
-      duration-200
-    "
-              >
-                ↑
-              </span>
-
-              {/* TITLE */}
-
-              <span>
-                MORE
-              </span>
-
-            </button>
-
-            {showMoreMenu && (
-              <div
-                className="
-      absolute
-      bottom-[100%]
-      right-2
-      mb-2
-      z-50
-      w-48
-      rounded-lg
-      border
-      border-zinc-600
-      bg-zinc-800
-      p-1
-      shadow-xl
-    "
-              >
-
-                {/* =========================================
-        COMPLIMENTARY
-    ========================================= */}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    setShowComplimentaryMenu(true);
-                  }}
-                  className="
-        flex
-        w-full
-        items-center
-        rounded-md
-        px-3
-        py-2
-        text-left
-        text-xs
-        font-medium
-        text-white
-        hover:bg-zinc-700
-        transition-colors
-      "
-                >
-                  Complimentary
-                </button>
-
-
-                {/* =========================================
-        DRIVER
-    ========================================= */}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleComplimentaryCheckout('DRIVER')
-
-                    setShowMoreMenu(false);
-                  }}
-                  className="
-        flex
-        w-full
-        items-center
-        rounded-md
-        px-3
-        py-2
-        text-left
-        text-xs
-        font-medium
-        text-white
-        hover:bg-zinc-700
-        transition-colors
-      "
-                >
-                  Driver
-                </button>
-
-
-                {/* =========================================
-        FRIEND
-    ========================================= */}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleComplimentaryCheckout('FRIEND')
-
-                    setShowMoreMenu(false);
-                  }}
-                  className="
-        flex
-        w-full
-        items-center
-        rounded-md
-        px-3
-        py-2
-        text-left
-        text-xs
-        font-medium
-        text-white
-        hover:bg-zinc-700
-        transition-colors
-      "
-                >
-                  Friend
-                </button>
-
-
-                {/* =========================================
-        FAMILY
-    ========================================= */}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleComplimentaryCheckout('FAMILY')
-
-                    setShowMoreMenu(false);
-                  }}
-                  className="
-        flex
-        w-full
-        items-center
-        rounded-md
-        px-3
-        py-2
-        text-left
-        text-xs
-        font-medium
-        text-white
-        hover:bg-zinc-700
-        transition-colors
-      "
-                >
-                  Family
-                </button>
-
-
-                {/* =========================================
-        STAFF
-    ========================================= */}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleComplimentaryCheckout('STAFF')
-
-                    setShowMoreMenu(false);
-                  }}
-                  className="
-        flex
-        w-full
-        items-center
-        rounded-md
-        px-3
-        py-2
-        text-left
-        text-xs
-        font-medium
-        text-white
-        hover:bg-zinc-700
-        transition-colors
-      "
-                >
-                  Staff
-                </button>
-
-
-                {/* =========================================
-        OWNER
-    ========================================= */}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleComplimentaryCheckout('OWNER')
-
-                    setShowMoreMenu(false);
-                  }}
-                  className="
-        flex
-        w-full
-        items-center
-        rounded-md
-        px-3
-        py-2
-        text-left
-        text-xs
-        font-medium
-        text-white
-        hover:bg-zinc-700
-        transition-colors
-      "
-                >
-                  Owner
-                </button>
-
-              </div>
-            )}
-
           </div>
+          {/* KEEP YOUR EXISTING MORE MENU HERE */}
 
-          {/* CASH */}
-
-          <button
-            type="button"
-            onClick={() => {
-              setCancelBillReason('');
-              setShowCancelBillConfirm(true);
-            }
-            }
-            disabled={
-              processing ||
-              billItems.length === 0
-            }
-            className="
-        h-8
-        w-fit
-        rounded-md
-        bg-green-600
-        px-3
-        text-xs
-        font-semibold
-        text-white
-        transition-colors
-        hover:bg-green-700
-        disabled:cursor-not-allowed
-        disabled:opacity-50
-      "
-          >
-            {processing
-              ? 'PROCESSING...'
-              : 'CANCEL'}
-          </button>
         </div>
-        {/* KEEP YOUR EXISTING MORE MENU HERE */}
-
-      </div>
 
 
-      {/* =================================================
+        {/* =================================================
           CALCULATIONS   border-t
           ${background.border}
       ================================================= */}
 
-      <div
-        className={`
+        <div
+          className={`
     space-y-1
     px-3
     py-2
     text-[12px]
   `}
-      >
-        {/* =====================================================
+        >
+          {/* =====================================================
       SUBTOTAL
   ===================================================== */}
 
-        <div
-          className="
+          <div
+            className="
       flex
       items-center
       justify-between
       py-0.5
     "
-        >
-          <span className="opacity-55">
-            Subtotal
-          </span>
+          >
+            <span className="opacity-55">
+              Subtotal
+            </span>
 
-          <span className="font-medium opacity-75">
-            ₹{calculation.itemSubtotal.toFixed(2)}
-          </span>
-        </div>
+            <span className="font-medium opacity-75">
+              ₹{calculation.itemSubtotal.toFixed(2)}
+            </span>
+          </div>
 
 
-        {/* =====================================================
+          {/* =====================================================
       TAX
   ===================================================== */}
 
-        <div
-          className="
+          <div
+            className="
       flex
       items-center
       justify-between
       py-0.5
     "
-        >
-          <span className="opacity-55">
-            Tax
-          </span>
+          >
+            <span className="opacity-55">
+              Tax
+            </span>
 
-          <span className="font-medium opacity-70">
-            ₹{calculation.itemTax.toFixed(2)}
-          </span>
-        </div>
+            <span className="font-medium opacity-70">
+              ₹{calculation.itemTax.toFixed(2)}
+            </span>
+          </div>
 
 
-        {/* =====================================================
+          {/* =====================================================
       DISCOUNT
   ===================================================== */}
 
-        <div
-          className="
+          <div
+            className="
       flex
       items-center
       justify-between
       gap-2
       py-1
     "
-        >
+          >
 
-          {/* LEFT */}
+            {/* LEFT */}
 
-          <div
-            className="
+            <div
+              className="
         flex
         min-w-0
         items-center
         gap-2
       "
-          >
+            >
 
-            <span className="shrink-0 opacity-55">
-              Discount
-            </span>
+              <span className="shrink-0 opacity-55">
+                Discount
+              </span>
 
 
-            {/* FLAT */}
+              {/* FLAT */}
 
-            <div
-              className={`
+              <div
+                className={`
           flex
           h-7
           w-[68px]
@@ -3240,40 +3123,40 @@ console.log("in no--------------- ", actualBillNo)
           ${background.border}
           bg-black/[0.025]
         `}
-            >
+              >
 
-              <span className="pl-2 text-[10px] opacity-35">
-                ₹
-              </span>
+                <span className="pl-2 text-[10px] opacity-35">
+                  ₹
+                </span>
 
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={discount === 0 ? '' : discount}
-                onChange={(e) => {
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discount === 0 ? '' : discount}
+                  onChange={(e) => {
 
-                  const value =
-                    e.target.value === ''
-                      ? 0
-                      : Number(e.target.value);
-
-                  setBillDraft({
-
-                    ...billDraft,
-
-                    discount: value,
-
-                    discountPercent:
-                      value > 0
+                    const value =
+                      e.target.value === ''
                         ? 0
-                        : billDraft.discountPercent,
+                        : Number(e.target.value);
 
-                  });
+                    setBillDraft({
 
-                }}
-                placeholder="0"
-                className={`
+                      ...billDraft,
+
+                      discount: value,
+
+                      discountPercent:
+                        value > 0
+                          ? 0
+                          : billDraft.discountPercent,
+
+                    });
+
+                  }}
+                  placeholder="0"
+                  className={`
     h-full
     w-full
     bg-transparent
@@ -3287,22 +3170,22 @@ console.log("in no--------------- ", actualBillNo)
     [&::-webkit-inner-spin-button]:appearance-none
     [&::-webkit-outer-spin-button]:appearance-none
   `}
-              />
+                />
 
-            </div>
-
-
-            {/* OR */}
-
-            <span className="text-[9px] opacity-25">
-              OR
-            </span>
+              </div>
 
 
-            {/* PERCENT */}
+              {/* OR */}
 
-            <div
-              className={`
+              <span className="text-[9px] opacity-25">
+                OR
+              </span>
+
+
+              {/* PERCENT */}
+
+              <div
+                className={`
           flex
           h-7
           w-[62px]
@@ -3312,41 +3195,41 @@ console.log("in no--------------- ", actualBillNo)
           ${background.border}
           bg-black/[0.025]
         `}
-            >
+              >
 
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={
-                  discountPercent === 0
-                    ? ''
-                    : discountPercent
-                }
-                onChange={(e) => {
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={
+                    discountPercent === 0
+                      ? ''
+                      : discountPercent
+                  }
+                  onChange={(e) => {
 
-                  const value =
-                    e.target.value === ''
-                      ? 0
-                      : Number(e.target.value);
-
-                  setBillDraft({
-
-                    ...billDraft,
-
-                    discountPercent: value,
-
-                    discount:
-                      value > 0
+                    const value =
+                      e.target.value === ''
                         ? 0
-                        : billDraft.discount,
+                        : Number(e.target.value);
 
-                  });
+                    setBillDraft({
 
-                }}
-                placeholder="0"
-                className={`
+                      ...billDraft,
+
+                      discountPercent: value,
+
+                      discount:
+                        value > 0
+                          ? 0
+                          : billDraft.discount,
+
+                    });
+
+                  }}
+                  placeholder="0"
+                  className={`
     h-full
     w-full
     bg-transparent
@@ -3360,63 +3243,63 @@ console.log("in no--------------- ", actualBillNo)
     [&::-webkit-inner-spin-button]:appearance-none
     [&::-webkit-outer-spin-button]:appearance-none
   `}
-              />
+                />
 
-              <span className="pr-2 text-[10px] opacity-40">
-                %
-              </span>
+                <span className="pr-2 text-[10px] opacity-40">
+                  %
+                </span>
+
+              </div>
 
             </div>
 
-          </div>
 
+            {/* CALCULATED DISCOUNT */}
 
-          {/* CALCULATED DISCOUNT */}
-
-          <span
-            className="
+            <span
+              className="
         shrink-0
         font-medium
         opacity-70
       "
-          >
-            − ₹{calculation.discount.toFixed(2)}
-          </span>
+            >
+              − ₹{calculation.discount.toFixed(2)}
+            </span>
 
-        </div>
+          </div>
 
 
-        {/* =====================================================
+          {/* =====================================================
       DELIVERY
   ===================================================== */}
 
-        <div
-          className="
+          <div
+            className="
       flex
       items-center
       justify-between
       gap-2
       py-1
     "
-        >
+          >
 
-          {/* LEFT */}
+            {/* LEFT */}
 
-          <div
-            className="
+            <div
+              className="
         flex
         items-center
         gap-2
       "
-          >
+            >
 
-            <span className="opacity-55">
-              Delivery
-            </span>
+              <span className="opacity-55">
+                Delivery
+              </span>
 
 
-            <div
-              className={`
+              <div
+                className={`
           flex
           h-7
           w-[72px]
@@ -3426,40 +3309,40 @@ console.log("in no--------------- ", actualBillNo)
           ${background.border}
           bg-black/[0.025]
         `}
-            >
+              >
 
-              <span className="pl-2 text-[10px] opacity-35">
-                ₹
-              </span>
+                <span className="pl-2 text-[10px] opacity-35">
+                  ₹
+                </span>
 
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={
-                  deliveryFee === 0
-                    ? ''
-                    : deliveryFee
-                }
-                onChange={(e) => {
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={
+                    deliveryFee === 0
+                      ? ''
+                      : deliveryFee
+                  }
+                  onChange={(e) => {
 
-                  const value =
-                    e.target.value === ''
-                      ? 0
-                      : Number(e.target.value);
+                    const value =
+                      e.target.value === ''
+                        ? 0
+                        : Number(e.target.value);
 
-                  setBillDraft({
+                    setBillDraft({
 
-                    ...billDraft,
+                      ...billDraft,
 
-                    deliveryFee:
-                      value,
+                      deliveryFee:
+                        value,
 
-                  });
+                    });
 
-                }}
-                placeholder="0"
-                className={`
+                  }}
+                  placeholder="0"
+                  className={`
     h-full
     w-full
     bg-transparent
@@ -3473,34 +3356,34 @@ console.log("in no--------------- ", actualBillNo)
     [&::-webkit-inner-spin-button]:appearance-none
     [&::-webkit-outer-spin-button]:appearance-none
   `}
-              />
+                />
+
+              </div>
 
             </div>
 
-          </div>
 
+            {/* DELIVERY TOTAL */}
 
-          {/* DELIVERY TOTAL */}
-
-          <span
-            className="
+            <span
+              className="
         shrink-0
         font-medium
         opacity-70
       "
-          >
-            ₹{calculation.deliveryFee.toFixed(2)}
-          </span>
+            >
+              ₹{calculation.deliveryFee.toFixed(2)}
+            </span>
 
-        </div>
+          </div>
 
 
-        {/* =====================================================
+          {/* =====================================================
       GRAND TOTAL
   ===================================================== */}
 
-        <div
-          className={`
+          <div
+            className={`
       mt-1
       flex
       items-center
@@ -3509,40 +3392,40 @@ console.log("in no--------------- ", actualBillNo)
       ${background.border}
       pt-2
     `}
-        >
+          >
 
-          <span
-            className="
+            <span
+              className="
         text-[13px]
         font-semibold
         opacity-85
       "
-          >
-            Grand Total
-          </span>
+            >
+              Grand Total
+            </span>
 
-          <span
-            className="
+            <span
+              className="
         text-[15px]
         font-bold
         opacity-95
       "
-          >
-            ₹{calculation.grandTotal.toFixed(2)}
-          </span>
+            >
+              ₹{calculation.grandTotal.toFixed(2)}
+            </span>
+
+          </div>
 
         </div>
 
-      </div>
-
-      {/* =================================================
+        {/* =================================================
           ERROR
       ================================================= */}
 
-      {error && (
+        {error && (
 
-        <div
-          className="
+          <div
+            className="
             border-t
             border-red-500/20
             bg-red-500/5
@@ -3551,17 +3434,17 @@ console.log("in no--------------- ", actualBillNo)
             text-sm
             text-red-500
           "
-        >
-          {error}
-        </div>
+          >
+            {error}
+          </div>
 
-      )}
+        )}
 
-      {showCancelBillConfirm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+        {showCancelBillConfirm && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
 
-          <div
-            className={`
+            <div
+              className={`
         w-full
         max-w-md
         rounded-2xl
@@ -3571,31 +3454,31 @@ console.log("in no--------------- ", actualBillNo)
         p-6
         shadow-2xl
       `}
-          >
+            >
 
-            <h2 className="text-lg font-bold">
-              Cancel Bill?
-            </h2>
+              <h2 className="text-lg font-bold">
+                Cancel Bill?
+              </h2>
 
-            <p className="mt-2 text-sm opacity-70">
-              Please enter a reason for cancelling this bill.
-            </p>
+              <p className="mt-2 text-sm opacity-70">
+                Please enter a reason for cancelling this bill.
+              </p>
 
-            <div className="mt-5">
+              <div className="mt-5">
 
-              <label className="mb-2 block text-sm font-semibold">
-                Cancellation Reason
-              </label>
+                <label className="mb-2 block text-sm font-semibold">
+                  Cancellation Reason
+                </label>
 
-              <textarea
-                value={cancelBillReason}
-                onChange={(e) => {
-                  setCancelBillReason(e.target.value)
+                <textarea
+                  value={cancelBillReason}
+                  onChange={(e) => {
+                    setCancelBillReason(e.target.value)
 
-                }}
-                placeholder="Enter cancellation reason..."
-                rows={4}
-                className="
+                  }}
+                  placeholder="Enter cancellation reason..."
+                  rows={4}
+                  className="
             w-full
             rounded-xl
             border
@@ -3606,19 +3489,19 @@ console.log("in no--------------- ", actualBillNo)
             outline-none
             resize-none
           "
-              />
+                />
 
-            </div>
+              </div>
 
-            <div className="mt-6 flex justify-end gap-3">
+              <div className="mt-6 flex justify-end gap-3">
 
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCancelBillConfirm(false);
-                  setCancelBillReason('');
-                }}
-                className="
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelBillConfirm(false);
+                    setCancelBillReason('');
+                  }}
+                  className="
             rounded-xl
             border
             px-5
@@ -3626,19 +3509,19 @@ console.log("in no--------------- ", actualBillNo)
             text-sm
             font-semibold
           "
-              >
-                Cancel
-              </button>
+                >
+                  Cancel
+                </button>
 
-              <button
-                type="button"
-                disabled={!cancelBillReason.trim()}
-                onClick={() => {
-                  // We will connect the actual cancel API here next
-                  handleCancel('CANCEL', cancelBillReason)
-                  setShowCancelBillConfirm(false);
-                }}
-                className="
+                <button
+                  type="button"
+                  disabled={!cancelBillReason.trim()}
+                  onClick={() => {
+                    // We will connect the actual cancel API here next
+                    handleCancel('CANCEL', cancelBillReason)
+                    setShowCancelBillConfirm(false);
+                  }}
+                  className="
             rounded-xl
             px-5
             py-2.5
@@ -3647,20 +3530,22 @@ console.log("in no--------------- ", actualBillNo)
             text-white
             disabled:opacity-50
           "
-                style={{
-                  backgroundColor: theme.primary,
-                }}
-              >
-                Confirm Cancel
-              </button>
+                  style={{
+                    backgroundColor: theme.primary,
+                  }}
+                >
+                  Confirm Cancel
+                </button>
+
+              </div>
 
             </div>
 
           </div>
+        )}
 
-        </div>
-      )}
-
-    </div>
+      </div>
+    </div>   {toastComponent}
+  </>
   );
 }

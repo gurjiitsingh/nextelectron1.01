@@ -24,6 +24,17 @@ export default function LANPrinter() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
+  const [toastMessage, setToastMessage] = useState('');
+const [toastType, setToastType] = useState<'success' | 'error'>('error');
+
+function showToast(
+  message: string,
+  type: 'success' | 'error' = 'error'
+) {
+  setToastMessage(message);
+  setToastType(type);
+}
+
   // LOAD KITCHEN LAN PRINTER SETTINGS
   useEffect(() => {
     let mounted = true;
@@ -66,45 +77,51 @@ export default function LANPrinter() {
   }, []);
 
   // TEST KITCHEN LAN PRINTER
-  async function testPrint() {
-    try {
-      const result = await window.posApi.print({
-        role: 'KITCHEN',
-        source: 'SYSTEM',
-        data: {
-          kotNumber: 'TEST',
-          tableNo: 'T1',
-          tableName: 'TEST TABLE',
-          orderType: 'TEST',
-          createdAt: Date.now(),
-          items: [
-            {
-              name: 'KITCHEN TEST ITEM',
-              quantity: 1,
-            },
-          ],
-        },
-      });
+ 
+async function testPrint() {
+  try {
+    const result = await window.posApi.print({
+      role: 'KITCHEN',
+      source: 'SYSTEM',
+      data: {
+        kotNumber: 'TEST',
+        tableNo: 'T1',
+        tableName: 'TEST TABLE',
+        orderType: 'TEST',
+        createdAt: Date.now(),
+        items: [
+          {
+            name: 'KITCHEN TEST ITEM',
+            quantity: 1,
+          },
+        ],
+      },
+    });
 
-      console.log('KITCHEN LAN TEST PRINT RESULT:', result);
+    console.log('KITCHEN LAN TEST PRINT RESULT:', result);
 
-      if (!result?.success) {
-        throw new Error(
-          result?.error || 'KITCHEN test print failed'
-        );
-      }
-
-      alert('KITCHEN test print job queued successfully.');
-    } catch (error) {
-      console.error('KITCHEN LAN TEST PRINT ERROR:', error);
-
-      alert(
-        error instanceof Error
-          ? error.message
-          : 'KITCHEN LAN test print failed'
+    if (!result?.success) {
+      throw new Error(
+        result?.error || 'KITCHEN test print failed'
       );
     }
+
+    showToast(
+      'KITCHEN test print job queued successfully.',
+      'success'
+    );
+  } catch (error) {
+    console.error('KITCHEN LAN TEST PRINT ERROR:', error);
+
+    showToast(
+      error instanceof Error
+        ? error.message
+        : 'KITCHEN LAN test print failed',
+      'error'
+    );
   }
+}
+ 
 
   // SAVE KITCHEN LAN PRINTER SETTINGS
   async function save() {
@@ -185,11 +202,12 @@ export default function LANPrinter() {
         error
       );
 
-      alert(
-        error instanceof Error
-          ? error.message
-          : 'Failed to update KITCHEN LAN selection'
-      );
+    showToast(
+  error instanceof Error
+    ? error.message
+    : 'Failed to update KITCHEN LAN selection',
+  'error'
+);
     }
   }
 

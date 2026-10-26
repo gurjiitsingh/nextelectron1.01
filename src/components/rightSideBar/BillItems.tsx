@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import toast from "react-hot-toast";
+ 
+import { useToast } from '@/hooks/useToast';
+
+ 
+
 export type BillItemData = {
   id: string;
   name: string;
@@ -72,7 +76,7 @@ export default function BillItem({
   const [migrating, setMigrating] = useState(false);
   const [selectedTableNo, setSelectedTableNo] = useState("");
   const [moveQuantity, setMoveQuantity] = useState(1);
-
+const { showToast, toastComponent } = useToast();
   const handleDelete = async () => {
     const finalReason = reason.trim();
 
@@ -80,10 +84,10 @@ export default function BillItem({
     // REASON REQUIRED
     // =============================================
 
-    if (!finalReason) {
-    toast.error("Please enter a reason for deleting this item.");
-      return;
-    }
+ if (!finalReason) {
+  showToast('Please enter a reason for deleting this item.');
+  return;
+}
 
     console.log("========================================");
     console.log("DELETE ITEM");
@@ -123,7 +127,7 @@ export default function BillItem({
     const finalReason = reason.trim();
 
     if (!finalReason) {
-      toast.error("Please enter a reason for decreasing the quantity.");
+      showToast("Please enter a reason for decreasing the quantity.");
       return;
     }
 
@@ -222,7 +226,8 @@ export default function BillItem({
 
   const handleConfirmMigrate = async () => {
     if (!selectedTableNo) {
-      alert("Please select a target table.");
+       
+       showToast("Please select a target table.");
       return;
     }
 
@@ -231,9 +236,8 @@ export default function BillItem({
         (item as any)?.tableNo || ""
       )
     ) {
-      alert(
-        "Item is already on this table."
-      );
+    
+        showToast("Item is already on this table.");
       return;
     }
 
@@ -243,10 +247,10 @@ export default function BillItem({
         String(selectedTableNo)
     );
 
-    if (!targetTable) {
-      alert("Target table not found.");
-      return;
-    }
+ if (!targetTable) {
+  showToast('Target table not found.');
+  return;
+}
 
     try {
       setMigrating(true);
@@ -335,190 +339,23 @@ export default function BillItem({
         e
       );
 
-      alert(
-        e instanceof Error
-          ? e.message
-          : String(e)
-      );
+  showToast(
+  e instanceof Error ? e.message : String(e)
+);
 
     } finally {
       setMigrating(false);
     }
   };
 
-  // const handleMoveItem = async (
-  //   newTableNo: string
-  // ) => {
-  //   if (!item?.id) {
-  //     console.error(
-  //       "[MOVE ITEM UI] Missing bill item id"
-  //     );
-  //     return;
-  //   }
 
-  //   if (!newTableNo) {
-  //     console.error(
-  //       "[MOVE ITEM UI] Missing destination table"
-  //     );
-  //     return;
-  //   }
-
-  //   const currentTableNo = String(
-  //     item?.tableNo || ""
-  //   );
-
-  //   if (newTableNo === currentTableNo) {
-  //     console.log(
-  //       "[MOVE ITEM UI] Item is already on this table"
-  //     );
-  //     return;
-  //   }
-
-  //   const selectedTable = tables.find(
-  //     (table) =>
-  //       String(table.id) ===
-  //       String(newTableNo)
-  //   );
-
-  //   if (!selectedTable) {
-  //     console.error(
-  //       "[MOVE ITEM UI] Destination table not found:",
-  //       newTableNo
-  //     );
-  //     return;
-  //   }
-
-  //   const newTableName =
-  //     selectedTable.tableName ||
-  //     newTableNo;
-
-  //   try {
-  //     setMigrating(true);
-
-  //     console.log(
-  //       "========================================"
-  //     );
-
-  //     console.log(
-  //       "[MOVE ITEM UI] START"
-  //     );
-
-  //     console.log(
-  //       "[MOVE ITEM UI] Item:",
-  //       item
-  //     );
-
-  //     console.log(
-  //       "[MOVE ITEM UI] Item ID:",
-  //       item.id
-  //     );
-
-  //     console.log(
-  //       "[MOVE ITEM UI] Current table:",
-  //       currentTableNo
-  //     );
-
-  //     console.log(
-  //       "[MOVE ITEM UI] Destination table:",
-  //       newTableNo
-  //     );
-
-  //     console.log(
-  //       "[MOVE ITEM UI] Destination name:",
-  //       newTableName
-  //     );
-
-  //     // =============================================
-  //     // MOVE ITEM IN SQLITE
-  //     // =============================================
-
-  //     const result =
-  //       await window.posApi.moveBillItemToTable({
-  //         itemId: item.id,
-  //         tableNo: newTableNo,
-  //         tableName: newTableName,
-  //       });
-
-  //     console.log(
-  //       "[MOVE ITEM UI] IPC result:",
-  //       result
-  //     );
-
-  //     if (!result?.success) {
-  //       throw new Error(
-  //         result?.error ||
-  //         "Failed to move item"
-  //       );
-  //     }
-
-  //     console.log(
-  //       "[MOVE ITEM UI] Database move successful"
-  //     );
-
-  //     // =============================================
-  //     // CLOSE MIGRATION MODAL
-  //     // =============================================
-
-  //     setMigrateOpen(false);
-  //     setSelectedTableNo("");
-
-  //     // =============================================
-  //     // IMPORTANT:
-  //     // Tell parent Bill component that the move
-  //     // succeeded so it can call loadBillItems().
-  //     // =============================================
-
-  //     if (onMigrateSuccess) {
-  //       console.log(
-  //         "[MOVE ITEM UI] Calling onMigrateSuccess..."
-  //       );
-
-  //       await onMigrateSuccess(
-  //         item,
-  //         newTableNo,
-  //         newTableName
-  //       );
-
-  //       console.log(
-  //         "[MOVE ITEM UI] onMigrateSuccess completed"
-  //       );
-  //     } else {
-  //       console.warn(
-  //         "[MOVE ITEM UI] onMigrateSuccess callback is not provided"
-  //       );
-  //     }
-
-  //     console.log(
-  //       "[MOVE ITEM UI] COMPLETE"
-  //     );
-
-  //     console.log(
-  //       "========================================"
-  //     );
-
-  //   } catch (error) {
-  //     console.error(
-  //       "[MOVE ITEM UI] Failed to move item:",
-  //       error
-  //     );
-
-  //     alert(
-  //       error instanceof Error
-  //         ? error.message
-  //         : String(error)
-  //     );
-
-  //   } finally {
-  //     setMigrating(false);
-  //   }
-  // };
 
   const handleMoveItem = async (
     newTableNo: string,
     quantityToMove: number
   ) => {
     if (!item?.id || !newTableNo) {
-      toast.error("Select a destination table.");
+      showToast("Select a destination table.");
       return;
     }
 
@@ -529,14 +366,14 @@ export default function BillItem({
       quantityToMove < 1 ||
       quantityToMove > currentQuantity
     ) {
-      toast.error("Please select a valid quantity.");
+      showToast("Please select a valid quantity.");
       return;
     }
 
     const currentTableNo = String(item.tableNo || "");
 
     if (newTableNo === currentTableNo) {
-      toast.error("Item is already on this table.");
+      showToast("Item is already on this table.");
       return;
     }
 
@@ -545,7 +382,7 @@ export default function BillItem({
     );
 
     if (!selectedTable) {
-      toast.error("Destination table not found.");
+      showToast("Destination table not found.");
       return;
     }
 
@@ -576,14 +413,14 @@ export default function BillItem({
         newTableName
       );
 
-      toast.success(
+      showToast(
         `Moved ${quantityToMove} ${quantityToMove === 1 ? "item" : "items"
         } to ${newTableName}.`
       );
     } catch (error) {
       console.error("Failed to move bill item:", error);
 
-      toast.error(
+      showToast(
         error instanceof Error
           ? error.message
           : String(error)
@@ -1329,7 +1166,8 @@ export default function BillItem({
     </div>
   </div>
 )}
-
+  {toastComponent}
+  
     </>
   );
 }

@@ -372,6 +372,14 @@ getConfig: () => Promise<{
   error?: string;
 }>;
 
+listInstalledUsbPrinters: () => Promise<
+  {
+    name: string;
+    displayName: string;
+    status: number;
+    isDefault: boolean;
+  }[]
+>;
 
 getUsbPrinterSettings: () => Promise<{
   success: boolean;

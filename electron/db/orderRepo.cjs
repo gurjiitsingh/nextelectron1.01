@@ -805,6 +805,17 @@ async function getTodayPosOrderNumbers(orderType) {
     `${String(now.getMonth() + 1).padStart(2, '0')}-` +
     `${String(now.getDate()).padStart(2, '0')}`;
 
+    
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS pos_daily_order_sequence (
+      dateKey TEXT NOT NULL,
+      orderType TEXT NOT NULL,
+      lastNumber INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (dateKey, orderType)
+    )
+  `).run();
+
+
   const row = db
     .prepare(`
       SELECT lastNumber

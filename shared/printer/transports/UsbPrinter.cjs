@@ -12,8 +12,8 @@ class UsbPrinter {
       );
     }
 
-   const printerName = String(
-  config.printerName || 'TVS-E RP 3230'
+const printerName = String(
+  config.printerName || ''
 ).trim();
 
     if (!printerName) {
@@ -195,7 +195,9 @@ finally {
         error.stderr || error.message
       );
 
-      return false;
+     throw new Error(
+  error.stderr || error.message || 'Windows USB printing failed'
+);
     }
   }
 

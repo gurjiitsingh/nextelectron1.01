@@ -103,6 +103,17 @@ export default function KotHistoryPage() {
   const [loadingDetail, setLoadingDetail] =
     useState(false);
 
+    const [toastMessage, setToastMessage] = useState('');
+const [toastType, setToastType] = useState<'success' | 'error'>('error');
+
+function showToast(
+  message: string,
+  type: 'success' | 'error' = 'error'
+) {
+  setToastMessage(message);
+  setToastType(type);
+}
+
   const [activeFilter, setActiveFilter] = useState<
   'ALL' | 'OPEN' | 'PARTIAL' | 'DELETED' | 'PAID'
 >('ALL');  
@@ -204,7 +215,7 @@ const [activeTab, setActiveTab] = useState<
         );
       }
      
-console.log("result.data----------", result.data)
+ 
       setSelectedKot(
         result.data || null
       );
@@ -216,11 +227,10 @@ console.log("result.data----------", result.data)
         error
       );
 
-      alert(
-        error?.message ||
-        'Failed to load KOT'
-      );
-
+   showToast(
+  error?.message || 'Failed to load KOT',
+  'error'
+);
     } finally {
 
       setLoadingDetail(false);
@@ -391,7 +401,7 @@ const filteredHistory =
   // RENDER
   // =====================================================
 
-return (
+return (<>
   <div className="flex h-full min-h-0 flex-col bg-slate-50 text-slate-900">
 
     {/* =========================================================
@@ -2224,5 +2234,26 @@ return (
 
 )}
   </div>
+{toastMessage && (
+  <div
+    role="status"
+    aria-live="polite"
+    className={`fixed right-5 top-5 z-[9999] flex max-w-md items-center gap-3 rounded-lg px-4 py-3 text-white shadow-lg ${
+      toastType === 'success' ? 'bg-green-600' : 'bg-red-600'
+    }`}
+  >
+    <span className="flex-1">{toastMessage}</span>
+
+    <button
+      type="button"
+      onClick={() => setToastMessage('')}
+      className="text-xl font-bold"
+      aria-label="Dismiss notification"
+    >
+      ×
+    </button>
+  </div>
+)}
+  </>
 );
 }

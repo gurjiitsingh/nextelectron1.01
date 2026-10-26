@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
-
+import { useToast } from '@/hooks/useToast';
 
 // =====================================================
 // TYPES
@@ -134,7 +134,7 @@ export default function OrderDetailContent() {
   const [loading, setLoading] =
     useState(true);
 
-
+const { showToast, toastComponent } = useToast();
   // =====================================================
   // LOAD ORDER
   // =====================================================
@@ -268,16 +268,15 @@ export default function OrderDetailContent() {
 
 
   async function reprintBill() {
-  if (!order) {
-    alert('Order not loaded');
-    return;
-  }
+if (!order) {
+  showToast('Order not loaded', 'error');
+  return;
+}
 
-  if (items.length === 0) {
-    alert('No saved items found for this order');
-    return;
-  }
-
+if (items.length === 0) {
+  showToast('No saved items found for this order', 'error');
+  return;
+}
   try {
     console.log('REPRINT SAVED BILL:', order.id, order.srno);
 
@@ -350,10 +349,11 @@ export default function OrderDetailContent() {
   } catch (e: any) {
     console.error('SAVED BILL REPRINT FAILED:', e);
 
-    alert(
-      'Bill reprint failed: ' +
-      (e?.message || 'Unknown error')
-    );
+ showToast(
+  'Bill reprint failed: ' +
+    (e?.message || 'Unknown error'),
+  'error'
+);
   }
 }
 
@@ -469,7 +469,7 @@ export default function OrderDetailContent() {
   // =====================================================
 
   return (
-
+<>
     <div
       className={`
         h-[95%]
@@ -1214,7 +1214,7 @@ className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm fo
       </div>
 
     </div>
-
+{toastComponent}</>
   );
 
 }

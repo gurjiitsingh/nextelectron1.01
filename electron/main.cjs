@@ -287,7 +287,33 @@ function registerIpcHandlers() {
   // // =====================================================
   // // PRINTER IPC
   // // =====================================================
+ipcMain.handle('usb-printer:list-installed', async () => {
+  try {
+    const win = BrowserWindow.getAllWindows()[0];
 
+    if (!win || win.isDestroyed()) {
+      throw new Error('POS window is not available');
+    }
+
+    const printers = await win.webContents.getPrintersAsync();
+
+    return printers
+      .map((printer) => ({
+        name: printer.name,
+        displayName: printer.displayName || printer.name,
+        status: printer.status,
+        isDefault: printer.isDefault === true,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error) {
+    console.error(
+      '[USB PRINTER] Failed to list installed printers:',
+      error
+    );
+
+    throw error;
+  }
+});
  
 ipcMain.handle(
   'printer:print',
@@ -455,56 +481,55 @@ ipcMain.handle(
   }
 );
 
+
 ipcMain.handle(
   'usb-printer:save-settings',
   async (_event, config) => {
     try {
       if (!config || typeof config !== 'object') {
-        throw new Error(
-          'Invalid USB printer configuration'
-        );
+        throw new Error('Invalid USB printer configuration');
+      }
+
+      const role = String(config.role || '').toUpperCase();
+
+      if (!['BILL', 'KITCHEN', 'BAR'].includes(role)) {
+        throw new Error(`Invalid USB printer role: ${role || '(missing)'}`);
       }
 
       const usbConfig = {
         ...config,
-        role: 'BILL',
+        role,
         connectionType: 'USB',
-        printerName:
-          config.printerName || 'TVS-E RP 3230',
+        printerName: config.printerName || 'TVS-E RP 3230',
         ip: '',
         port: config.port ?? 9100,
         active: config.active === true,
       };
 
-      const savedConfig =
-        printerSettingsRepo.saveConfig(usbConfig);
+      const savedConfig = printerSettingsRepo.saveConfig(usbConfig);
 
-      console.log(
-        '[USB PRINTER] Saved:',
-        savedConfig,
-        'active:',
-        savedConfig.active
-      );
+      console.log('[USB PRINTER] Saved:', {
+        role: savedConfig.role,
+        connectionType: savedConfig.connectionType,
+        active: savedConfig.active,
+        printerName: savedConfig.printerName,
+      });
 
       return {
         success: true,
         data: savedConfig,
       };
     } catch (error) {
-      console.error(
-        '[USB PRINTER] Failed to save settings:',
-        error
-      );
+      console.error('[USB PRINTER] Failed to save settings:', error);
 
       return {
         success: false,
-        error:
-          error.message ||
-          'Failed to save USB printer settings',
+        error: error.message || 'Failed to save USB printer settings',
       };
     }
   }
 );
+
  
 
 

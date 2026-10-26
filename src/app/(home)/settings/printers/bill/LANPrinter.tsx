@@ -3,6 +3,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/useToast';
+
+
+
 import {
   Printer,
   Save,
@@ -26,7 +30,7 @@ export default function LANPrinter() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
-
+  const { showToast, toastComponent } = useToast();
   // LOAD LAN PRINTER SETTINGS
   useEffect(() => {
     let mounted = true;
@@ -89,10 +93,10 @@ export default function LANPrinter() {
       });
 
       console.log('LAN TEST PRINT RESULT:', result);
-      alert(JSON.stringify(result));
+      showToast(JSON.stringify(result));
     } catch (error) {
       console.error('LAN TEST PRINT ERROR:', error);
-      alert('LAN test print failed');
+      showToast('LAN test print failed');
     }
   }
 
@@ -136,38 +140,38 @@ export default function LANPrinter() {
       setSaving(false);
     }
   }
-  
-async function handleActiveChange(checked: boolean) {
-  try {
-    const config = {
-      role: 'BILL',
-      active: checked,
-      name: name.trim() || 'BILL Printer',
-      connectionType: 'LAN',
-      paperSize,
-      renderMode,
-      ip: ip.trim(),
-      port: Number(port) || 9100,
-    };
 
-    const result = await window.posApi.savePrinterSetting(config);
+  async function handleActiveChange(checked: boolean) {
+    try {
+      const config = {
+        role: 'BILL',
+        active: checked,
+        name: name.trim() || 'BILL Printer',
+        connectionType: 'LAN',
+        paperSize,
+        renderMode,
+        ip: ip.trim(),
+        port: Number(port) || 9100,
+      };
 
-    if (!result?.success) {
-      throw new Error(
-        result?.error || 'Failed to update LAN printer selection'
+      const result = await window.posApi.savePrinterSetting(config);
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error || 'Failed to update LAN printer selection'
+        );
+      }
+
+      setActive(checked);
+    } catch (error) {
+      console.error('[LAN PRINTER] Failed to change active state:', error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update LAN printer selection'
       );
     }
-
-    setActive(checked);
-  } catch (error) {
-    console.error('[LAN PRINTER] Failed to change active state:', error);
-    alert(
-      error instanceof Error
-        ? error.message
-        : 'Failed to update LAN printer selection'
-    );
   }
-}
 
 
   if (loading) {
@@ -181,6 +185,7 @@ async function handleActiveChange(checked: boolean) {
   }
 
   return (
+    <>
     <div>
       <div className=" p-1 mb-20">
 
@@ -212,27 +217,27 @@ async function handleActiveChange(checked: boolean) {
         <div
           className={`space-y-6 rounded-xl border ${background.border} p-6`}
         >
-       
-{/* SELECT LAN CONNECTION */}
-<div
-  className={`flex items-center justify-between rounded-xl border ${background.border} p-4`}
->
-  <div>
-    <p className="font-medium">Use LAN Printer</p>
-    <p className="mt-1 text-sm opacity-60">
-      Select LAN as the active BILL printer connection.
-    </p>
-  </div>
 
-  <input
-    type="checkbox"
-    checked={active}
-  onChange={(e) => handleActiveChange(e.target.checked)}
-    className="h-5 w-5"
-    style={{ accentColor: theme.primary }}
-  />
-</div>
- 
+          {/* SELECT LAN CONNECTION */}
+          <div
+            className={`flex items-center justify-between rounded-xl border ${background.border} p-4`}
+          >
+            <div>
+              <p className="font-medium">Use LAN Printer</p>
+              <p className="mt-1 text-sm opacity-60">
+                Select LAN as the active BILL printer connection.
+              </p>
+            </div>
+
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={(e) => handleActiveChange(e.target.checked)}
+              className="h-5 w-5"
+              style={{ accentColor: theme.primary }}
+            />
+          </div>
+
           <div>
             <label className="mb-2 block text-sm font-medium">
               Printer Name
@@ -355,5 +360,7 @@ async function handleActiveChange(checked: boolean) {
         </div>
       </div>
     </div>
+       {toastComponent}
+  </>
   );
 }

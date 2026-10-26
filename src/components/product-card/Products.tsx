@@ -10,6 +10,9 @@ import { FAVORITES_CATEGORY_ID } from "../home/PosSidebarCategories";
 
 import { FiSearch, FiX } from "react-icons/fi";
 import { usePosSession } from "@/PosSessionStore/PosSessionContext";
+import { useToast } from '@/hooks/useToast';
+
+ 
 
 export default function Products() {
   const {
@@ -55,7 +58,7 @@ export default function Products() {
 
   const [modifierGroups, setModifierGroups] = useState<any[]>([]);
   const [productModifiers, setProductModifiers] = useState<any[]>([]);
-
+const { showToast, toastComponent } = useToast();
   // =====================================================
   // LOAD PRODUCTS FROM SQLITE
   // =====================================================
@@ -287,6 +290,7 @@ export default function Products() {
   // =====================================================
 
   return (
+    <>
     <div className="w-full">
       {/* =================================================
     SEARCH + ORDER TYPE
@@ -466,7 +470,7 @@ export default function Products() {
                     error
                   );
 
-                  alert(
+                  showToast(
                     "Failed to create takeaway order."
                   );
                 }
@@ -525,7 +529,7 @@ export default function Products() {
                     error
                   );
 
-                  alert(
+                  showToast(
                     "Failed to create delivery order."
                   );
                 }
@@ -593,5 +597,7 @@ export default function Products() {
           </div>
         )}
     </div>
+        {toastComponent}
+  </>
   );
 }

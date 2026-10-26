@@ -13,6 +13,10 @@ import { usePosUi } from "@/PosUiStore/PosUiContext";
 import { usePosSession } from "@/PosSessionStore/PosSessionContext";
 import { useRouter } from 'next/navigation';
 import { usePosTheme } from "@/PosThemeStore/PosThemeContext";
+import { useToast } from '@/hooks/useToast';
+
+ 
+
 export default function ProductCardHorizontical({
   product,
   variants,
@@ -77,7 +81,7 @@ export default function ProductCardHorizontical({
 
   const [popupNote, setPopupNote] = useState("");
   const [quickNote, setQuickNote] = useState("");
-
+const { showToast, toastComponent } = useToast();
   //  FILTER VARIANTS FOR THIS PRODUCT
   const productVariants = useMemo(() => {
     if (!product.hasVariants) return [];
@@ -261,7 +265,7 @@ export default function ProductCardHorizontical({
     // =====================================================
 
     if (!activeOrder) {
-      alert('Please select an order type first.');
+      showToast('Please select an order type first.');
       return;
     }
 
@@ -285,7 +289,7 @@ export default function ProductCardHorizontical({
       activeOrder.orderType !== 'DINE_IN' &&
       !activeOrder.orderNo
     ) {
-      alert('Order number is not available yet.');
+      showToast('Order number is not available yet.');
       return;
     }
 
@@ -387,6 +391,7 @@ export default function ProductCardHorizontical({
           {/* existing note popup code */}
         </div>
       )}
-    </>
+        {toastComponent}
+  </>
   );
 }

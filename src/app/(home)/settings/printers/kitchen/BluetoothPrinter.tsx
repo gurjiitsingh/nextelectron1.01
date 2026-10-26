@@ -8,6 +8,10 @@ import {
   TestTube,
   ArrowLeft,
 } from 'lucide-react';
+import { useToast } from '@/hooks/useToast';
+
+ 
+
 
 import { usePosTheme } from '@/PosThemeStore/PosThemeContext';
 
@@ -25,7 +29,7 @@ export default function BluetoothPrinter() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
-
+const { showToast, toastComponent } = useToast();
   // LOAD BLUETOOTH SETTINGS
 
   useEffect(() => {
@@ -121,10 +125,10 @@ export default function BluetoothPrinter() {
       });
 
       console.log('BLUETOOTH TEST PRINT RESULT:', result);
-      alert(JSON.stringify(result));
+      showToast(JSON.stringify(result));
     } catch (error) {
       console.error('BLUETOOTH TEST PRINT ERROR:', error);
-      alert('Bluetooth test print failed');
+      showToast('Bluetooth test print failed');
     }
   }
 
@@ -144,6 +148,7 @@ export default function BluetoothPrinter() {
   }
 
   return (
+    <>
     <div>
       <div className=" p-1 mb-20">
        
@@ -339,6 +344,8 @@ export default function BluetoothPrinter() {
         </div>
       </div>
     </div>
+      {toastComponent}
+  </>
   );
 }
  

@@ -1,6 +1,10 @@
 'use client';
+import { useToast } from '@/hooks/useToast';
+
+ 
 
 export default function TestPrinter() {
+  const { showToast, toastComponent } = useToast();
   async function handlePrint() {
     const result = await window.posApi.print({
       role: 'KITCHEN',
@@ -19,12 +23,15 @@ export default function TestPrinter() {
     });
 
     console.log(result);
-    alert(JSON.stringify(result));
+    showToast(JSON.stringify(result));
   }
 
   return (
+    <>
     <button onClick={handlePrint}>
       Test Kitchen Print
     </button>
+      {toastComponent}
+  </>
   );
 }

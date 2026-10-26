@@ -53,6 +53,17 @@ export default function OrdersPage() {
       return `${year}-${month}-${day}`;
     });
 
+    const [toastMessage, setToastMessage] = useState('');
+const [toastType, setToastType] = useState<'success' | 'error'>('error');
+
+function showToast(
+  message: string,
+  type: 'success' | 'error' = 'error'
+) {
+  setToastMessage(message);
+  setToastType(type);
+}
+
   const {
     theme,
     background,
@@ -231,14 +242,18 @@ async function printBill(orderId: string) {
       );
     }
 
-    alert(`Bill ${savedOrder.srno ?? ''} sent to printer.`);
+    showToast(
+  `Bill ${savedOrder.srno ?? ''} sent to printer.`,
+  'success'
+);
   } catch (error: any) {
     console.error('[ORDER LIST] Reprint failed:', error);
 
-    alert(
-      'Bill printing failed: ' +
-      (error?.message || 'Unknown error')
-    );
+ showToast(
+    'Bill printing failed: ' +
+      (error?.message || 'Unknown error'),
+    'error'
+  );
   } finally {
     setPrintingOrderId(null);
   }
@@ -417,7 +432,7 @@ async function printBill(orderId: string) {
 
 
   return (
-
+<>
     <div
       className={`
     h-[calc(100vh-60px)]
@@ -1159,5 +1174,27 @@ async function printBill(orderId: string) {
       )}
 
     </div>
+    
+{toastMessage && (
+  <div
+    role="status"
+    aria-live="polite"
+    className={`fixed right-5 top-5 z-[9999] flex max-w-md items-center gap-3 rounded-lg px-4 py-3 text-white shadow-lg ${
+      toastType === 'success' ? 'bg-green-600' : 'bg-red-600'
+    }`}
+  >
+    <span className="flex-1">{toastMessage}</span>
+
+    <button
+      type="button"
+      onClick={() => setToastMessage('')}
+      className="text-xl font-bold"
+      aria-label="Dismiss notification"
+    >
+      ×
+    </button>
+  </div>
+)}
+</>
   );
 }

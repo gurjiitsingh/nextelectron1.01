@@ -449,6 +449,9 @@ getOrCreateOrderNo: (tableNo) =>
   // PRINTER
   // =====================================================
 
+  listInstalledUsbPrinters: () =>
+  ipcRenderer.invoke('usb-printer:list-installed'),
+
   print: (payload) =>
     ipcRenderer.invoke(
       'printer:print',

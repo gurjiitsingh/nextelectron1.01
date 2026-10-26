@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS categories (
   taxRate REAL,
   taxType TEXT,
 
+   taxRate1 REAL,
+  taxType1 TEXT,
+
   sortOrder INTEGER NOT NULL DEFAULT 0,
   slug TEXT,
   isFeatured INTEGER NOT NULL DEFAULT 0,
@@ -58,6 +61,9 @@ discountEligible INTEGER NOT NULL DEFAULT 1,
 
   taxRate REAL,
   taxType TEXT,
+
+   taxRate1 REAL,
+  taxType1 TEXT,
 
   type TEXT,
 
@@ -111,6 +117,9 @@ CREATE TABLE IF NOT EXISTS pos_cart_item (
 
   taxRate REAL NOT NULL DEFAULT 0,
   taxType TEXT NOT NULL DEFAULT 'exclusive',
+
+   taxRate1 REAL,
+  taxType1 TEXT,
 
   sessionId TEXT NOT NULL,
 
@@ -237,6 +246,9 @@ discountEligible INTEGER NOT NULL DEFAULT 1,
 
   taxRate REAL NOT NULL DEFAULT 0,
   taxType TEXT NOT NULL DEFAULT 'exclusive',
+
+   taxRate1 REAL,
+  taxType1 TEXT,
 
   status TEXT NOT NULL DEFAULT 'PENDING',
   note TEXT DEFAULT '',
@@ -481,6 +493,9 @@ kotBatchId TEXT NOT NULL,
 
   taxType TEXT,
 
+     taxRate1 REAL,
+  taxType1 TEXT,
+
   taxAmountPerItem REAL NOT NULL DEFAULT 0,
 
   taxTotal REAL NOT NULL DEFAULT 0,
@@ -558,6 +573,8 @@ CREATE TABLE IF NOT EXISTS pos_bill_items (
   taxRate REAL NOT NULL DEFAULT 0,
   taxType TEXT NOT NULL DEFAULT 'exclusive',
 
+   taxRate1 REAL,
+  taxType1 TEXT,
   -- Notes / modifiers
   note TEXT DEFAULT '',
   modifiersJson TEXT DEFAULT '',
@@ -819,6 +836,9 @@ CREATE TABLE IF NOT EXISTS pos_order_items (
 
   taxRate REAL NOT NULL DEFAULT 0,
   taxType TEXT NOT NULL DEFAULT 'exclusive',
+
+     taxRate1 REAL,
+  taxType1 TEXT,
 
   taxAmountPerItem REAL NOT NULL DEFAULT 0,
   taxTotal REAL NOT NULL DEFAULT 0,

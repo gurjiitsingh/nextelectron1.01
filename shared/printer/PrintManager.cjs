@@ -96,32 +96,39 @@ class PrintManager {
 
 
 
-  async handleJob(job) {
+async handleJob(job) {
+
     console.log('[PRINT JOB] Started:', {
-      id: job.id,
-      role: job.role,
-      source: job.source,
+        id: job.id,
+        role: job.role,
+        source: job.source,
     });
 
     // REPORT uses BILL printer settings, but keeps REPORT formatting.
     const printerRole =
-      job.role === 'REPORT' ? PrinterRole.BILL : job.role;
+        job.role === 'REPORT' ? PrinterRole.BILL : job.role;
 
     const config = this.settingsRepo.getConfig(printerRole);
 
     console.log('[PRINT JOB] Printer config:', {
-      requestedRole: job.role,
-      printerRole,
-      configFound: Boolean(config),
-      connectionType: config?.connectionType,
-      renderMode: config?.renderMode,
-      paperSize: config?.paperSize,
+        requestedRole: job.role,
+        printerRole,
+        configFound: Boolean(config),
+        active: config?.active,
+        connectionType: config?.connectionType,
+        printerName: config?.printerName,
+        renderMode: config?.renderMode,
+        paperSize: config?.paperSize,
     });
 
     if (!config) {
-      throw new Error(
-        `Printer configuration not found for role ${printerRole}`
-      );
+        throw new Error(
+            `Printer configuration not found for role ${printerRole}`
+        );
+    }
+
+    if (config.connectionType === 'USB') {
+        console.log('[PRINT JOB] USB target printer:', config.printerName);
     }
 
     // =====================================================

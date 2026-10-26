@@ -96,6 +96,25 @@ async function syncProducts() {
   taxType:
     data.taxType || null,
 
+
+
+// ==========================================
+  // OPTIONAL SECOND TAX
+  // ==========================================
+  taxRate1:
+    typeof data.taxRate1 === 'number'
+      ? data.taxRate1
+      : null,
+
+
+  taxType1:
+    data.taxType1 || null,
+
+
+
+  type: data.type || null,
+
+
   type: data.type || null,
 
   outletId:

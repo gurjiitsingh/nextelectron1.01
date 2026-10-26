@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+
+import { useToast } from '@/hooks/useToast';
 import {
   Printer,
   Save,
@@ -25,7 +27,7 @@ export default function BluetoothPrinter() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
-
+const { showToast, toastComponent } = useToast();
   // LOAD BLUETOOTH SETTINGS
 
   useEffect(() => {
@@ -100,33 +102,35 @@ export default function BluetoothPrinter() {
 
   // TEST BLUETOOTH PRINT
 
-  async function testPrint() {
-    try {
-      const result = await window.posApi.print({
-        role,
-        source: 'SYSTEM',
-        data: {
-          kotNumber: 'TEST',
-          tableNo: 'T1',
-          tableName: 'TEST TABLE',
-          orderType: 'TEST',
-          createdAt: Date.now(),
-          items: [
-            {
-              name: 'BLUETOOTH TEST ITEM',
-              quantity: 1,
-            },
-          ],
-        },
-      });
+ async function testPrint() {
+  try {
+    const result = await window.posApi.print({
+      role,
+      source: 'SYSTEM',
+      data: {
+        kotNumber: 'TEST',
+        tableNo: 'T1',
+        tableName: 'TEST TABLE',
+        orderType: 'TEST',
+        createdAt: Date.now(),
+        items: [
+          {
+            name: 'BLUETOOTH TEST ITEM',
+            quantity: 1,
+          },
+        ],
+      },
+    });
 
-      console.log('BLUETOOTH TEST PRINT RESULT:', result);
-      alert(JSON.stringify(result));
-    } catch (error) {
-      console.error('BLUETOOTH TEST PRINT ERROR:', error);
-      alert('Bluetooth test print failed');
-    }
+    console.log('BLUETOOTH TEST PRINT RESULT:', result);
+
+    showToast(JSON.stringify(result), 'success');
+  } catch (error) {
+    console.error('BLUETOOTH TEST PRINT ERROR:', error);
+
+    showToast('Bluetooth test print failed', 'error');
   }
+}
 
   if (loading) {
     return (
@@ -144,6 +148,7 @@ export default function BluetoothPrinter() {
   }
 
   return (
+    <>
     <div>
       <div className=" p-1 mb-20">
        
@@ -339,6 +344,8 @@ export default function BluetoothPrinter() {
         </div>
       </div>
     </div>
+       {toastComponent}
+  </>
   );
 }
  

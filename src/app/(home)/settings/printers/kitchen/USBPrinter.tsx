@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+ 
 import {
   Printer,
   Save,
@@ -21,7 +22,31 @@ export default function USBPrinter() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+ 
+const [toastType, setToastType] = useState<'success' | 'error'>('error');
 
+function showToast(
+  message: string,
+  type: 'success' | 'error' = 'error'
+) {
+  setToastMessage(message);
+  setToastType(type);
+}
+
+  const [installedPrinters, setInstalledPrinters] =
+    useState<
+      {
+        name: string;
+        displayName: string;
+        status: number;
+        isDefault: boolean;
+      }[]
+    >([]);
+
+  const [printerName, setPrinterName] = useState('');
+  const [loadingPrinters, setLoadingPrinters] = useState(false);
+  const [printerListError, setPrinterListError] = useState('');
+const [toastMessage, setToastMessage] = useState('');
   // =====================================================
   // LOAD KITCHEN USB PRINTER SETTINGS
   // =====================================================
@@ -51,6 +76,7 @@ export default function USBPrinter() {
           setName(config.name || 'KITCHEN USB Printer');
           setPaperSize(config.paperSize || '80mm');
           setRenderMode(config.renderMode || 'TEXT');
+          setPrinterName(config.printerName || '');
         }
       } catch (error) {
         console.error(
@@ -81,6 +107,11 @@ export default function USBPrinter() {
   async function save() {
     if (saving) return;
 
+    if (active && !printerName.trim()) {
+      setSaveMessage('Please select an installed Windows printer.');
+      return;
+    }
+
     setSaving(true);
     setSaveMessage('');
 
@@ -94,7 +125,7 @@ export default function USBPrinter() {
         renderMode,
         ip: '',
         port: 9100,
-        printerName: 'TVS-E RP 3230',
+        printerName: printerName.trim(),
       };
 
       console.log('[KITCHEN USB PRINTER] Saving settings:', config);
@@ -128,6 +159,12 @@ export default function USBPrinter() {
   // =====================================================
   async function handleActiveChange(checked: boolean) {
     const previousActive = active;
+
+  if (checked && !printerName.trim()) {
+  showToast('Please select an installed Windows printer.');
+  return;
+}
+
     setActive(checked);
     setSaveMessage('');
 
@@ -141,7 +178,7 @@ export default function USBPrinter() {
         renderMode,
         ip: '',
         port: 9100,
-        printerName: 'TVS-E RP 3230',
+        printerName: printerName.trim(),
       };
 
       const result = await window.posApi.saveUsbPrinterSettings(config);
@@ -165,56 +202,88 @@ export default function USBPrinter() {
         error
       );
 
-      alert(
-        error instanceof Error
-          ? error.message
-          : 'Failed to update KITCHEN USB selection'
-      );
+    setToastMessage(
+  error instanceof Error
+    ? error.message
+    : 'Failed to update KITCHEN USB selection'
+);
     }
   }
 
   // =====================================================
   // TEST KITCHEN USB PRINTER
   // =====================================================
-  async function testPrint() {
-    try {
-      const result = await window.posApi.print({
-        role: 'KITCHEN',
-        source: 'SYSTEM',
-        data: {
-          kotNumber: 'TEST',
-          tableNo: 'T1',
-          tableName: 'TEST TABLE',
-          orderType: 'TEST',
-          createdAt: Date.now(),
-          items: [
-            {
-              name: 'KITCHEN USB TEST ITEM',
-              quantity: 1,
-            },
-          ],
-        },
-      });
+ 
+async function testPrint() {
+  try {
+    console.log('[KITCHEN USB TEST] Selected printer:', printerName);
+    console.log('[KITCHEN USB TEST] Active:', active);
 
-      console.log('[KITCHEN USB PRINTER] Test print result:', result);
+    const result = await window.posApi.print({
+      role: 'KITCHEN',
+      source: 'SYSTEM',
+      data: {
+        kotNumber: 'TEST',
+        tableNo: 'T1',
+        tableName: 'TEST TABLE',
+        orderType: 'TEST',
+        createdAt: Date.now(),
+        items: [
+          {
+            name: 'KITCHEN USB TEST ITEM',
+            quantity: 1,
+          },
+        ],
+      },
+    });
 
-      if (!result?.success) {
-        throw new Error(
-          result?.error || 'KITCHEN USB test print failed'
-        );
-      }
+    console.log('[KITCHEN USB PRINTER] Test print result:', result);
 
-      alert('KITCHEN USB test print job queued successfully.');
-    } catch (error) {
-      console.error('[KITCHEN USB PRINTER] Test print error:', error);
-
-      alert(
-        error instanceof Error
-          ? error.message
-          : 'KITCHEN USB test print failed'
+    if (!result?.success) {
+      throw new Error(
+        result?.error || 'KITCHEN USB test print failed'
       );
     }
+
+    showToast(
+      'KITCHEN USB test print job queued successfully.',
+      'success'
+    );
+  } catch (error) {
+    console.error('[KITCHEN USB PRINTER] Test print error:', error);
+
+    showToast(
+      error instanceof Error
+        ? error.message
+        : 'KITCHEN USB test print failed',
+      'error'
+    );
   }
+}
+ 
+
+
+
+const loadInstalledPrinters = useCallback(async () => {
+  setLoadingPrinters(true);
+  setPrinterListError('');
+
+  try {
+    const printers = await window.posApi.listInstalledUsbPrinters();
+    setInstalledPrinters(printers);
+  } catch (error) {
+    console.error('Failed to load Windows printers:', error);
+    setPrinterListError('Could not load installed Windows printers.');
+  } finally {
+    setLoadingPrinters(false);
+  }
+}, []);
+
+  useEffect(() => {
+    if (!loading) {
+      loadInstalledPrinters();
+    }
+  }, [loading, loadInstalledPrinters]);
 
   // =====================================================
   // LOADING STATE
@@ -233,6 +302,7 @@ export default function USBPrinter() {
   // UI
   // =====================================================
   return (
+    <>
     <div>
       <div className="mb-20 p-1">
         <div className="mb-8 flex items-center gap-4">
@@ -285,20 +355,59 @@ export default function USBPrinter() {
           </div>
 
           {/* PRINTER NAME */}
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Printer Name
-            </label>
-
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={`w-full rounded-xl border ${background.border} px-3 py-3 outline-none`}
-            />
-          </div>
+        
 
           {/* PAPER SIZE */}
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">
+              Select Printer
+            </label>
+
+            <div className="flex gap-2">
+              <select
+                value={printerName}
+                onChange={(e) => setPrinterName(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 bg-slate-400"
+                disabled={loadingPrinters}
+              >
+                <option value="">
+                  {loadingPrinters
+                    ? 'Loading printers...'
+                    : 'Select a Windows printer'}
+                </option>
+
+                {installedPrinters.map((printer) => (
+                  <option key={printer.name} value={printer.name}>
+                    {printer.name}
+                    {printer.isDefault ? ' (Default)' : ''}
+                  </option>
+                ))}
+
+                {printerName &&
+                  !installedPrinters.some((printer) => printer.name === printerName) && (
+                    <option value={printerName}>
+                      {printerName} (Not currently available)
+                    </option>
+                  )}
+              </select>
+
+              <button
+                type="button"
+                onClick={loadInstalledPrinters}
+                disabled={loadingPrinters}
+                className="rounded-lg border px-3 py-2"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {printerListError && (
+              <p className="text-sm text-red-600">
+                {printerListError}
+              </p>
+            )}
+          </div>
           <div>
             <label className="mb-2 block text-sm font-medium">
               Paper Size
@@ -314,10 +423,10 @@ export default function USBPrinter() {
                   style={
                     paperSize === size
                       ? {
-                          borderColor: theme.primary,
-                          backgroundColor: theme.primaryLight,
-                          color: theme.primaryText,
-                        }
+                        borderColor: theme.primary,
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                      }
                       : undefined
                   }
                 >
@@ -343,10 +452,10 @@ export default function USBPrinter() {
                   style={
                     renderMode === mode
                       ? {
-                          borderColor: theme.primary,
-                          backgroundColor: theme.primaryLight,
-                          color: theme.primaryText,
-                        }
+                        borderColor: theme.primary,
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                      }
                       : undefined
                   }
                 >
@@ -388,5 +497,26 @@ export default function USBPrinter() {
         </div>
       </div>
     </div>
+    {toastMessage && (
+  <div
+    role="status"
+    aria-live="polite"
+    className={`fixed right-5 top-5 z-[9999] flex max-w-md items-center gap-3 rounded-lg px-4 py-3 text-white shadow-lg ${
+      toastType === 'success' ? 'bg-green-600' : 'bg-red-600'
+    }`}
+  >
+    <span className="flex-1">{toastMessage}</span>
+
+    <button
+      type="button"
+      onClick={() => setToastMessage('')}
+      className="text-xl font-bold"
+      aria-label="Dismiss notification"
+    >
+      ×
+    </button>
+  </div>
+)}
+    </>
   );
 }
