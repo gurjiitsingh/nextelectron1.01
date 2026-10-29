@@ -303,8 +303,10 @@ export default function LoginScreen() {
           dark:border-white/10
           shadow-2xl
           overflow-hidden
-          bg-white/5
-          backdrop-blur-xl
+         bg-white dark:bg-slate-900
+text-slate-900 dark:text-slate-100
+backdrop-blur-md
+border-slate-300 dark:border-slate-700
         "
       >
 
@@ -812,7 +814,7 @@ export default function LoginScreen() {
                       hover:bg-black/[0.06]
                       dark:hover:bg-white/[0.08]
                       active:scale-[0.96]
-                      disabled:opacity-25
+                      disabled:opacity-45
                       transition
                     "
                   >

@@ -106,67 +106,48 @@ const { showToast, toastComponent } = useToast();
   // FILTER PRODUCTS
   // =====================================================
 
-  const products = useMemo(() => {
+
  
-    const query =
-      productToSearchQuery?.trim().toLowerCase();
+const products = useMemo(() => {
+  const query = productToSearchQuery?.trim().toLowerCase();
 
-    // ===================================================
-    // 1. SEARCH
-    // Search ALL products by name OR search code
-    // ===================================================
-
-    if (query) {
+  if (query) {
+    // Numeric input = exact search-code match only
+    if (/^\d+$/.test(query)) {
       return allProducts.filter((p) => {
-        const name =
-          p.name?.toLowerCase() ?? "";
-
-        const searchCode =
-          p.searchCode?.toLowerCase() ?? "";
-
-        return (
-          name.includes(query) ||
-          searchCode.includes(query)
-        );
+        const searchCode = String(p.searchCode ?? "").trim();
+        return searchCode === query;
       });
     }
 
-    // ===================================================
-    // 2. FAVORITES
-    // ===================================================
+    // Text input = partial product-name match
+    return allProducts.filter((p) => {
+      const name = p.name?.toLowerCase() ?? "";
+      const searchCode = String(p.searchCode ?? "")
+        .trim()
+        .toLowerCase();
 
-    if (
-      productCategoryIdG ===
-      FAVORITES_CATEGORY_ID
-    ) {
-      return allProducts.filter(
-        (p) => p.favorite === true
-      );
-    }
+      return name.includes(query) || searchCode === query;
+    });
+  }
 
-    // ===================================================
-    // 3. NORMAL CATEGORY
-    // ===================================================
+  if (productCategoryIdG === FAVORITES_CATEGORY_ID) {
+    return allProducts.filter((p) => p.favorite === true);
+  }
 
-    if (productCategoryIdG) {
-      return allProducts.filter(
-        (p) =>
-          p.categoryId === productCategoryIdG
-      );
-    }
-
-    // ===================================================
-    // 4. DEFAULT
-    // ===================================================
-
+  if (productCategoryIdG) {
     return allProducts.filter(
-      (p) => p.favorite === true
+      (p) => p.categoryId === productCategoryIdG
     );
-  }, [
-    allProducts,
-    productCategoryIdG,
-    productToSearchQuery,
-  ]);
+  }
+
+  return allProducts.filter((p) => p.favorite === true);
+}, [
+  allProducts,
+  productCategoryIdG,
+  productToSearchQuery,
+]);
+
 
  
 

@@ -1863,7 +1863,7 @@ const { showToast, toastComponent } = useToast();
 
     if (billItems.length === 0) {
 
-     showToast('No items to preview');
+     showToast('No items to print');
 
       return;
     }
@@ -2050,7 +2050,7 @@ const { showToast, toastComponent } = useToast();
 
     if (billItems.length === 0) {
 
-showToast('No items to preview');
+showToast('No items to print');
 
       return;
     }

@@ -464,7 +464,7 @@ setConfigStatus("");
           overflow-hidden
           blur-[5px]
           scale-[1.015]
-          opacity-60
+          opacity-90
           pointer-events-none
           select-none
         "

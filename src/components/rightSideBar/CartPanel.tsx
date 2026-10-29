@@ -751,13 +751,14 @@ const { showToast, toastComponent } = useToast();
               justify-center
             "
           >
-
-            <p className="text-sm opacity-60">
-
-              Cart is empty
-
-            </p>
-
+<div className='flex flex-col items-left'>
+        <p className=" gap-3 text-2xl md:text-4xl font-extrabold tracking-wide text-gray-700 dark:text-gray-200 text-center">
+  Your Cart Awaits
+</p>
+<p className="text-sm md:text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
+  Add something delicious to get started!
+</p>
+</div>
           </div>
 
         ) : (
@@ -1193,12 +1194,13 @@ const { showToast, toastComponent } = useToast();
         style={{
           backgroundColor:
             cartData.length === 0
-              ? '#a3abde'
-              : theme.primary,
+              ? '#e3a246'
+              : '#87b52d',
+              // : theme.primary,
           color:
             cartData.length === 0
-              ? '#639add'
-              : '#e4e5ea',
+              ? '#4d4b4a'
+              : '#262644',
         }}
         className="
           h-8
