@@ -2643,23 +2643,25 @@ function stopNextServer() {
 // WINDOW
 // =====================================================
 
+
+
 function createWindow() {
   const preloadPath = path.resolve(
     __dirname,
-    'preload.cjs'
+    "preload.cjs"
   );
 
-  console.log(
-    'PRELOAD =>',
-    preloadPath
-  );
+  console.log("PRELOAD =>", preloadPath);
 
   const isDev = !app.isPackaged;
+
+  const targetUrl = isDev
+    ? "http://localhost:3000"
+    : "http://127.0.0.1:3000";
 
   const win = new BrowserWindow({
     width: 1400,
     height: 900,
-
     show: false,
 
     webPreferences: {
@@ -2672,27 +2674,90 @@ function createWindow() {
 
   win.maximize();
 
-  win.once('ready-to-show', () => {
+  win.once("ready-to-show", () => {
+    console.log("[WINDOW] Ready to show");
     win.show();
   });
 
-  if (isDev) {
-    //   win.webContents.openDevTools();
-  }
+  win.webContents.on("did-finish-load", () => {
+    console.log("[WINDOW] Page loaded:", targetUrl);
+  });
 
-  if (isDev) {
-    // Development
-    win.loadURL(
-      'http://localhost:3000'
-    );
-  } else {
-    // Production
-    win.loadURL(
-      'http://127.0.0.1:3000'
-    );
-  }
+  win.webContents.on(
+    "did-fail-load",
+    (_, errorCode, errorDescription, validatedURL, isMainFrame) => {
+      console.error("[WINDOW] Load failed:", {
+        errorCode,
+        errorDescription,
+        validatedURL,
+        isMainFrame,
+      });
+    }
+  );
+
+  win.webContents.on("render-process-gone", (_, details) => {
+    console.error("[WINDOW] Renderer exited:", details);
+  });
+
+  win.webContents.on("console-message", (_, details) => {
+    if (details.level >= 2) {
+      console.error(
+        "[RENDERER ERROR]",
+        details.message
+      );
+    }
+  });
+
+  win.loadURL(targetUrl).catch((error) => {
+    console.error("[WINDOW] loadURL failed:", error);
+  });
 
   return win;
+}
+
+
+
+
+
+// =====================================================
+// WAIT HELPER
+// =====================================================
+
+
+async function waitForNextServer(
+  url,
+  timeoutMs = 30000
+) {
+  const startedAt = Date.now();
+  let lastError = null;
+
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(2000),
+      });
+
+      // Any HTTP response proves that the server is reachable.
+      // Even a 404 or 500 means the HTTP server responded.
+      console.log(
+        "[NEXT SERVER] Responded with status:",
+        response.status
+      );
+
+      return;
+    } catch (error) {
+      lastError = error;
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 500)
+      );
+    }
+  }
+
+  throw new Error(
+    `Next.js server did not respond at ${url} within ${timeoutMs}ms. ` +
+    `Last error: ${lastError?.message ?? "Unknown error"}`
+  );
 }
 
 // =====================================================
@@ -2734,13 +2799,31 @@ app.whenReady().then(async () => {
   // START NEXT.JS IN PRODUCTION
   // ===================================================
 
-  if (app.isPackaged) {
+if (app.isPackaged) {
+  console.log("[STARTUP] Starting Next.js server...");
+
+  try {
     startNextServer();
 
-    await new Promise(
-      resolve => setTimeout(resolve, 1500)
+    await waitForNextServer(
+      "http://127.0.0.1:3000",
+      30000
     );
+
+    console.log(
+      "[STARTUP] Next.js server is ready"
+    );
+  } catch (error) {
+    console.error(
+      "[STARTUP] Next.js server startup failed:",
+      error
+    );
+
+    app.quit();
+    return;
   }
+}
+
 
   // ===================================================
   // CREATE WINDOW
